@@ -178,6 +178,35 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
+    while (t < _t_end) {
+
+        // Apply the Boundary conditions (not implemented yet)
+        for (auto& boundary_ptr : _boundaries) {
+            boundary_ptr->apply(_field);
+        }
+
+        // Fluxes(not implemented yet)
+        _field.calculate_fluxes(_grid);
+
+        // Poisson Pressure Equation (not implemented yet)
+        _field.calculate_rs(_grid); 
+
+
+        // TODO : Solve the PPE, then update velocities with new p
+
+        _field.calculate_velocities(_grid);
+
+        t += dt;
+        timestep += 1;
+        dt = _field.dt();
+
+        // Write the output. What's the rank parameter ?
+        output_vtk(timestep);
+    }
+
+    
+
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
