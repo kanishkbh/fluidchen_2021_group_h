@@ -104,7 +104,8 @@ template <typename T> class Matrix {
     /// get the number of elements in y direction
     int jmax() const { return _jmax; }
 
-    T max() {
+    /// Retyurns the absolute maximum in the array.
+    T max() const {
         T max_elem = 0; 
         for(auto j=0;j<jmax;++i){
             for(auto i=0;i<imax;++j){
