@@ -1,5 +1,6 @@
 #include "Case.hpp"
 #include "Enums.hpp"
+#include "PressureSolver.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -191,6 +192,13 @@ void Case::simulate() {
 
         // Poisson Pressure Equation (not implemented yet)
         _field.calculate_rs(_grid); 
+
+        double res;
+        unsigned iter = 0;
+        do {
+            res = _pressure_solver->solve(_field, _grid, _boundaries);
+            ++iter;
+        } while (res > _tolerance && iter < _max_iter);
 
 
         // TODO : Solve the PPE, then update velocities with new p
