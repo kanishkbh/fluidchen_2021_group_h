@@ -1,12 +1,8 @@
 #pragma once
 
 #include <vector>
-<<<<<<< HEAD
 #include <cmath>        // std::abs
 
-=======
-#include<cmath> 
->>>>>>> origin/Fields
 
 /**
  * @brief General 2D data structure around std::vector, in column
