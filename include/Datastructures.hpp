@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include<cmath> 
 
 /**
  * @brief General 2D data structure around std::vector, in column
@@ -107,10 +108,10 @@ template <typename T> class Matrix {
     /// Retyurns the absolute maximum in the array.
     T max() const {
         T max_elem = 0; 
-        for(auto j=0;j<jmax;++j){
-            for(auto i=0;i<imax;++j){
-                if(abs(_container.at(j*imax+i)) > max_elem){
-                    max_elem = _container.at(j*imax+i);
+        for(auto j=0;j<_jmax;++j){
+            for(auto i=0;i<_imax;++j){
+                if(abs(_container.at(j*_imax+i)) > max_elem){
+                    max_elem = _container.at(j*_imax+i);
                 }
             }
         }
