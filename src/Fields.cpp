@@ -55,11 +55,11 @@ void Fields::calculate_fluxes(Grid &grid) {
 }
 
 void Fields::calculate_rs(Grid &grid) {
-    double idt = 1 / _dt;
-    double idx = 1 / grid.dx();
-    double idy = 1 / grid.dy();
-    for(auto j=0; j < grid.jmax(); ++j){
-        for(auto i=0; i < grid.imax(); ++i){
+    double idt = 1/_dt;
+    double idx = 1/grid.dx();
+    double idy = 1/grid.dy();
+    for(auto j=1;j<=grid.jmax();++j){
+        for(auto i=1;i<=grid.imax();++i){
             _RS(i,j) = idt*( idx*(_F(i,j)-_F(i-1,j)) + idy*(_G(i,j)-_G(i,j-1)) );
         }
     } 
@@ -70,15 +70,22 @@ void Fields::calculate_velocities(Grid &grid) {
     int jmax = grid.jmax();
     int imax = grid.imax();
     for(auto j=1;j<=jmax;++j){
-        for (auto i=0;i<imax;++i){
+        for (auto i=1;i<imax;++i){
             _U(i,j) = _F(i,j) - kappa*(_P(i+1,j)-_P(i,j));
+        }
+    }
+    for(auto j=1;j<jmax;++j){
+        for(auto i=1;i<=imax;++i){
             _V(i,j) = _G(i,j) - kappa*(_P(i,j+1)-_P(i,j));
         }
     }
 }
 
 double Fields::calculate_dt(Grid &grid) { 
-    if(_tau < 0){
+
+    // If the safety parameter tau is negative, it makes little sense. 
+    // Hence for a negative tau, we simply have a fixed time step. 
+    if(_tau<0){
         return _dt;
     } 
     else {
@@ -88,10 +95,10 @@ double Fields::calculate_dt(Grid &grid) {
         double k2 = dx/(_U.max());
         double k3 = dy/(_V.max());
         _dt = _tau*std::min({k1,k2,k3});
-
         return _dt;
     }
 }
+
 
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
