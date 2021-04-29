@@ -176,7 +176,7 @@ void Case::set_file_names(std::string file_name) {
 void Case::simulate() {
 
     double t = 0.0;
-    double dt = _field.dt();
+    double dt = _field.calculate_dt(_grid);
     int timestep = 0;
     double output_counter = 0.0;
 
@@ -219,7 +219,7 @@ void Case::simulate() {
 
         t += dt;
         timestep += 1;
-        dt = _field.dt();
+        dt = _field.calculate_dt(_grid);
 
         // Write the output. What's the rank parameter ?
         output_vtk(timestep);
