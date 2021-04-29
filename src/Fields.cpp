@@ -18,7 +18,8 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 void Fields::calculate_fluxes(Grid &grid) {
 
     // Template fill away :  0.25*idy*( ( ()*() - ()*() ) + gamma*(abs()*() - abs()*() ) ); 
-    double gamma = 0.5;    
+    // donor cell scheme. 
+    double gamma = 1;   
     // Create Discretization object; 
     Discretization del(grid.dx(),grid.dy(),gamma);
     for(auto j=1;j<=jmax;j++){
@@ -39,7 +40,7 @@ void Fields::calculate_fluxes(Grid &grid) {
                                  -del.convection_v(_U,_V,i,j) +_gy);
         }
     }
-    for(auto i=0;i<=imax;++i){
+    for(auto i=1;i<=imax;++i){
         _G(i,0) = _V(i,0);
         _G(i,jmax) = _V(i,jmax);
     }
@@ -50,8 +51,8 @@ void Fields::calculate_rs(Grid &grid) {
     double idt = 1/_dt;
     double idx = 1/grid._dx;
     double idy = 1/grid._dy;
-    for(auto j=0;j<grid.jmax();++j){
-        for(auto i=0;i<grid.imax();++i){
+    for(auto j=1;j<=grid.jmax();++j){
+        for(auto i=1;i<=grid.imax();++i){
             _RS(i,j) = idt*( idx*(_F(i,j)-_F(i-1,j)) + idy*(_G(i,j)-_G(i,j-1)) );
         }
     } 
@@ -62,15 +63,22 @@ void Fields::calculate_velocities(Grid &grid) {
     int jmax = grid.jmax();
     int imax = grid.imax();
     for(auto j=1;j<=jmax;++j){
-        for (auto i=0;i<imax;++i){
+        for (auto i=1;i<imax;++i){
             _U(i,j) = _F(i,j) - kappa*(_P(i+1,j)-_P(i,j));
+        }
+    }
+    for(auto j=1;j<jmax;++j){
+        for(auto i=1;i<=imax;++i){
             _V(i,j) = _G(i,j) - kappa*(_P(i,j+1)-P(i,j));
         }
     }
 }
 
 double Fields::calculate_dt(Grid &grid) { 
-    if(_tau=-1){
+
+    // If the safety parameter tau is negative, it makes little sense. 
+    // Hence for a negative tau, we simply have a fixed time step. 
+    if(_tau<0){
         return _dt;
     } 
     else {
