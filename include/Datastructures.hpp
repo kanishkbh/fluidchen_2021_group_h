@@ -1,8 +1,12 @@
 #pragma once
 
 #include <vector>
+<<<<<<< HEAD
 #include <cmath>        // std::abs
 
+=======
+#include<cmath> 
+>>>>>>> origin/Fields
 
 /**
  * @brief General 2D data structure around std::vector, in column
@@ -113,6 +117,7 @@ template <typename T> class Matrix {
             for(auto i=0;i<imax;++i){
                 if(std::abs(_container.at(j*imax+i)) > max_elem){
                     max_elem = _container.at(j*imax+i);
+
                 }
             }
         }

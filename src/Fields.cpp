@@ -18,7 +18,9 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 void Fields::calculate_fluxes(Grid &grid) {
 
     // Template fill away :  0.25*idy*( ( ()*() - ()*() ) + gamma*(abs()*() - abs()*() ) ); 
-    // donor cell scheme. 
+    // donor cell scheme
+    int jmax = grid.jmax();
+    int imax = grid.imax(); 
     double gamma = 1;   
     // Create Discretization object; 
     Discretization del(grid.dx(),grid.dy(),gamma);
@@ -87,7 +89,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k1 = (0.5/_nu) * 1/(1/(dx*dx)+(1/dy*dy));
         double k2 = dx/(_U.max());
         double k3 = dy/(_V.max());
-        _dt = _tau*std::min(k1,k2,k3);
+        _dt = _tau*std::min([k1,k2,k3]);
         return _dt;
     }
 }
