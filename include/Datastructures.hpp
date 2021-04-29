@@ -107,8 +107,8 @@ template <typename T> class Matrix {
     /// Retyurns the absolute maximum in the array.
     T max() const {
         T max_elem = 0; 
-        for(auto j=0;j<jmax;++i){
-            for(auto i=0;i<imax;++j){
+        for(auto j=0;j<jmax;++j){
+            for(auto i=0;i<imax;++i){
                 if(abs(_container.at(j*imax+i)) > max_elem){
                     max_elem = _container.at(j*imax+i);
                 }
