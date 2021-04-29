@@ -109,10 +109,10 @@ template <typename T> class Matrix {
     /// Retyurns the absolute maximum in the array.
     T max() const {
         T max_elem = 0; 
-        for(auto j=0;j<jmax;++j){
-            for(auto i=0;i<imax;++i){
-                if(std::abs(_container.at(j*imax+i)) > max_elem){
-                    max_elem = _container.at(j*imax+i);
+        for(auto j=0;j<_jmax;++j){
+            for(auto i=0;i<_imax;++i){
+                if(std::abs(_container.at(j*_imax+i)) > max_elem){
+                    max_elem = _container.at(j*_imax+i);
 
                 }
             }
