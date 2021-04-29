@@ -80,6 +80,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k2 = dx/(_U.max());
         double k3 = dy/(_V.max());
         _dt = _tau*std::min(k1,k2,k3);
+        return _dt;
     }
 }
 
