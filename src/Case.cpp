@@ -180,6 +180,10 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
+    // For logging purpose
+    std::vector<int> pressure_iterations;
+    std::vector<double> timesteps_history;
+
     while (t < _t_end) {
 
         // Apply the Boundary conditions (not implemented yet)
@@ -219,14 +223,33 @@ void Case::simulate() {
 
         t += dt;
         timestep += 1;
+        
         dt = _field.calculate_dt(_grid);
+
+        /* Update logging data */
+        pressure_iterations.push_back(iter);
+        timesteps_history.push_back(dt);
 
         // Write the output. What's the rank parameter ?
         output_vtk(timestep);
     }
 
-    
+    //Write logs
+    output_simulation_logs(pressure_iterations, timesteps_history);
 
+}
+
+void Case::output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts) {
+    // Create Filename
+    std::string outputname =
+        _dict_name + '/' + _case_name + "_log.txt";
+
+    std::ofstream file(outputname);
+
+    file << "# iter_number; dt; pressure_iterations" << std::endl;
+    for (int i = 0; i < pressure_iter.size(); ++i) {
+        file << i << "; " << dts[i] << "; " << pressure_iter[i] << std::endl;
+    }
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
