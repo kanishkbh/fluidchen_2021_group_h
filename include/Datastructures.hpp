@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <cmath>        // std::abs
+
 
 /**
  * @brief General 2D data structure around std::vector, in column
@@ -103,6 +105,20 @@ template <typename T> class Matrix {
 
     /// get the number of elements in y direction
     int jmax() const { return _jmax; }
+
+    /// Retyurns the absolute maximum in the array.
+    T max() const {
+        T max_elem = 0; 
+        for(auto j=0;j<_jmax;++j){
+            for(auto i=0;i<_imax;++i){
+                if(std::abs(_container.at(j*_imax+i)) > max_elem){
+                    max_elem = _container.at(j*_imax+i);
+
+                }
+            }
+        }
+        return max_elem; 
+    }
 
   private:
     /// Number of elements in x direction
