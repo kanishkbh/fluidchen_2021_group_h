@@ -13,61 +13,61 @@ Discretization::Discretization(double dx, double dy, double gamma) {
 }
 
 double Discretization::convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
-    double u, u1, u2, u3, u4, u5, v, v1, v2, v3, v4, v6;
- double u2x, uv_y, uxx, uyy, v2y, uv_x, vxx, vyy;
 	
-	u = U(i,j);
-    u1 = U(i + 1,j);
-    u2 = U(i,j + 1);
-    u3 = U(i - 1,j);
-    u4 = U(i,j - 1);
-    u5 = U(i - 1,j + 1);
+	double idx = 1/_dx;
+    double idy = 1/_dy;
+    // temporary variables 
 
-    v = V(i,j);
-    v1 = V(i + 1,j);
-    v2 = V(i,j + 1);
-    v3 = V(i - 1,j);
-    v4 = V(i,j - 1);
-    v6 = V(i + 1,j - 1);
+    double u = U(i,j);
+    double u_right = U(i+1,j);
+    double u_left = U(i-1,j);
+    double u_top = U(i,j+1);
+    double u_bottom = U(i,j-1);
+    double u_west = U(i-1,j+1);
+    double v = V(i,j);
+    double v_left = V(i-1,j);
+    double v_right = V(i+1,j);
+    double v_top = V(i,j+1);
+    double v_bottom = V(i,j-1);
+    double v_east = V(i+1,j-1);
 
-	  u2x =
-	    1 / _dx * ( ((u + u1)*(u + u1)/4) - ((u3 + u)*(u3 + u)/4) ) +
-	    _gamma / (4 * _dx) * (fabs (u + u1) * (u - u1) -
-				fabs (u3 + u) * (u3 - u));
-	  uv_y =
-	    1 / (4 * _dy) * ((v + v1) * (u + u2) - (v4 + v6) * (u4 + u)) +
-	    _gamma / (4 * _dy) * (fabs (v + v1) * (u - u2) -
-				fabs (v4 + v6) * (u4 - u));
-    return u2x + uv_y;
+	double k3 = idx*0.25 *(
+                        (u+u_right)*(u+u_right) - (u_left+u)*(u_left+u) +  _gamma *( fabs(u+u_right)*(u-u_right)  - fabs(u_left + u) * (u_left - u) )  
+                          );
+
+    double k4 = idy*0.25 *(
+                        (v+v_right)*(u+u_top) - (v_bottom+v_east)*(u_bottom+u) + _gamma*(fabs(v+v_right)*(u-u_top) - fabs(v_bottom+v_east)*(u_bottom - u) )
+                          );
+
+    return k3+k4;
 }
 
 double Discretization::convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
-    double u, u1, u2, u3, u4, u5, v, v1, v2, v3, v4, v6;
- double u2x, uv_y, uxx, uyy, v2y, uv_x, vxx, vyy;
-	
-	u = U(i,j);
-    u1 = U(i + 1,j);
-    u2 = U(i,j + 1);
-    u3 = U(i - 1,j);
-    u4 = U(i,j - 1);
-    u5 = U(i - 1,j + 1);
+    double idx = 1/_dx;
+    double idy = 1/_dy;
 
-    v = V(i,j);
-    v1 = V(i + 1,j);
-    v2 = V(i,j + 1);
-    v3 = V(i - 1,j);
-    v4 = V(i,j - 1);
-    v6 = V(i + 1,j - 1);
+    double u = U(i,j);
+    double u_right = U(i+1,j);
+    double u_left = U(i-1,j);
+    double u_top = U(i,j+1);
+    double u_bottom = U(i,j-1);
+    double u_west = U(i-1,j+1);
+    
+    double v = V(i,j);
+    double v_left = V(i-1,j);
+    double v_right = V(i+1,j);
+    double v_top = V(i,j+1);
+    double v_bottom = V(i,j-1);
+    double v_east = V(i+1,j-1);
 
-    v2y =
-	    1 / _dy * ( (0.5 * (v + v2))*(0.5 * (v + v2)) - (0.5 * (v4 + v))*(0.5 * (v4 + v)) ) +
-	    _gamma / (4 * _dy) * (fabs (v + v2) * (v - v2) -
-				fabs (v4 + v) * (v4 - v));
-	uv_x =
-	    1 / (4 * _dx) * ((u + u2) * (v + v1) - (u3 + u5) * (v3 + v)) +
-	    _gamma / (4 * _dx) * (fabs (u + u2) * (v - v1) -
-				fabs (u3 + u5) * (v3 - v));
-    return v2y + uv_x;
+    double k5 = idx*0.25 *(
+                        (u+u_top)*(v+v_right) - (u_left+u_west)*(v_left+v) + _gamma*( fabs(u+u_top)*(v-v_right) - fabs(u_left+u_west)*(v_left - v))
+                          );
+    double k6 = idy*0.25*(
+                        (v+v_top)*(v+v_top) - (v_bottom+v)*(v_bottom+v) + _gamma * (fabs(v+v_top)*(v-v_top) - fabs(v_bottom+v)*(v_bottom - v) ) 
+                         );
+
+    return k5+k6;
 }
 
 double Discretization::diffusion(const Matrix<double> &_U, int i, int j) {
