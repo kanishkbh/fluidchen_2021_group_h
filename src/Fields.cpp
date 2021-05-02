@@ -47,7 +47,7 @@ void Fields::calculate_fluxes(Grid &grid) {
         }
     }
     // Boundary conditions. Does it belong here ?
-    for(auto i=0;i<=imax;++i){
+    for(auto i=1;i<=imax;++i){
         _G(i,0) = _V(i,0);
         _G(i,jmax) = _V(i,jmax);
     }
@@ -66,17 +66,18 @@ void Fields::calculate_rs(Grid &grid) {
 }
 
 void Fields::calculate_velocities(Grid &grid) {
-    double kappa = _dt/grid.dx();
+    double kappa1 = _dt/grid.dx();
+    double kappa2 = _dt/grid.dy();
     int jmax = grid.jmax();
     int imax = grid.imax();
     for(auto j=1;j<=jmax;++j){
         for (auto i=1;i<imax;++i){
-            _U(i,j) = _F(i,j) - kappa*(_P(i+1,j)-_P(i,j));
+            _U(i,j) = _F(i,j) - kappa1*(_P(i+1,j)-_P(i,j));
         }
     }
     for(auto j=1;j<jmax;++j){
         for(auto i=1;i<=imax;++i){
-            _V(i,j) = _G(i,j) - kappa*(_P(i,j+1)-_P(i,j));
+            _V(i,j) = _G(i,j) - kappa2*(_P(i,j+1)-_P(i,j));
         }
     }
 }

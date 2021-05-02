@@ -21,8 +21,8 @@ double Discretization::convection_u(const Matrix<double> &_U, const Matrix<doubl
     double k3 = 0.25*idx*( ( (_U(i,j) + _U(i+1,j))*(_U(i,j) + _U(i+1,j))  - (_U(i-1,j) + _U(i,j))*(_U(i-1,j) + _U(i,j)) )
         + _gamma*( abs(_U(i,j) + _U(i+1,j)) * (_U(i,j) - _U(i+1,j)) - abs(_U(i-1,j) + _U(i,j)) * (_U(i-1,j) - _U(i,j)) ) );
     // k4:= discretization of Dy(u*v)
-    double k4 = 0.25*idy*( ( (_V(i,j) + _V(i+1,j)) * (_U(i,j) + _U(i,j+1)) ) -  (_V(i,j-1)+_V(i+1,j-1)) * (_U(i,j-1) + _U(i,j)) )
-        + _gamma*( (abs(_V(i,j) + _V(i+1,j))*(_U(i,j)-_U(i,j+1))) - (abs(_V(i,j-1) + _V(i+1,j-1)) * (_U(i,j-1)-_U(i,j)) ) );
+    double k4 = 0.25*idy*( ( (_V(i,j) + _V(i+1,j)) * (_U(i,j) + _U(i,j+1))  -  (_V(i,j-1)+_V(i+1,j-1)) * (_U(i,j-1) + _U(i,j)) ) 
+        + _gamma*( abs(_V(i,j) + _V(i+1,j))*(_U(i,j)-_U(i,j+1)) - abs(_V(i,j-1) + _V(i+1,j-1)) * (_U(i,j-1)-_U(i,j)) ) );
 
     return k3+k4;
 }
