@@ -221,13 +221,14 @@ void Case::simulate() {
         timestep += 1;
         dt = _field.calculate_dt(_grid);
 
+/*  Printing u matrix for debugging :[On bash : ./fluidchen.exe > Log.dat]
         for(auto i=0;i<_grid.imax();++i){
             for(auto j=0;j<_grid.jmax();++j){
                 std::cout << _field.u(i,j) << " ";
             }
         std::cout << std::endl; 
         }   
-
+*/
         // Write the output. What's the rank parameter ?
         output_vtk(timestep);
     }
