@@ -18,14 +18,14 @@ jmax        50
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.05
-t_end        100
-tau          0.8
+t_end        50
+tau          0.5
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     0.2
+dt_value     0.5
 
 #--------------------------------------------
 #               pressure

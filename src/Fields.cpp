@@ -15,6 +15,8 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
 }
 
+
+
 void Fields::calculate_fluxes(Grid &grid) {
 
     // Template fill away :  0.25*idy*( ( ()*() - ()*() ) + gamma*(abs()*() - abs()*() ) ); 
@@ -24,11 +26,32 @@ void Fields::calculate_fluxes(Grid &grid) {
     int imax = grid.imax();
     int jmax = grid.jmax();
 
+    
+    for(int j=1;j<=jmax;++j){
+        // For the left and right walls 
+        // Left wall : U = 0 on ghost cell. 
+        // Right wall : U(imax) = 0 on pre-ghost cell 
+        _U(0,j) = 0;
+        _U(imax,j) = 0;
+        // Left wall :0.5*( V(0,j) + V(1,j)) = 0;  
+        _V(0,j) = -_V(1,j);
+        // Right wall :0.5*( V(imax+1,j) + V(imax,j)) = 0; 
+        _V(imax+1,j) = -_V(imax,j);
+    }
+
+    for(int i=1;i<=imax;++i){
+        _U(i,0) = -_U(i,1);
+        _U(i,jmax+1) = 2-_U(i,jmax);
+        _V(i,0) = 0; 
+        _V(i,jmax) = 0;
+    }
+    
+
     Discretization del(grid.dx(),grid.dy(),gamma);
 
     for(auto j = 1; j <= jmax; j++){
         for(auto i=1; i < imax; ++i){
-        _F(i,j) = _U(i,j) + _dt*(_nu*(del.diffusion(_U,i,j))
+        _F(i,j) = _U(i,j) + _dt*(_nu*(del.laplacian(_U,i,j))
                                  - del.convection_u(_U,_V,i,j) +_gx);
         }
     }
@@ -42,7 +65,7 @@ void Fields::calculate_fluxes(Grid &grid) {
         
     for(auto j=1; j<jmax; ++j){
         for(auto i=1; i<=imax; ++i){        
-        _G(i,j) = _V(i,j) + _dt*(_nu*(del.diffusion(_V,i,j))
+        _G(i,j) = _V(i,j) + _dt*(_nu*(del.laplacian(_V,i,j))
                                  -del.convection_v(_U,_V,i,j) +_gy);
         }
     }
