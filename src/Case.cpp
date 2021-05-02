@@ -252,6 +252,7 @@ void Case::output_simulation_logs(const std::vector<int>& pressure_iter, const s
     }
 }
 
+
 void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();

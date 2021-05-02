@@ -9,53 +9,57 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, do
 
 void FixedWallBoundary::apply(Fields &field) {
 
-    for (int k=0; k < _cells.size(); k++) {
+    for (auto this_cell : _cells) {
          /// check if it is top wall
-         if (_cells[k]->is_border(border_position::BOTTOM) == true) {
+         if (this_cell->is_border(border_position::BOTTOM) == true) {
             //  wall_id = 1; 
-             //set y velocity of below cell to zero
-             field.v(_cells[k]->i(), _cells[k]->j()-1) = 0;
-             // set x velocity to 2*wall_velocity - u[bottom cell]
-             field.u(_cells[k]->i(), _cells[k]->j()) = - field.u(_cells[k]->i(), _cells[k]->j()-1);
-             // set Pressure to - P[below]
-             field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i(), _cells[k]->j()-1);
+             auto bottom_cell = this_cell->neighbour(border_position::BOTTOM);
+             //set v of below cell to zero
+             field.v(bottom_cell->i(), bottom_cell->j()) = 0;
+             // set u to - u[below cell]
+             field.u(this_cell->i(), this_cell->j()) = - field.u(bottom_cell->i(), bottom_cell->j());
+             // set Pressure = P[below]
+             field.p(this_cell->i(), this_cell->j()) = field.p(bottom_cell->i(), bottom_cell->j());
              // break;
          }
          else
          /// check if it is bottom wall
-         if (_cells[k]->is_border(border_position::BOTTOM) == true) {
+         if (this_cell->is_border(border_position::TOP) == true) {
             //  wall_id = 2;
-            // set y velocity to zero
-             field.v(_cells[k]->i(), _cells[k]->j()) = 0;
-             // set x velocity to 2*wall_velocity - u[above cell]
-             field.u(_cells[k]->i(), _cells[k]->j()) = - field.u(_cells[k]->i(), _cells[k]->j()+1);
-             // set Pressure to P[above]
-             field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i(), _cells[k]->j()+1);
+            auto top_cell = this_cell->neighbour(border_position::TOP);
+            // set v to zero
+             field.v(this_cell->i(), this_cell->j()) = 0;
+             // set u to - u[top cell]
+             field.u(this_cell->i(), this_cell->j()) = - field.u(top_cell->i(), top_cell->j());
+             // set Pressure to P[top]
+             field.p(this_cell->i(), this_cell->j()) = field.p(top_cell->i(), top_cell->j());
               
             //  break;
          }
          else
          /// check if it is right wall
-         if (_cells[k]->is_border(border_position::LEFT) == true) {
+         if (this_cell->is_border(border_position::LEFT) == true) {
             //  wall_id = 3; 
+            auto left_cell = this_cell->neighbour(border_position::LEFT);
             // set u[left cell] to zero
-             field.u(_cells[k]->i()-1, _cells[k]->j()) = 0;
-             // set v to 2*wall_velocity - v[left cell]
-             field.v(_cells[k]->i(), _cells[k]->j()) =  - field.v(_cells[k]->i()-1, _cells[k]->j());
+             field.u(this_cell->i()-1, this_cell->j()) = 0;
+             // set v to - v[left cell]
+             field.v(this_cell->i(), this_cell->j()) = - field.v(this_cell->i()-1, this_cell->j());
              // set Pressure to P[left]
-             field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i()-1, _cells[k]->j());
+             field.p(this_cell->i(), this_cell->j()) = field.p(left_cell->i(), left_cell->j());
             //  break;
          }
          else
          /// check if it is left wall
-         if (_cells[k]->is_border(border_position::RIGHT) == true) {
+         if (this_cell->is_border(border_position::RIGHT) == true) {
             //  wall_id = 4; 
+            auto right_cell = this_cell->neighbour(border_position::RIGHT);
             // set u[this cell] to zero
-            field.u(_cells[k]->i(), _cells[k]->j()) = 0;
-            // set v to 2*wall_velocity - v[right cell]
-            field.v(_cells[k]->i(), _cells[k]->j()) =  - field.v(_cells[k]->i()+1, _cells[k]->j());
+            field.u(this_cell->i(), this_cell->j()) = 0;
+            // set v to - v[right cell]
+            field.v(this_cell->i(), this_cell->j()) = - field.v(right_cell->i(), right_cell->j());
             // set Pressure to P[right]
-            field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i()+1, _cells[k]->j());
+            field.p(this_cell->i(), this_cell->j()) = field.p(right_cell->i(), right_cell->j());
             //  break;
          }
      }
@@ -76,53 +80,57 @@ void MovingWallBoundary::apply(Fields &field) {
     // wall_id = 1 for top, 2 for bottom, 3 for left, 4 for right
     // int wall_id = 0;
 
-     for (int k=0; k < _cells.size(); k++) {
+     for (auto this_cell : _cells) {
          /// check if it is top wall
-         if (_cells[k]->is_border(border_position::BOTTOM) == true) {
+         if (this_cell->is_border(border_position::BOTTOM) == true) {
             //  wall_id = 1; 
-             //set y velocity of below cell to zero
-             field.v(_cells[k]->i(), _cells[k]->j()-1) = 0;
-             // set x velocity to 2*wall_velocity - u[bottom cell]
-             field.u(_cells[k]->i(), _cells[k]->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] - field.u(_cells[k]->i(), _cells[k]->j()-1);
-             // set Pressure to - P[below]
-             field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i(), _cells[k]->j()-1);
+             auto bottom_cell = this_cell->neighbour(border_position::BOTTOM);
+             //set v of below cell to zero
+             field.v(bottom_cell->i(), bottom_cell->j()) = 0;
+             // set u to 2*wall_velocity - u[below cell]
+             field.u(this_cell->i(), this_cell->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] - field.u(bottom_cell->i(), bottom_cell->j());
+             // set Pressure = P[below]
+             field.p(this_cell->i(), this_cell->j()) = field.p(bottom_cell->i(), bottom_cell->j());
              // break;
          }
          else
          /// check if it is bottom wall
-         if (_cells[k]->is_border(border_position::BOTTOM) == true) {
+         if (this_cell->is_border(border_position::TOP) == true) {
             //  wall_id = 2;
-            // set y velocity to zero
-             field.v(_cells[k]->i(), _cells[k]->j()) = 0;
-             // set x velocity to 2*wall_velocity - u[above cell]
-             field.u(_cells[k]->i(), _cells[k]->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] - field.u(_cells[k]->i(), _cells[k]->j()+1);
-             // set Pressure to P[above]
-             field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i(), _cells[k]->j()+1);
+            auto top_cell = this_cell->neighbour(border_position::TOP);
+            // set v to zero
+             field.v(this_cell->i(), this_cell->j()) = 0;
+             // set u to 2*wall_velocity - u[top cell]
+             field.u(this_cell->i(), this_cell->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] - field.u(top_cell->i(), top_cell->j());
+             // set Pressure to P[top]
+             field.p(this_cell->i(), this_cell->j()) = field.p(top_cell->i(), top_cell->j());
               
             //  break;
          }
          else
          /// check if it is right wall
-         if (_cells[k]->is_border(border_position::LEFT) == true) {
+         if (this_cell->is_border(border_position::LEFT) == true) {
             //  wall_id = 3; 
+            auto left_cell = this_cell->neighbour(border_position::LEFT);
             // set u[left cell] to zero
-             field.u(_cells[k]->i()-1, _cells[k]->j()) = 0;
+             field.u(this_cell->i()-1, this_cell->j()) = 0;
              // set v to 2*wall_velocity - v[left cell]
-             field.v(_cells[k]->i(), _cells[k]->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] - field.v(_cells[k]->i()-1, _cells[k]->j());
+             field.v(this_cell->i(), this_cell->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] - field.v(this_cell->i()-1, this_cell->j());
              // set Pressure to P[left]
-             field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i()-1, _cells[k]->j());
+             field.p(this_cell->i(), this_cell->j()) = field.p(left_cell->i(), left_cell->j());
             //  break;
          }
          else
          /// check if it is left wall
-         if (_cells[k]->is_border(border_position::RIGHT) == true) {
+         if (this_cell->is_border(border_position::RIGHT) == true) {
             //  wall_id = 4; 
+            auto right_cell = this_cell->neighbour(border_position::RIGHT);
             // set u[this cell] to zero
-            field.u(_cells[k]->i(), _cells[k]->j()) = 0;
+            field.u(this_cell->i(), this_cell->j()) = 0;
             // set v to 2*wall_velocity - v[right cell]
-            field.v(_cells[k]->i(), _cells[k]->j()) = 2*_wall_velocity [LidDrivenCavity::moving_wall_id]- field.v(_cells[k]->i()+1, _cells[k]->j());
+            field.v(this_cell->i(), this_cell->j()) = 2*_wall_velocity [LidDrivenCavity::moving_wall_id]- field.v(right_cell->i(), right_cell->j());
             // set Pressure to P[right]
-            field.p(_cells[k]->i(), _cells[k]->j()) = field.p(_cells[k]->i()+1, _cells[k]->j());
+            field.p(this_cell->i(), this_cell->j()) = field.p(right_cell->i(), right_cell->j());
             //  break;
          }
      }
