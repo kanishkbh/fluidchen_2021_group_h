@@ -201,7 +201,13 @@ void Case::simulate() {
         double res;
         unsigned iter = 0;
         do {
+            // Call PPE solver
             res = _pressure_solver->solve(_field, _grid, _boundaries);
+            // Apply boundary conditions (redundant for velocities, but didn't have a big impact on speed)
+            for (auto& boundary_ptr : _boundaries) {
+                boundary_ptr->apply(_field);
+            }
+            // Solver iteration counter
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
     

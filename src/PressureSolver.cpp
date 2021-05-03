@@ -11,6 +11,8 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     double jmax = grid.jmax();
     double dx = grid.dx();
     double dy = grid.dy();
+    // int imax = grid.imax();
+    // int jmax = grid.jmax();
 
     double coeff = _omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy))); // = _omega * h^2 / 4.0, if dx == dy == h
 
@@ -37,17 +39,17 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         res = std::sqrt(res);
     }
 
-
-    for(int i=1;i<=imax;++i){
-        field.p(i,0) = field.p(i,1);
-        field.p(i,jmax+1) = field.p(i,jmax); 
-    }
+    // // apply Pressure BCs on top and bottom wall/
+    // for(int i=1;i<=imax;++i){
+    //     field.p(i,0) = field.p(i,1);
+    //     field.p(i,jmax+1) = field.p(i,jmax); 
+    // }
     
-    for(int j=1;j<=jmax;++j){
-        field.p(0,j) = field.p(1,j);
-        field.p(imax+1,j) = field.p(imax,j);
-    }
+    // // apply Pressure BCs on left and right wall/
+    // for(int j=1;j<=jmax;++j){
+    //     field.p(0,j) = field.p(1,j);
+    //     field.p(imax+1,j) = field.p(imax,j);
+    // }
 
-    
     return res;
 }
