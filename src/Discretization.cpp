@@ -12,32 +12,60 @@ Discretization::Discretization(double dx, double dy, double gamma) {
     _gamma = gamma;
 }
 
-double Discretization::convection_u(const Matrix<double> &_U, const Matrix<double> &_V, int i, int j) {
-
-    // loop invariants 
-    double idx = 1/_dx;
+double Discretization::convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
+	
+	double idx = 1/_dx;
     double idy = 1/_dy;
-    // k3 := discretization of Dx(u**2)
-    double k3 = 0.25*idx*( ( (_U(i,j) + _U(i+1,j))*(_U(i,j) + _U(i+1,j))  - (_U(i-1,j) + _U(i,j))*(_U(i-1,j) + _U(i,j)) )
-        + _gamma*( abs(_U(i,j) + _U(i+1,j)) * (_U(i,j) - _U(i+1,j)) - abs(_U(i-1,j) + _U(i,j)) * (_U(i-1,j) - _U(i,j)) ) );
-    // k4:= discretization of Dy(u*v)
-    double k4 = 0.25*idy*( ( (_V(i,j) + _V(i+1,j)) * (_U(i,j) + _U(i,j+1)) ) -  (_V(i,j-1)+_V(i+1,j-1)) * (_U(i,j-1) + _U(i,j)) )
-        + _gamma*( (abs(_V(i,j) + _V(i+1,j))*(_U(i,j)-_U(i,j+1))) - (abs(_V(i,j-1) + _V(i+1,j-1)) * (_U(i,j-1)-_U(i,j)) ) );
+    // temporary variables 
+
+    double u = U(i,j);
+    double u_right = U(i+1,j);
+    double u_left = U(i-1,j);
+    double u_top = U(i,j+1);
+    double u_bottom = U(i,j-1);
+    double u_west = U(i-1,j+1);
+    double v = V(i,j);
+    double v_left = V(i-1,j);
+    double v_right = V(i+1,j);
+    double v_top = V(i,j+1);
+    double v_bottom = V(i,j-1);
+    double v_east = V(i+1,j-1);
+
+	double k3 = idx*0.25 *(
+                        (u+u_right)*(u+u_right) - (u_left+u)*(u_left+u) +  _gamma *( fabs(u+u_right)*(u-u_right)  - fabs(u_left + u) * (u_left - u) )  
+                          );
+
+    double k4 = idy*0.25 *(
+                        (v+v_right)*(u+u_top) - (v_bottom+v_east)*(u_bottom+u) + _gamma*(fabs(v+v_right)*(u-u_top) - fabs(v_bottom+v_east)*(u_bottom - u) )
+                          );
 
     return k3+k4;
 }
 
-double Discretization::convection_v(const Matrix<double> &_U, const Matrix<double> &_V, int i, int j) {
-
-    // loop invariants xxxxxxxxxxxx Not really, this is a refactored code xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+double Discretization::convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
     double idx = 1/_dx;
     double idy = 1/_dy;
-    // k5:= discretization of Dx(uv)
-    double k5 = 0.25*idx*( ( (_U(i,j) + _U(i,j+1))*(_V(i,j) + _V(i+1,j))  - (_U(i-1,j) + _U(i-1,j+1))*(_V(i-1,j) + _V(i,j)) )  
-    + _gamma*( abs(_U(i,j) + _U(i,j+1)) * (_V(i,j) - _V(i+1,j)) - abs(_U(i-1,j) + _U(i-1,j+1)) * (_V(i-1,j) - _V(i,j)) ) );
-    // k6:= disretization of Dy(v**2)
-    double k6 =0.25*idy*( ( (_V(i,j)+_V(i,j+1))*(_V(i,j)+_V(i,j+1)) - (_V(i,j-1)+_V(i,j))*(_V(i,j-1)+_V(i,j)) ) 
-    + _gamma*(abs(_V(i,j)+_V(i,j+1))*(_V(i,j)-_V(i,j+1)) - abs(_V(i,j-1)+_V(i,j))*(_V(i,j-1)-_V(i,j)) ) );
+
+    double u = U(i,j);
+    double u_right = U(i+1,j);
+    double u_left = U(i-1,j);
+    double u_top = U(i,j+1);
+    double u_bottom = U(i,j-1);
+    double u_west = U(i-1,j+1);
+    
+    double v = V(i,j);
+    double v_left = V(i-1,j);
+    double v_right = V(i+1,j);
+    double v_top = V(i,j+1);
+    double v_bottom = V(i,j-1);
+    double v_east = V(i+1,j-1);
+
+    double k5 = idx*0.25 *(
+                        (u+u_top)*(v+v_right) - (u_left+u_west)*(v_left+v) + _gamma*( fabs(u+u_top)*(v-v_right) - fabs(u_left+u_west)*(v_left - v))
+                          );
+    double k6 = idy*0.25*(
+                        (v+v_top)*(v+v_top) - (v_bottom+v)*(v_bottom+v) + _gamma * (fabs(v+v_top)*(v-v_top) - fabs(v_bottom+v)*(v_bottom - v) ) 
+                         );
 
     return k5+k6;
 }
