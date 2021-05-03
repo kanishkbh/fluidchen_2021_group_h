@@ -186,10 +186,11 @@ void Case::simulate() {
 
     while (t < _t_end) {
 
-        // Apply the Boundary conditions (not implemented yet)
-        for (auto& boundary_ptr : _boundaries) {
-            boundary_ptr->apply(_field);
-        }
+        
+        // // Apply the Boundary conditions (not implemented yet)
+        // for (auto& boundary_ptr : _boundaries) {
+        //     boundary_ptr->apply(_field);
+        // }
 
         // Fluxes(not implemented yet)
         _field.calculate_fluxes(_grid);
