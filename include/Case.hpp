@@ -87,5 +87,12 @@ class Case {
      */
     void output_vtk(int t, int my_rank = 0);
 
+    /** 
+     *  @brief Solution log outputter
+     * 
+     *  Outputs simulation data in a text file, containing the history of pressure iterations and time stepping.
+     */
+    void output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts);
+
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 };
