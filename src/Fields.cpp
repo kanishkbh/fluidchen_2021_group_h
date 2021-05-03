@@ -27,8 +27,13 @@ void Fields::calculate_fluxes(Grid &grid) {
     int jmax = grid.jmax();
 
     
-    for(int j=1;j<=jmax;++j){
-        // For the left and right walls 
+    // APPLYING BOUNDARY CONDITIONS ON U and V
+    /*
+    // For the left and right walls
+    for(int j=1;j<=jmax;++j) {
+        std::cout << "\n applying boundary conditions \n"
+                  <<"imax = " << imax << std::endl << "jmax = " << jmax << std::endl;
+         
         // Left wall : U = 0 on ghost cell. 
         // Right wall : U(imax) = 0 on pre-ghost cell 
         _U(0,j) = 0;
@@ -38,17 +43,20 @@ void Fields::calculate_fluxes(Grid &grid) {
         // Right wall :0.5*( V(imax+1,j) + V(imax,j)) = 0; 
         _V(imax+1,j) = -_V(imax,j);
     }
-
+    
+    // For the top and bottom walls
     for(int i=1;i<=imax;++i){
         _U(i,0) = -_U(i,1);
         _U(i,jmax+1) = 2-_U(i,jmax);
         _V(i,0) = 0; 
         _V(i,jmax) = 0;
     }
+    */
     
 
     Discretization del(grid.dx(),grid.dy(),gamma);
 
+    // F Flux
     for(auto j = 1; j <= jmax; j++){
         for(auto i=1; i < imax; ++i){
         _F(i,j) = _U(i,j) + _dt*(_nu*(del.laplacian(_U,i,j))
@@ -56,20 +64,20 @@ void Fields::calculate_fluxes(Grid &grid) {
         }
     }
 
-    // Boundary conditions. Does it belong here ?
+    // Boundary conditions for F Fluxe
     for(auto j=1; j<=jmax; ++j){
             _F(0,j) = _U(0,j);
             _F(imax, j) = _U(imax, j);
         }
     
-        
+    // G Flux
     for(auto j=1; j<jmax; ++j){
         for(auto i=1; i<=imax; ++i){        
         _G(i,j) = _V(i,j) + _dt*(_nu*(del.laplacian(_V,i,j))
                                  -del.convection_v(_U,_V,i,j) +_gy);
         }
     }
-    // Boundary conditions. Does it belong here ?
+    // Boundary conditions for G flux
     for(auto i=1;i<=imax;++i){
         _G(i,0) = _V(i,0);
         _G(i,jmax) = _V(i,jmax);
