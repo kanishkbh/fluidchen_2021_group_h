@@ -187,10 +187,10 @@ void Case::simulate() {
             boundary_ptr->apply(_field);
         }
 
-        // Fluxes(not implemented yet)
+        // Fluxes
         _field.calculate_fluxes(_grid);
 
-        // Poisson Pressure Equation (not implemented yet)
+        // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
 
         double res;
