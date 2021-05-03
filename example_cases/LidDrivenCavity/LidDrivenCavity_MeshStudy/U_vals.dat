@@ -1,0 +1,13 @@
+Solution to exercise 7 : 
+
+The below are values for U(25,43)
+
+For mesh size (16,16)     0.183833
+For mesh size (32,32)     nan
+For mesh size (64,64)     -nan
+For mesh size (128,128)     nan
+For mesh size (256,256)     nan
+
+
+We see that for finer meshes the method fails to be stable for a fixed time step 
+In these cases an adaptive mesh refinement makes sense. 

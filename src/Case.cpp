@@ -238,6 +238,8 @@ void Case::simulate() {
     //Write logs
     output_simulation_logs(pressure_iterations, timesteps_history);
 
+    std::cout << "For mesh size (" << _grid.imax() << "," << _grid.jmax() << ")     "; 
+    std::cout << _field.u(_grid.imax()/2,7*_grid.jmax()/8) << std::endl; 
 }
 
 void Case::output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts) {
