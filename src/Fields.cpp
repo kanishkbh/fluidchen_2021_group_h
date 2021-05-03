@@ -18,7 +18,7 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 void Fields::calculate_fluxes(Grid &grid) {
 
     // Template fill away :  0.25*idy*( ( ()*() - ()*() ) + gamma*(abs()*() - abs()*() ) ); 
-    double gamma = 0.5;    
+    // double gamma = 0.5;    
     // Create Discretization object; 
 
     int imax = grid.imax();
@@ -51,14 +51,13 @@ void Fields::calculate_fluxes(Grid &grid) {
     }
     */
     
-
-    Discretization del(grid.dx(),grid.dy(),gamma);
+    // Discretization del(grid.dx(),grid.dy(),gamma);
 
     // F Flux
     for(auto j = 1; j <= jmax; j++){
         for(auto i=1; i < imax; ++i){
-        _F(i,j) = _U(i,j) + _dt*(_nu*(del.diffusion(_U,i,j))
-                                 - del.convection_u(_U,_V,i,j) +_gx);
+        _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::diffusion(_U,i,j))
+                                 - Discretization::convection_u(_U,_V,i,j) +_gx);
         }
     }
 
@@ -71,8 +70,8 @@ void Fields::calculate_fluxes(Grid &grid) {
     // G Flux
     for(auto j=1; j<jmax; ++j){
         for(auto i=1; i<=imax; ++i){        
-        _G(i,j) = _V(i,j) + _dt*(_nu*(del.diffusion(_V,i,j))
-                                 -del.convection_v(_U,_V,i,j) +_gy);
+        _G(i,j) = _V(i,j) + _dt*(_nu*(Discretization::diffusion(_V,i,j))
+                                 -Discretization::convection_v(_U,_V,i,j) +_gy);
         }
     }
     // Boundary conditions for G flux
