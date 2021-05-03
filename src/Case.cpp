@@ -186,11 +186,10 @@ void Case::simulate() {
 
     while (t < _t_end) {
 
-        
-        // // Apply the Boundary conditions (not implemented yet)
-        // for (auto& boundary_ptr : _boundaries) {
-        //     boundary_ptr->apply(_field);
-        // }
+        // Applying BCs 
+        for (auto& boundary_ptr : _boundaries) {
+            boundary_ptr->apply(_field);
+        }
 
         // Fluxes
         _field.calculate_fluxes(_grid);
@@ -211,21 +210,6 @@ void Case::simulate() {
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
     
-        /*
-        // BC Check
-        if (res <= _tolerance) {  // only check, if SOR has converged
-            // Check Neumann BCs for PPE
-            for (int i = 1; i <= _grid.imax(); i++) {
-                assert(abs(_field.p(i, 0) - _field.p(i, 1)) < _tolerance);
-                assert(abs(_field.p(i, _grid.jmax() + 1) == _field.p(i, _grid.jmax())) < _tolerance);
-            }
-            for (int j = 1; j <= _grid.jmax(); j++) {
-                assert(abs(_field.p(0, j) == _field.p(1, j)) < _tolerance);
-                assert(abs(_field.p(_grid.imax() + 1, j) == _field.p(_grid.imax(), j)) < _tolerance);
-            }
-        }
-        */
-
         _field.calculate_velocities(_grid);
 
         t += dt;
