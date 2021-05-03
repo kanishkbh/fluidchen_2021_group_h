@@ -15,6 +15,8 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
 }
 
+
+
 void Fields::calculate_fluxes(Grid &grid) {
 
     // Template fill away :  0.25*idy*( ( ()*() - ()*() ) + gamma*(abs()*() - abs()*() ) ); 
@@ -57,7 +59,7 @@ void Fields::calculate_fluxes(Grid &grid) {
     // F Flux
     for(auto j = 1; j <= jmax; j++){
         for(auto i=1; i < imax; ++i){
-        _F(i,j) = _U(i,j) + _dt*(_nu*(del.diffusion(_U,i,j))
+        _F(i,j) = _U(i,j) + _dt*(_nu*(del.laplacian(_U,i,j))
                                  - del.convection_u(_U,_V,i,j) +_gx);
         }
     }
@@ -71,7 +73,7 @@ void Fields::calculate_fluxes(Grid &grid) {
     // G Flux
     for(auto j=1; j<jmax; ++j){
         for(auto i=1; i<=imax; ++i){        
-        _G(i,j) = _V(i,j) + _dt*(_nu*(del.diffusion(_V,i,j))
+        _G(i,j) = _V(i,j) + _dt*(_nu*(del.laplacian(_V,i,j))
                                  -del.convection_v(_U,_V,i,j) +_gy);
         }
     }
@@ -124,7 +126,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k1 = (0.5/_nu) * 1/(1/(dx*dx)+(1/dy*dy));
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
-        _dt = _tau*std::min({k1,k2,k3});
+        _dt = _tau * std::min({k1,k2,k3});
         return _dt;
     }
 }
