@@ -38,15 +38,15 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     }
 
 
-    for(int i=1;i<=imax;++i){
-        field.p(i,0) = field.p(i,1);
-        field.p(i,jmax+1) = field.p(i,jmax); 
-    }
+    // for(int i=1;i<=imax;++i){
+    //     field.p(i,0) = field.p(i,1);
+    //     field.p(i,jmax+1) = field.p(i,jmax); 
+    // }
     
-    for(int j=1;j<=jmax;++j){
-        field.p(0,j) = field.p(1,j);
-        field.p(imax+1,j) = field.p(imax,j);
-    }
+    // for(int j=1;j<=jmax;++j){
+    //     field.p(0,j) = field.p(1,j);
+    //     field.p(imax+1,j) = field.p(imax,j);
+    // }
 
     
     return res;
