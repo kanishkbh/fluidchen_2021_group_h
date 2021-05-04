@@ -37,7 +37,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         res = std::sqrt(res);
     }
 
-
+    
     // for(int i=1;i<=imax;++i){
     //     field.p(i,0) = field.p(i,1);
     //     field.p(i,jmax+1) = field.p(i,jmax); 
