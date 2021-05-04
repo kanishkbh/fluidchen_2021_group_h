@@ -127,8 +127,8 @@ double Fields::calculate_dt(Grid &grid) {
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
         _dt = _tau * std::min({k1,k2,k3});
-        std::cout << "min = " << std::min({k1,k2,k3}) << ", dt=min*tau = " << _dt << ", Umax = " << _U.max() << ", Vmax = " << _V.max()
-                    << ", k1= " << k1 << ", k2= " << k2 <<", k3= " << k3 <<std::endl;
+        // std::cout << "min = " << std::min({k1,k2,k3}) << ", dt=min*tau = " << _dt << ", Umax = " << _U.max() << ", Vmax = " << _V.max()
+        //             << ", k1= " << k1 << ", k2= " << k2 <<", k3= " << k3 <<std::endl;
         return _dt;
     }
 }

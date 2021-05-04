@@ -7,6 +7,7 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : _cells(cells) 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
     : _cells(cells), _wall_temperature(wall_temperature) {}
 
+//-----------------------------------------------------------------------------------------------------------
 void FixedWallBoundary::apply(Fields &field) {
 
     // for debugging
@@ -15,12 +16,12 @@ void FixedWallBoundary::apply(Fields &field) {
    //              << "matrix jmax = " << field.p_matrix().jmax() << std::endl;
   
     int i = 0, j = 0;
-
+//-----------------------------------------------------------------------------------------------------------
     /// cycle through all cells
     for (auto this_cell : _cells) {
         i = this_cell->i();
         j = this_cell->j();
-
+//-----------------------------------------------------------------------------------------------------------
          // TOP-WALL CELL
          if (this_cell->is_border(border_position::BOTTOM)) {
             //  std::cout << "\nTOP WALL: i = " << i << ", j = " << j << std::endl;
@@ -28,6 +29,7 @@ void FixedWallBoundary::apply(Fields &field) {
             field.u(i, j) = - field.u(i, j-1); // u = - u[bottom]
             field.p(i,j) = field.p(i, j-1);
          }
+//-----------------------------------------------------------------------------------------------------------
          // BOTTOM-WALL CELL
          if (this_cell->is_border(border_position::TOP)) {
             //  std::cout << "\nBOTTOM WALL: i = " << i << ", j = " << j << std::endl;
@@ -35,6 +37,7 @@ void FixedWallBoundary::apply(Fields &field) {
             field.u(i, j) = - field.u(i, j+1); // u = - u[top]
             field.p(i,j) = field.p(i,j+1);
          }
+//-----------------------------------------------------------------------------------------------------------
          // RIGHT-WALL CELL
          if (this_cell->is_border(border_position::LEFT)) {
             //  std::cout << "\nRIGHT WALL: i = " << i << ", j = " << j << std::endl;
@@ -42,6 +45,7 @@ void FixedWallBoundary::apply(Fields &field) {
             field.v(i, j) = - field.v(i-1,j); // v = - v [left]
             field.p(i,j) = field.p(i-1,j);
          }
+//-----------------------------------------------------------------------------------------------------------
          else
          // LEFT-WALL CELL
          if (this_cell->is_border(border_position::RIGHT)) {
@@ -52,15 +56,15 @@ void FixedWallBoundary::apply(Fields &field) {
          }
      }
 }
-
+//-----------------------------------------------------------------------------------------------------------
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
 }
-
+//-----------------------------------------------------------------------------------------------------------
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
                                        std::map<int, double> wall_temperature)
     : _cells(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
-
+//-----------------------------------------------------------------------------------------------------------
 void MovingWallBoundary::apply(Fields &field) {
 
     // FOR DEBUGGING
@@ -76,7 +80,7 @@ void MovingWallBoundary::apply(Fields &field) {
     for (auto this_cell : _cells) {
         i = this_cell->i();
         j = this_cell->j();
-
+//-----------------------------------------------------------------------------------------------------------
          // TOP-WALL CELL
          if (this_cell->is_border(border_position::BOTTOM)) {
             //  std::cout << "\nTOP WALL: i = " << i << ", j = " << j << std::endl
@@ -85,6 +89,7 @@ void MovingWallBoundary::apply(Fields &field) {
             field.u(i, j) = 2*w - field.u(i, j-1); // u = 2*wall_velocity - u[bottom]
             field.p(i,j) = field.p(i, j-1);
          }
+//-----------------------------------------------------------------------------------------------------------
          // BOTTOM-WALL CELL
          if (this_cell->is_border(border_position::TOP)) {
             //  std::cout << "\nBOTTOM WALL: i = " << i << ", j = " << j << std::endl;
@@ -92,6 +97,7 @@ void MovingWallBoundary::apply(Fields &field) {
             field.u(i, j) = 2*w - field.u(i, j+1); // u = - u[top]
             field.p(i,j) = field.p(i,j+1);
          }
+//-----------------------------------------------------------------------------------------------------------
          // RIGHT-WALL CELL
          if (this_cell->is_border(border_position::LEFT)) {
             //  std::cout << "\nRIGHT WALL: i = " << i << ", j = " << j << std::endl;
@@ -99,6 +105,7 @@ void MovingWallBoundary::apply(Fields &field) {
             field.v(i, j) = 2*w - field.v(i-1,j); // v = - v [left]
             field.p(i,j) = field.p(i-1,j);
          }
+//-----------------------------------------------------------------------------------------------------------
          else
          // LEFT-WALL CELL
          if (this_cell->is_border(border_position::RIGHT)) {
@@ -111,7 +118,7 @@ void MovingWallBoundary::apply(Fields &field) {
     }
 
 }
-
+//-----------------------------------------------------------------------------------------------------------
 /*
 // APPLY FUNCTION USING CELL::NEIGHBOUR FUNCTION - DIDN'T WORK
 // LEFT HERE TO DEBUG LATER
