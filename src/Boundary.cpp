@@ -10,9 +10,9 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, do
 void FixedWallBoundary::apply(Fields &field) {
 
     // for debugging
-    std::cout << "\nInside FixedWallBoundary::apply\n"
-                << "matrix imax = " << field.p_matrix().imax() << std::endl
-                << "matrix jmax = " << field.p_matrix().jmax() << std::endl;
+   //  std::cout << "\nInside FixedWallBoundary::apply\n"
+   //              << "matrix imax = " << field.p_matrix().imax() << std::endl
+   //              << "matrix jmax = " << field.p_matrix().jmax() << std::endl;
   
     int i = 0, j = 0;
 
@@ -64,10 +64,10 @@ MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, 
 void MovingWallBoundary::apply(Fields &field) {
 
     // FOR DEBUGGING
-    std::cout << "\nInside MovingWallBoundary::apply\n"
-            << "matrix imax = " << field.p_matrix().imax() << std::endl
-            << "matrix jmax = " << field.p_matrix().jmax() << std::endl
-            << "wall velocity = " << _wall_velocity[LidDrivenCavity::moving_wall_id] << std::endl;
+   //  std::cout << "\nInside MovingWallBoundary::apply\n"
+   //          << "matrix imax = " << field.p_matrix().imax() << std::endl
+   //          << "matrix jmax = " << field.p_matrix().jmax() << std::endl
+   //          << "wall velocity = " << _wall_velocity[LidDrivenCavity::moving_wall_id] << std::endl;
 
     int i = 0, j = 0;
     auto w =  _wall_velocity[LidDrivenCavity::moving_wall_id];
