@@ -19,64 +19,69 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 
 void Fields::calculate_fluxes(Grid &grid) {
 
+//===========================================================================================================
     // Template fill away :  0.25*idy*( ( ()*() - ()*() ) + gamma*(abs()*() - abs()*() ) ); 
-    double gamma = 0.5;    
-    // Create Discretization object; 
+//===========================================================================================================    
+    // DEBUGGING : Hardcoded boundary conditions. -> This saved me. 
+    // for(int j=1;j<=jmax;++j){
+    //     // For the left and right walls 
+    //     // Left wall : U = 0 on ghost cell. 
+    //     // Right wall : U(imax) = 0 on pre-ghost cell 
+    //     _U(0,j) = 0;
+    //     _U(imax,j) = 0;
+    //     // Left wall :0.5*( V(0,j) + V(1,j)) = 0;  
+    //     _V(0,j) = -_V(1,j);
+    //     // Right wall :0.5*( V(imax+1,j) + V(imax,j)) = 0; 
+    //     _V(imax+1,j) = -_V(imax,j);
+    // }
+
+    // for(int i=1;i<=imax;++i){
+    //     _U(i,0) = -_U(i,1);
+    //     _U(i,jmax+1) = 2-_U(i,jmax);
+    //     _V(i,0) = 0; 
+    //     _V(i,jmax) = 0;
+    // }
+//===========================================================================================================    
+    // DEBUGGING : (Obsolete Object)  
+    //double gamma = 0.5; 
+    //Discretization del(grid.dx(),grid.dy(),gamma);
+//===========================================================================================================
 
     int imax = grid.imax();
     int jmax = grid.jmax();
 
-    
-    for(int j=1;j<=jmax;++j){
-        // For the left and right walls 
-        // Left wall : U = 0 on ghost cell. 
-        // Right wall : U(imax) = 0 on pre-ghost cell 
-        _U(0,j) = 0;
-        _U(imax,j) = 0;
-        // Left wall :0.5*( V(0,j) + V(1,j)) = 0;  
-        _V(0,j) = -_V(1,j);
-        // Right wall :0.5*( V(imax+1,j) + V(imax,j)) = 0; 
-        _V(imax+1,j) = -_V(imax,j);
-    }
-
-    for(int i=1;i<=imax;++i){
-        _U(i,0) = -_U(i,1);
-        _U(i,jmax+1) = 2-_U(i,jmax);
-        _V(i,0) = 0; 
-        _V(i,jmax) = 0;
-    }
-    
-
-    Discretization del(grid.dx(),grid.dy(),gamma);
-
+//-----------------------------------------------------------------------------------------------------------
+// F computation 
     for(auto j = 1; j <= jmax; j++){
         for(auto i=1; i < imax; ++i){
-        _F(i,j) = _U(i,j) + _dt*(_nu*(del.laplacian(_U,i,j))
-                                 - del.convection_u(_U,_V,i,j) +_gx);
+        _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
+                                 - Discretization::convection_u(_U,_V,i,j) +_gx);
         }
     }
 
-    // Boundary conditions. Does it belong here ?
+    // Boundary conditions.
     for(auto j=1; j<=jmax; ++j){
             _F(0,j) = _U(0,j);
             _F(imax, j) = _U(imax, j);
         }
-    
-        
+//-----------------------------------------------------------------------------------------------------------    
+// G computation         
     for(auto j=1; j<jmax; ++j){
         for(auto i=1; i<=imax; ++i){        
-        _G(i,j) = _V(i,j) + _dt*(_nu*(del.laplacian(_V,i,j))
-                                 -del.convection_v(_U,_V,i,j) +_gy);
+        _G(i,j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j))
+                                 -Discretization::convection_v(_U,_V,i,j) +_gy);
         }
     }
-    // Boundary conditions. Does it belong here ?
+    // Boundary conditions.
     for(auto i=1;i<=imax;++i){
         _G(i,0) = _V(i,0);
         _G(i,jmax) = _V(i,jmax);
     }
-        
+//-----------------------------------------------------------------------------------------------------------
 }
 
+//-----------------------------------------------------------------------------------------------------------
+// Compute gradients of force fields 
 void Fields::calculate_rs(Grid &grid) {
     double idt = 1/_dt;
     double idx = 1/grid.dx();
@@ -87,7 +92,8 @@ void Fields::calculate_rs(Grid &grid) {
         }
     } 
 }
-
+//-----------------------------------------------------------------------------------------------------------
+// Compute velocity updates 
 void Fields::calculate_velocities(Grid &grid) {
     double kappa1 = _dt/grid.dx();
     double kappa2 = _dt/grid.dy();
@@ -104,7 +110,9 @@ void Fields::calculate_velocities(Grid &grid) {
         }
     }
 }
+//-----------------------------------------------------------------------------------------------------------
 
+// ? Adaptive time step ? 
 double Fields::calculate_dt(Grid &grid) { 
 
     // If the safety parameter tau is negative, it makes little sense. 
@@ -119,11 +127,12 @@ double Fields::calculate_dt(Grid &grid) {
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
         _dt = _tau * std::min({k1,k2,k3});
+        // std::cout << "min = " << std::min({k1,k2,k3}) << ", dt=min*tau = " << _dt << ", Umax = " << _U.max() << ", Vmax = " << _V.max()
+        //             << ", k1= " << k1 << ", k2= " << k2 <<", k3= " << k3 <<std::endl;
         return _dt;
     }
 }
-
-
+//-----------------------------------------------------------------------------------------------------------
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
 double &Fields::v(int i, int j) { return _V(i, j); }

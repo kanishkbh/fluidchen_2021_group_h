@@ -11,7 +11,7 @@ Discretization::Discretization(double dx, double dy, double gamma) {
     _dy = dy;
     _gamma = gamma;
 }
-
+//-----------------------------------------------------------------------------------------------------------
 double Discretization::convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
 	
 	double idx = 1/_dx;
@@ -41,6 +41,7 @@ double Discretization::convection_u(const Matrix<double> &U, const Matrix<double
 
     return k3+k4;
 }
+//-----------------------------------------------------------------------------------------------------------
 
 double Discretization::convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
     double idx = 1/_dx;
@@ -69,6 +70,7 @@ double Discretization::convection_v(const Matrix<double> &U, const Matrix<double
 
     return k5+k6;
 }
+//-----------------------------------------------------------------------------------------------------------
 
 double Discretization::diffusion(const Matrix<double> &_U, int i, int j) {
         
@@ -82,16 +84,17 @@ double Discretization::diffusion(const Matrix<double> &_U, int i, int j) {
 
         return k1+k2;
 }
+//-----------------------------------------------------------------------------------------------------------
 
 double Discretization::laplacian(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) - 2.0 * P(i, j) + P(i - 1, j)) / (_dx * _dx) +
                     (P(i, j + 1) - 2.0 * P(i, j) + P(i, j - 1)) / (_dy * _dy);
     return result;
 }
-
+//-----------------------------------------------------------------------------------------------------------
 double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) + P(i - 1, j)) / (_dx * _dx) + (P(i, j + 1) + P(i, j - 1)) / (_dy * _dy);
     return result;
 }
-
+//-----------------------------------------------------------------------------------------------------------
 double Discretization::interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset) {}

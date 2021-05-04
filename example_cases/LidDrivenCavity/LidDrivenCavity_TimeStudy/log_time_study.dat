@@ -1,0 +1,11 @@
+For mesh size 50x50 
+For t_end = 50 
+
+ tau 1.0              -nan
+ tau 0.5               nan
+ tau 0.1              -nan
+ tau 0.05             -nan
+ tau 0.005           0.221989
+
+Unstability in the initial time steps in observed. 
+This is evident from the result blowing up. 
