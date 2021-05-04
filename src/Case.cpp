@@ -194,43 +194,30 @@ void Case::simulate() {
  
     while (t < _t_end) {
           
-        // Apply the Boundary conditions (not implemented yet)
+        // Apply the Boundary conditions
         for (auto& boundary_ptr : _boundaries) {
             boundary_ptr->apply(_field);
         }
 
-        // Fluxes(not implemented yet)
+        // Fluxes
         _field.calculate_fluxes(_grid);
 
-        // Poisson Pressure Equation (not implemented yet)
+        // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
 
         double res;
         unsigned iter = 0;
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
-            // Apply the Boundary conditions (not implemented yet)
+            // Apply the Boundary conditions (again, despite being redundant on velocity)
             for (auto& boundary_ptr : _boundaries) {
                 boundary_ptr->apply(_field);
             }
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
         
-        /*
-        // BC Check
-        if (res <= _tolerance) {  // only check, if SOR has converged
-            // Check Neumann BCs for PPE
-            for (int i = 1; i <= _grid.imax(); i++) {
-                assert(abs(_field.p(i, 0) - _field.p(i, 1)) < _tolerance);
-                assert(abs(_field.p(i, _grid.jmax() + 1) == _field.p(i, _grid.jmax())) < _tolerance);
-            }
-            for (int j = 1; j <= _grid.jmax(); j++) {
-                assert(abs(_field.p(0, j) == _field.p(1, j)) < _tolerance);
-                assert(abs(_field.p(_grid.imax() + 1, j) == _field.p(_grid.imax(), j)) < _tolerance);
-            }
-        }
-        */
-
+        
+        // Update velocity
         _field.calculate_velocities(_grid);
 
         t += dt;
@@ -238,19 +225,17 @@ void Case::simulate() {
         
         dt = _field.calculate_dt(_grid);
 
-        /* Update logging data */
+        // Update logging data
         pressure_iterations.push_back(iter);
         timesteps_history.push_back(dt);
 
-        // Write the output. What's the rank parameter ?
+        // Write the output.
         output_vtk(timestep);
     }
 
     //Write logs
-    //output_simulation_logs(pressure_iterations, timesteps_history);
+    output_simulation_logs(pressure_iterations, timesteps_history);
 
-    // std::cout << "For mesh size (" << _grid.imax() << "," << _grid.jmax() << ")     "; 
-    // std::cout << _field.u(_grid.imax()/2,7*_grid.jmax()/8) << std::endl; 
 }
 
 void Case::output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts) {
