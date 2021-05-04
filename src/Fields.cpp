@@ -19,33 +19,6 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 
 void Fields::calculate_fluxes(Grid &grid) {
 
-//===========================================================================================================
-    // Template fill away :  0.25*idy*( ( ()*() - ()*() ) + gamma*(abs()*() - abs()*() ) ); 
-//===========================================================================================================    
-    // DEBUGGING : Hardcoded boundary conditions. -> This saved me. 
-    // for(int j=1;j<=jmax;++j){
-    //     // For the left and right walls 
-    //     // Left wall : U = 0 on ghost cell. 
-    //     // Right wall : U(imax) = 0 on pre-ghost cell 
-    //     _U(0,j) = 0;
-    //     _U(imax,j) = 0;
-    //     // Left wall :0.5*( V(0,j) + V(1,j)) = 0;  
-    //     _V(0,j) = -_V(1,j);
-    //     // Right wall :0.5*( V(imax+1,j) + V(imax,j)) = 0; 
-    //     _V(imax+1,j) = -_V(imax,j);
-    // }
-
-    // for(int i=1;i<=imax;++i){
-    //     _U(i,0) = -_U(i,1);
-    //     _U(i,jmax+1) = 2-_U(i,jmax);
-    //     _V(i,0) = 0; 
-    //     _V(i,jmax) = 0;
-    // }
-//===========================================================================================================    
-    // DEBUGGING : (Obsolete Object)  
-    //double gamma = 0.5; 
-    //Discretization del(grid.dx(),grid.dy(),gamma);
-//===========================================================================================================
 
     int imax = grid.imax();
     int jmax = grid.jmax();
@@ -112,11 +85,10 @@ void Fields::calculate_velocities(Grid &grid) {
 }
 //-----------------------------------------------------------------------------------------------------------
 
-// ? Adaptive time step ? 
 double Fields::calculate_dt(Grid &grid) { 
 
-    // If the safety parameter tau is negative, it makes little sense. 
-    // Hence for a negative tau, we simply have a fixed time step. 
+    // If the safety parameter tau is negative, this is interpreted as "use a fixed dt".
+
     if(_tau<0){
         return _dt;
     } 
@@ -127,8 +99,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
         _dt = _tau * std::min({k1,k2,k3});
-        // std::cout << "min = " << std::min({k1,k2,k3}) << ", dt=min*tau = " << _dt << ", Umax = " << _U.max() << ", Vmax = " << _V.max()
-        //             << ", k1= " << k1 << ", k2= " << k2 <<", k3= " << k3 <<std::endl;
+        
         return _dt;
     }
 }

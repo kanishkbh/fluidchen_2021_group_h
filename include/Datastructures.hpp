@@ -109,8 +109,8 @@ template <typename T> class Matrix {
     /// Returns the absolute maximum from the fluid domain.
     T max() const {
         T max_elem = 0; 
-        for(auto j=1; j < _jmax-1; ++j){        // excluding ghost cells
-            for(auto i=1; i < _imax-1; ++i){    // excluding ghost cells
+        for(auto j=0; j < _jmax; ++j){
+            for(auto i=0; i < _imax; ++i){
                 if(std::abs(_container.at(j*_imax+i)) > max_elem){
                     max_elem = _container.at(j*_imax+i);
 
