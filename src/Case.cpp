@@ -198,10 +198,8 @@ void Case::simulate() {
 
     logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
 
-    // For logging purpose
-    std::vector<int> pressure_iterations;
-    std::vector<double> timesteps_history;
  
+    /* Main loop */
     while (t < _t_end) {
           
         // Apply the Boundary conditions
