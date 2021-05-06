@@ -188,6 +188,16 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
+    /* Initialize the logger */
+    std::string outputname =
+        _dict_name + '/' + _case_name + "_log.txt";
+
+    std::ofstream logger(outputname);
+    if (!logger.is_open())
+        std::cerr << "Couldn't open the file " << outputname << ". Simulation will run without logs" << std::endl;
+
+    logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
+
     // For logging purpose
     std::vector<int> pressure_iterations;
     std::vector<double> timesteps_history;
@@ -220,17 +230,18 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
+        // Update logging data & output
+        logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
+        output_vtk(timestep);
+
+
+        // Update time and dt 
         t += dt;
         timestep += 1;
-        
         dt = _field.calculate_dt(_grid);
 
-        // Update logging data
-        pressure_iterations.push_back(iter);
-        timesteps_history.push_back(dt);
 
-        // Write the output.
-        output_vtk(timestep);
+
     }
 
     //Write logs
