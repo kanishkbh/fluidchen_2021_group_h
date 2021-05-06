@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cmath>        // std::abs
+#include <algorithm>
 
 
 /**
@@ -108,16 +109,10 @@ template <typename T> class Matrix {
 
     /// Returns the absolute maximum from the fluid domain.
     T max() const {
-        T max_elem = 0; 
-        for(auto j=0; j < _jmax; ++j){
-            for(auto i=0; i < _imax; ++i){
-                if(std::abs(_container.at(j*_imax+i)) > max_elem){
-                    max_elem = _container.at(j*_imax+i);
-
-                }
-            }
-        }
-        return max_elem; 
+        return std::fabs(*std::max_element(_container.cbegin(), _container.cend(), 
+            [](const T a, const T b) {
+            return (std::fabs(a) < std::fabs(b));
+            }));
     }
 
   private:
