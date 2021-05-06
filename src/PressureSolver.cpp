@@ -7,6 +7,8 @@ SOR::SOR(double omega) : _omega(omega) {}
 
 double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
+    double imax = grid.imax();
+    double jmax = grid.jmax();
     double dx = grid.dx();
     double dy = grid.dy();
 
@@ -35,5 +37,8 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         res = std::sqrt(res);
     }
 
+    
+
+    
     return res;
 }

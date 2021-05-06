@@ -10,6 +10,7 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include "PressureSolver.hpp"
+#include "Datastructures.hpp"
 
 /**
  * @brief Class to hold and orchestrate the simulation flow.
@@ -85,6 +86,13 @@ class Case {
      * @param[in] Timestep of the solution
      */
     void output_vtk(int t, int my_rank = 0);
+
+    /** 
+     *  @brief Solution log outputter
+     * 
+     *  Outputs simulation data in a text file, containing the history of pressure iterations and time stepping.
+     */
+    void output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts);
 
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 };

@@ -20,6 +20,8 @@ namespace filesystem = std::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
+//-----------------------------------------------------------------------------------------------------------
+
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
@@ -71,42 +73,46 @@ Case::Case(std::string file_name, int argn, char **args) {
         }
     }
     file.close();
-
+//-----------------------------------------------------------------------------------------------------------
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
-
+//-----------------------------------------------------------------------------------------------------------
     // Set file names for geometry file and output directory
     set_file_names(file_name);
-
+//-----------------------------------------------------------------------------------------------------------
     // Build up the domain
     Domain domain;
     domain.dx = xlength / (double)imax;
     domain.dy = ylength / (double)jmax;
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
-
     build_domain(domain, imax, jmax);
-
+//-----------------------------------------------------------------------------------------------------------
     _grid = Grid(_geom_name, domain);
+//-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
-
+//-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
+//-----------------------------------------------------------------------------------------------------------
     _pressure_solver = std::make_unique<SOR>(omg);
+//-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
+//-----------------------------------------------------------------------------------------------------------
     _tolerance = eps;
-
+//-----------------------------------------------------------------------------------------------------------    
     // Construct boundaries
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
     }
+//-----------------------------------------------------------------------------------------------------------
     if (not _grid.fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
 }
-
+//-----------------------------------------------------------------------------------------------------------
 void Case::set_file_names(std::string file_name) {
     std::string temp_dir;
     bool case_name_flag = true;
@@ -153,7 +159,7 @@ void Case::set_file_names(std::string file_name) {
                   << std::endl;
     }
 }
-
+//-----------------------------------------------------------------------------------------------------------
 /**
  * This function is the main simulation loop. In the simulation loop, following steps are required
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
@@ -173,59 +179,78 @@ void Case::set_file_names(std::string file_name) {
  *
  * For information about the classes and functions, you can check the header files.
  */
+//-----------------------------------------------------------------------------------------------------------
+
 void Case::simulate() {
 
     double t = 0.0;
-    double dt = _field.dt();
+    double dt = _field.calculate_dt(_grid);
     int timestep = 0;
     double output_counter = 0.0;
 
+    // For logging purpose
+    std::vector<int> pressure_iterations;
+    std::vector<double> timesteps_history;
+ 
     while (t < _t_end) {
-
-        // Apply the Boundary conditions (not implemented yet)
+          
+        // Apply the Boundary conditions
         for (auto& boundary_ptr : _boundaries) {
             boundary_ptr->apply(_field);
         }
 
-        // Fluxes(not implemented yet)
+        // Fluxes
         _field.calculate_fluxes(_grid);
 
-        // Poisson Pressure Equation (not implemented yet)
+        // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
 
         double res;
         unsigned iter = 0;
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
+            // Apply the Boundary conditions (again, despite being redundant on velocity)
+            for (auto& boundary_ptr : _boundaries) {
+                boundary_ptr->apply(_field);
+            }
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
-
-        // BC Check
-        if (res <= _tolerance) {  // only check, if SOR has converged
-        // Check Neumann BCs for PPE
-        for (int i = 1; i <= _grid.imax(); i++) {
-            assert(abs(_field.p(i, 0) - _field.p(i, 1)) < _tolerance);
-            assert(abs(_field.p(i, _grid.jmax() + 1) == _field.p(i, _grid.jmax())) < _tolerance);
-        }
-        for (int j = 1; j <= _grid.jmax(); j++) {
-            assert(abs(_field.p(0, j) == _field.p(1, j)) < _tolerance);
-            assert(abs(_field.p(_grid.imax() + 1, j) == _field.p(_grid.imax(), j)) < _tolerance);
-        }
-}
-
+        
+        
+        // Update velocity
         _field.calculate_velocities(_grid);
 
         t += dt;
         timestep += 1;
-        dt = _field.dt();
+        
+        dt = _field.calculate_dt(_grid);
 
-        // Write the output. What's the rank parameter ?
+        // Update logging data
+        pressure_iterations.push_back(iter);
+        timesteps_history.push_back(dt);
+
+        // Write the output.
         output_vtk(timestep);
     }
 
-    
+    //Write logs
+    output_simulation_logs(pressure_iterations, timesteps_history);
 
 }
+
+void Case::output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts) {
+    // Create Filename
+    std::string outputname =
+        _dict_name + '/' + _case_name + "_log.txt";
+
+    std::ofstream file(outputname);
+
+    file << "# iter_number; dt; pressure_iterations" << std::endl;
+    for (int i = 0; i < pressure_iter.size(); ++i) {
+        file << i << "; " << dts[i] << "; " << pressure_iter[i] << std::endl;
+    }
+}
+
 
 void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid

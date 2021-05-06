@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 
+//-----------------------------------------------------------------------------------------------------------
 Grid::Grid(std::string geom_name, Domain &domain) {
 
     _domain = domain;
@@ -22,7 +23,7 @@ Grid::Grid(std::string geom_name, Domain &domain) {
         build_lid_driven_cavity();
     }
 }
-
+//-----------------------------------------------------------------------------------------------------------
 void Grid::build_lid_driven_cavity() {
     std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                 std::vector<int>(_domain.domain_size_y + 2, 0));
@@ -41,7 +42,7 @@ void Grid::build_lid_driven_cavity() {
     }
     assign_cell_types(geometry_data);
 }
-
+//-----------------------------------------------------------------------------------------------------------
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
     int i = 0;
@@ -211,7 +212,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         }
     }
 }
-
+//-----------------------------------------------------------------------------------------------------------
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
 
     int numcols, numrows, depth;
@@ -247,6 +248,8 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
 
     infile.close();
 }
+
+//-----------------------------------------------------------------------------------------------------------
 
 int Grid::imax() const { return _domain.size_x; }
 int Grid::jmax() const { return _domain.size_y; }

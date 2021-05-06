@@ -9,7 +9,7 @@ nu           0.01
 #            number of cells
 #--------------------------------------------
 imax        50
-jmax        50  
+jmax        50
 
 #--------------------------------------------
 #               time steps
@@ -34,9 +34,9 @@ dt_value     0.5
 # omg: relaxation factor for SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
-itermax      150
+itermax      100
 eps          0.001
-omg          1.7
+omg          0.5
 gamma        0.5
 
 #--------------------------------------------
