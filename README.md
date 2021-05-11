@@ -18,7 +18,7 @@ After building, navigate back to the directory 'fluidchen-skeleton' and build th
 ./build/fluidchen ./example_cases/LidDrivenCavity/LidDrivenCavity.dat
 ```
 
-This will run the case file and create the output folder `./example_cases/LidDrivenCavity/LidDrivenCavity_Output` which holds the `.vtk` files of the solution. The output folder is created in the same location as your case file. Note that this may require write permissions in the given directory.
+This will run the case file and create the output folder `./example_cases/LidDrivenCavity/LidDrivenCavity_Output` which holds the `.vtk` files of the solution. The output folder is created in the same location as your case file. Note that this may require write permissions in the given directory. A log file in the output folder is also created and updated in real time, with file name CASE_NAME_log.txt. It is recommended to read it in command line with, `tail -f ./example_cases/CASE_NAME/CASE_NAME_Output/CASE_NAME_log.txt`. At the moment, it includes time steps counter, simulation time, time step, number of SOR iterations and pressure residual.
 
 If input file does not contain a geometry file, fluidchen will run lid-driven cavity case with given parameters.
 

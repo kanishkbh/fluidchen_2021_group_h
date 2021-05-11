@@ -188,10 +188,18 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
-    // For logging purpose
-    std::vector<int> pressure_iterations;
-    std::vector<double> timesteps_history;
+    /* Initialize the logger */
+    std::string outputname =
+        _dict_name + '/' + _case_name + "_log.txt";
+
+    std::ofstream logger(outputname);
+    if (!logger.is_open())
+        std::cerr << "Couldn't open the file " << outputname << ". Simulation will run without logs" << std::endl;
+
+    logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
+
  
+    /* Main loop */
     while (t < _t_end) {
           
         // Apply the Boundary conditions
@@ -220,36 +228,22 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
+        // Update logging data & output
+        logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
+        output_vtk(timestep);
+
+
+        // Update time and dt 
         t += dt;
         timestep += 1;
-        
         dt = _field.calculate_dt(_grid);
 
-        // Update logging data
-        pressure_iterations.push_back(iter);
-        timesteps_history.push_back(dt);
 
-        // Write the output.
-        output_vtk(timestep);
+
     }
-
-    //Write logs
-    output_simulation_logs(pressure_iterations, timesteps_history);
 
 }
 
-void Case::output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts) {
-    // Create Filename
-    std::string outputname =
-        _dict_name + '/' + _case_name + "_log.txt";
-
-    std::ofstream file(outputname);
-
-    file << "# iter_number; dt; pressure_iterations" << std::endl;
-    for (int i = 0; i < pressure_iter.size(); ++i) {
-        file << i << "; " << dts[i] << "; " << pressure_iter[i] << std::endl;
-    }
-}
 
 
 void Case::output_vtk(int timestep, int my_rank) {
