@@ -29,6 +29,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double nu;      /* viscosity   */
     double UI;      /* velocity x-direction */
     double VI;      /* velocity y-direction */
+    double TI;      /* Initial temperature */
+    double beta;    /* Thermal expansion coefficient */
+    double Pr;      /* Prandtl number */
     double PI;      /* pressure */
     double GX;      /* gravitation x-direction */
     double GY;      /* gravitation y-direction */
@@ -69,6 +72,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+                if (var == "TI") file >> TI;
+                if (var == "prandtl") file >> Pr;
+                if (var == "beta") file >> beta;
             }
         }
     }

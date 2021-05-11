@@ -4,11 +4,12 @@
 #include <iostream>
 #include<cmath> 
 
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
-    : _nu(nu), _dt(dt), _tau(tau) {
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI, double Pr, double beta)
+    : _nu(nu), _dt(dt), _tau(tau), _pr(Pr), _beta(beta) {
     _U = Matrix<double>(imax + 2, jmax + 2, UI);
     _V = Matrix<double>(imax + 2, jmax + 2, VI);
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
+    _T = Matrix<double>(imax + 2, jmax + 2, TI)
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
