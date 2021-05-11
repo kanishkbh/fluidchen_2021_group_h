@@ -16,6 +16,14 @@ template <typename T> class Matrix {
     Matrix<T>() = default;
 
     /**
+     * @brief Move constructor
+     * @param[in] Matrix from which data must be moved
+     * */
+    Matrix<T>(Matrix<T>&& rhs) : _imax(rhs._imax), _jmax(rhs._jmax) {
+        _container = std::move(rhs._container);
+    }
+
+    /**
      * @brief Constructor with initial value
      *
      * @param[in] number of elements in x direction
