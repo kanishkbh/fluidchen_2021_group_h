@@ -5,15 +5,24 @@
 #include<cmath> 
 
 Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI, double Pr, double beta)
-    : _nu(nu), _dt(dt), _tau(tau), _pr(Pr), _beta(beta) {
+    : _nu(nu), _dt(dt), _tau(tau), _pr(Pr), _beta(beta),
+    _U(imax + 2, jmax + 2, UI),
+    _V(imax + 2, jmax + 2, VI),
+    _P(imax + 2, jmax + 2, PI),
+    _T(imax + 2, jmax + 2, TI),
+    _F(imax + 2, jmax + 2, 0.0),
+    _G(imax + 2, jmax + 2, 0.0),
+    _RS(imax + 2, jmax + 2, 0.0) {
+
+    /*
     _U = Matrix<double>(imax + 2, jmax + 2, UI);
     _V = Matrix<double>(imax + 2, jmax + 2, VI);
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
-    _T = Matrix<double>(imax + 2, jmax + 2, TI)
+    _T = Matrix<double>(imax + 2, jmax + 2, TI);
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);*/
 }
 
 
@@ -52,6 +61,29 @@ void Fields::calculate_fluxes(Grid &grid) {
         _G(i,jmax) = _V(i,jmax);
     }
 //-----------------------------------------------------------------------------------------------------------
+}
+
+void Fields::calculate_T(Grid &grid) {
+
+
+    int imax = grid.imax();
+    int jmax = grid.jmax();
+
+    // In-place update !
+    auto new_T = Matrix<double>(imax + 2, jmax + 2);
+
+    double alpha = _nu/_pr;
+
+    for(auto j = 1; j <= jmax; j++){
+        for(auto i=1; i < imax; ++i){
+            new_T(i,j) = _T(i,j) + _dt*(alpha*(Discretization::laplacian(_U,i,j))
+                                 - Discretization::convection_u_T(_U,_T,i,j) - Discretization::convection_v_T(_V,_T,i,j));
+        }
+    }
+
+    //Replace _T par updated version
+    _T = std::move(new_T);
+
 }
 
 //-----------------------------------------------------------------------------------------------------------
