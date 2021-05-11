@@ -38,7 +38,8 @@ void Fields::calculate_fluxes(Grid &grid) {
     for(auto j = 1; j <= jmax; j++){
         for(auto i=1; i < imax; ++i){
         _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
-                                 - Discretization::convection_u(_U,_V,i,j) +_gx);
+                                 - Discretization::convection_u(_U,_V,i,j) + _gx 
+                                 - _gx * _beta * 0.5*(_T(i,j) + _T(i+1, j)));
         }
     }
 
@@ -52,7 +53,8 @@ void Fields::calculate_fluxes(Grid &grid) {
     for(auto j=1; j<jmax; ++j){
         for(auto i=1; i<=imax; ++i){        
         _G(i,j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j))
-                                 -Discretization::convection_v(_U,_V,i,j) +_gy);
+                                 -Discretization::convection_v(_U,_V,i,j) + _gy
+                                 - _gy * _beta * 0.5 *(_T(i,j) + _T(i, j+1)));
         }
     }
     // Boundary conditions.

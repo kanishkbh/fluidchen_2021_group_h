@@ -39,6 +39,14 @@ class Fields {
     void calculate_fluxes(Grid &grid);
 
     /**
+     * @brief Update temperatures through a diffusion time step
+     *
+     * @param[in] grid in which the temperatures are calculated
+     *
+     */
+    void calculate_T(Grid &grid);
+
+    /**
      * @brief Right hand side calculations using the fluxes for the pressure
      * Poisson equation
      *
