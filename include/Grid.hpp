@@ -89,11 +89,12 @@ class Grid {
 
     Matrix<Cell> _cells;
     std::vector<Cell *> _fluid_cells;
-    std::vector<Cell *> _fixed_wall_cells;
+    std::vector<Cell *> _insulated_wall_cells;
     std::vector<Cell *> _moving_wall_cells;
     std::vector<Cell *> _fluid_inlet_cells;
     std::vector<Cell *> _fluid_outlet_cells;
-
+    std::vector<Cell *> _heated_wall_cells;
+    std::vector<Cell *> _cooled_wall_cells; 
 
     Domain _domain;
 

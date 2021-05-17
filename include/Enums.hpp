@@ -11,7 +11,10 @@ const double wall_velocity = 1.0;
 } // namespace LidDrivenCavity
 
 namespace GeometryType {
-    const int obstacle_id = 3;
+    const int moving_wall = 8; 
+    const int cooled_wall = 5; 
+    const int heated_wall = 4;
+    const int insulated_wall = 3;
     const int fluid_outlet = 2;
     const int fluid_inlet = 1;
     const int fluid_interior = 0;
@@ -32,10 +35,7 @@ const int RIGHT = 3;
 } // namespace border
 
 enum class cell_type {
-
     FLUID,          // WS1: fluid interior = 0 in .pgm file
-    // FLUID_INLET,    // WS2: fluid inlet = 1 in .pgm file
-    // FLUID_OUTLET,   // WS2: fluid outlet = 2 in .pgm file
     FIXED_WALL,
     MOVING_WALL,
     DEFAULT
