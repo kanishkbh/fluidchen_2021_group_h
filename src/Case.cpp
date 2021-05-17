@@ -51,6 +51,7 @@ Case::Case(std::string file_name, int argn, char **args) {
             if (var[0] == '#') { /* ignore comment line*/
                 file.ignore(MAX_LINE_LENGTH, '\n');
             } else {
+                if (var == "geo_file") file >> _geom_name;  // WS2: reading geomtery file name from dat file
                 if (var == "xlength") file >> xlength;
                 if (var == "ylength") file >> ylength;
                 if (var == "nu") file >> nu;
@@ -74,6 +75,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     file.close();
 //-----------------------------------------------------------------------------------------------------------
+    // If no geometry file was given, then wall veocity is taken from Enums.h
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
@@ -82,7 +84,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Set file names for geometry file and output directory
     set_file_names(file_name);
 //-----------------------------------------------------------------------------------------------------------
-    // Build up the domain
+    // Build up the domain (this is a temp placeholder.. it's simply passed to _grid)
     Domain domain;
     domain.dx = xlength / (double)imax;
     domain.dy = ylength / (double)jmax;

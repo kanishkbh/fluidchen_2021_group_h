@@ -80,8 +80,10 @@ class Grid {
      */
     void build_lid_driven_cavity();
 
-    /// Build cell data structures with given geometrical data
+    /// Build cell data structures with ~given geometrical data~ default LidDrivenCavity values
     void assign_cell_types(std::vector<std::vector<int>> &geometry_data);
+    /// Build cell data structures with given geometrical data
+    void assign_cell_types_2 (std::vector<std::vector<int>> &geometry_data);
     /// Extract geometry from pgm file and create geometrical data
     void parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data);
 
@@ -89,6 +91,9 @@ class Grid {
     std::vector<Cell *> _fluid_cells;
     std::vector<Cell *> _fixed_wall_cells;
     std::vector<Cell *> _moving_wall_cells;
+    std::vector<Cell *> _fluid_inlet_cells;
+    std::vector<Cell *> _fluid_outlet_cells;
+
 
     Domain _domain;
 
