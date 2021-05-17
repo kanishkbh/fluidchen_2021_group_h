@@ -63,7 +63,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             } else {
                 if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) {
                     // Outer walls
-                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_3, geometry_data.at(i_geom).at(j_geom));
                     _fixed_wall_cells.push_back(&_cells(i, j));
                 }
             }

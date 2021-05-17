@@ -27,7 +27,13 @@ const int RIGHT = 3;
 enum class cell_type {
 
     FLUID,
-    FIXED_WALL,
+    INFLOW,
+    OUTFLOW,
+    FIXED_WALL_3,
+    FIXED_WALL_4,
+    FIXED_WALL_5,
+    FIXED_WALL_6,
+    FIXED_WALL_7,
     MOVING_WALL,
     DEFAULT
 };
