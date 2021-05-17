@@ -25,6 +25,8 @@ namespace filesystem = std::filesystem;
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
+    _geom_name = file_name.substr(0, file_name.length()-4) + ".pgm";
+    
     std::ifstream file(file_name);
     double nu;      /* viscosity   */
     double UI;      /* velocity x-direction */
@@ -42,6 +44,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double tau;     /* safety factor for time step*/
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
+
 
     if (file.is_open()) {
 
@@ -72,14 +75,21 @@ Case::Case(std::string file_name, int argn, char **args) {
             }
         }
     }
+    else {
+        std::cerr << "Couldn't open file " << file_name << ". Aborting." << std::endl;
+        exit(EXIT_FAILURE);
+    }
     file.close();
+
+
 //-----------------------------------------------------------------------------------------------------------
     std::map<int, double> wall_vel;
+    //Should be deprecated soon
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
 //-----------------------------------------------------------------------------------------------------------
-    // Set file names for geometry file and output directory
+    // Set file names for output directory
     set_file_names(file_name);
 //-----------------------------------------------------------------------------------------------------------
     // Build up the domain
@@ -90,7 +100,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.domain_size_y = jmax;
     build_domain(domain, imax, jmax);
 //-----------------------------------------------------------------------------------------------------------
+    // Load the geometry file
+    std::cout << "GEOM NAME : " << _geom_name << std::endl;
     _grid = Grid(_geom_name, domain);
+
 //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
 //-----------------------------------------------------------------------------------------------------------
@@ -144,9 +157,8 @@ void Case::set_file_names(std::string file_name) {
     _dict_name.append(_case_name);
     _dict_name.append("_Output");
 
-    if (_geom_name.compare("NONE") != 0) {
-        _geom_name = _prefix + _geom_name;
-    }
+    /* _geom_name handled in constructor */
+
 
     // Create output directory
     filesystem::path folder(_dict_name);
@@ -195,6 +207,8 @@ void Case::simulate() {
     std::ofstream logger(outputname);
     if (!logger.is_open())
         std::cerr << "Couldn't open the file " << outputname << ". Simulation will run without logs" << std::endl;
+    else
+        std::cerr << "Starting to log in file " << outputname << std::endl;
 
     logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
 

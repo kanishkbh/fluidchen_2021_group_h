@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <cassert>
 
 //-----------------------------------------------------------------------------------------------------------
 Grid::Grid(std::string geom_name, Domain &domain) {
@@ -218,6 +219,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     int numcols, numrows, depth;
 
     std::ifstream infile(filedoc);
+    assert(infile.is_open());
     std::stringstream ss;
     std::string inputLine = "";
 
@@ -226,7 +228,6 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     if (inputLine.compare("P2") != 0) {
         std::cerr << "First line of the PGM file should be P2" << std::endl;
     }
-
     // Second line : comment
     getline(infile, inputLine);
 
@@ -236,6 +237,8 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     ss >> numrows >> numcols;
     // Fourth line : depth
     ss >> depth;
+    assert(numrows == _domain.size_x + 2);
+    assert(numcols == _domain.size_y + 2);
 
     int array[numrows][numcols];
 
