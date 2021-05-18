@@ -73,3 +73,17 @@ class InflowBoundary : public Boundary {
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
 };
+
+/**
+ * @brief Outlet BC, Neumann homogenous for normal velocity. Default Dirichlet pressure (see forum)
+ */
+class OutFlowBoundary : public Boundary {
+  public:
+    OutFlowBoundary(std::vector<Cell *> cells, double pressure);
+    virtual ~OutFlowBoundary() = default;
+    virtual void apply(Fields &field);
+
+  private:
+    std::vector<Cell *> _cells;
+    double pressure{0};
+};

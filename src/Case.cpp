@@ -131,16 +131,30 @@ Case::Case(std::string file_name, int argn, char **args) {
         }
     }
     else {
-        //General case of BCs
+        //Shared map of BCs, to complete
+        std::map<int, double> vel_map, temp_map;
+        vel_map[GeometryType::fluid_inlet_u] = UIN;
+        vel_map[GeometryType::fluid_inlet_v] = VIN;
+        temp_map[GeometryType::inlet_temp] = in_temp;
+        //temp_map[GeometryType::]
+
+        // General case of BCs
         if (not _grid.inflow_cells().empty()) {
-            std::map<int, double> vel_map, temp_map;
-            vel_map[GeometryType::fluid_inlet_u] = UIN;
-            vel_map[GeometryType::fluid_inlet_v] = VIN;
-            temp_map[GeometryType::inlet_temp] = in_temp;
-            _boundaries.push_back(
-                std::make_unique<InflowBoundary>(_grid.inflow_cells(), vel_map, temp_map));
+
+            _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), vel_map, temp_map));
         }
 
+        if (not _grid.outflow_cells().empty()) {
+            _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.outflow_cells()), PI);
+        }
+
+        if (not _grid.moving_wall_cells().empty()) {
+            _boundaries.push_back(
+                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), vel_map, temp_map));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(), temp_map));
+        }
     }
 }
 //-----------------------------------------------------------------------------------------------------------
