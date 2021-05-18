@@ -22,39 +22,39 @@ class Boundary {
     virtual ~Boundary() = default;
 };
 
-/**
- * @brief Fixed wall boundary condition for the outer boundaries of the domain.
- * Dirichlet for velocities, which is zero, Neumann for pressure
- */
-class FixedWallBoundary : public Boundary {
-  public:
-    FixedWallBoundary(std::vector<Cell *> cells);
-    FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
-    virtual ~FixedWallBoundary() = default;
-    virtual void apply(Fields &field);
 
-  private:
-    std::vector<Cell *> _cells;
-    std::map<int, double> _wall_temperature;
-};
 
 /**
  * @brief Moving wall boundary condition for the outer boundaries of the domain.
  * Dirichlet for velocities for the given velocity parallel to the fluid,
  * Neumann for pressure
+ * Use an additional BC object for temperature
  */
 class MovingWallBoundary : public Boundary {
   public:
     MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity);
-    MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
-                       std::map<int, double> wall_temperature);
+
     virtual ~MovingWallBoundary() = default;
     virtual void apply(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
-    std::map<int, double> _wall_velocity;
-    std::map<int, double> _wall_temperature;
+    double _velocity;
+};
+
+/**
+ * @brief Fixed wall boundary condition for the outer boundaries of the domain.
+ * Dirichlet for velocities, which is zero, Neumann for pressure
+ * Use an additional BC object for temperature
+ */
+class FixedWallBoundary : public MovingWallBoundary {
+  public:
+    FixedWallBoundary(std::vector<Cell *> cells);
+    virtual ~FixedWallBoundary() = default;
+    virtual void apply(Fields &field);
+
+  private:
+    std::vector<Cell *> _cells;
 };
 
 /**
