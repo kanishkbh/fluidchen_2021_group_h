@@ -83,5 +83,5 @@ class OutFlowBoundary : public Boundary {
 
   private:
     std::vector<Cell *> _cells;
-    double pressure{0};
+    double _pressure{0};
 };
