@@ -76,19 +76,26 @@ void InflowBoundary::apply(Fields &field) {
             switch (border) {
             case border_position::BOTTOM:
                 field.v(i, j - 1) = _v_in;
+                field.u(i, j) = 2 * _u_in - field.u(i, j - 1);
+                field.p(i, j) = field.p(i, j - 1);
                 break;
 
             case border_position::TOP:
                 field.v(i, j) = _v_in;
-                
+                field.u(i, j) = 2 * _u_in - field.u(i, j + 1);
+                field.p(i, j) = field.p(i, j + 1);
                 break;
 
             case border_position::LEFT:
                 field.u(i - 1, j) = _u_in;
+                field.v(i, j) = 2 * _v_in - field.v(i - 1, j);
+                field.p(i, j) = field.p(i - 1, j);
                 break;
 
             case border_position::RIGHT:
+                field.v(i, j) = 2 * _v_in - field.v(i + 1, j);
                 field.u(i, j) = _u_in;
+                field.p(i, j) = field.p(i + 1, j);
                 break;
 
             default:
@@ -108,52 +115,12 @@ void OutFlowBoundary::apply(Fields &field) {
     int i = 0, j = 0;
 
     /// cycle through all cells
+
     for (auto this_cell : _cells) {
         i = this_cell->i();
         j = this_cell->j();
-
-        //Uniform pressure on the outflow
         field.p(i, j) = _pressure;
 
-        /* du/dn = 0. This means that the normal velocity at the border between this cell and the fluid cell are the same */
-        for (const auto &border : this_cell->borders()) {
-            int i_n = this_cell->neighbour(border)->i();
-            int j_n = this_cell->neighbour(border)->j();
-
-            switch (border) {
-            case border_position::BOTTOM:
-                field.v(i, j - 1) = field.v(i, j - 2);
-                // field.u(i, j) = 2 * w - field.u(i, j - 1); // Unchanged tangential speed ?
-                field.p(i, j) = field.p(i, j - 1);
-                break;
-
-            case border_position::TOP:
-                field.v(i, j) = field.v(i, j + 1);
-                //field.u(i, j) = 2 * w - field.u(i, j + 1); 
-                field.p(i, j) = field.p(i, j + 1);
-                break;
-
-            case border_position::LEFT:
-                field.u(i - 1, j) = field.u(i - 2, j);
-                //field.v(i, j) = 2 * w - field.v(i - 1, j); 
-                field.p(i, j) = field.p(i - 1, j);
-                break;
-
-            case border_position::RIGHT:
-                field.u(i, j) = field.u(i + 1, j);
-                //field.v(i, j) = 2 * w - field.v(i + 1, j); // v = - v[right]
-                field.p(i, j) = field.p(i + 1, j);
-                break;
-
-            default:
-                throw std::runtime_error("Unknown border type !");
-                break;
-            }
-        }
-    }
-    for (auto this_cell : _cells) {
-        i = this_cell->i();
-        j = this_cell->j();
         for (const auto &border : this_cell->borders()) {
             int i_n = this_cell->neighbour(border)->i();
             int j_n = this_cell->neighbour(border)->j();
