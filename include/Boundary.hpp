@@ -63,15 +63,13 @@ class FixedWallBoundary : public MovingWallBoundary {
  */
 class InflowBoundary : public Boundary {
   public:
-    InflowBoundary(std::vector<Cell *> cells, std::map<int, double> in_velocity,
-                       std::map<int, double> wall_temperature);
+    InflowBoundary(std::vector<Cell *> cells, double u_in, double v_in);
     virtual ~InflowBoundary() = default;
     virtual void apply(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
-    std::map<int, double> _wall_velocity;
-    std::map<int, double> _wall_temperature;
+    double _u_in, _v_in;
 };
 
 /**
