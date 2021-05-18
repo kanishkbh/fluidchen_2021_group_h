@@ -56,3 +56,20 @@ class MovingWallBoundary : public Boundary {
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
 };
+
+/**
+ * @brief Inlet BC, with Dirichlet non-zero condition for normal velocity, zero for tangential velocity and
+ * Neumann for pressure
+ */
+class InflowBoundary : public Boundary {
+  public:
+    InflowBoundary(std::vector<Cell *> cells, std::map<int, double> in_velocity,
+                       std::map<int, double> wall_temperature);
+    virtual ~InflowBoundary() = default;
+    virtual void apply(Fields &field);
+
+  private:
+    std::vector<Cell *> _cells;
+    std::map<int, double> _wall_velocity;
+    std::map<int, double> _wall_temperature;
+};

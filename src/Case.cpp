@@ -44,6 +44,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double tau;     /* safety factor for time step*/
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
+    double UIN;     /* Inlet horizontal velocity */
+    double VIN;     /* Inlet vertical velocity */
+    double in_temp; /* Inlet (Dirichlet) Temperature */
 
 
     if (file.is_open()) {
@@ -72,6 +75,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+                if (var == "UIN") file >> UIN;
+                if (var == "VIN") file >> VIN;
+                if (var == "in_temp") file >> in_temp;
             }
         }
     }
@@ -113,15 +119,28 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
     _tolerance = eps;
-//-----------------------------------------------------------------------------------------------------------    
-    // Construct boundaries
-    if (not _grid.moving_wall_cells().empty()) {
-        _boundaries.push_back(
-            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+    //-----------------------------------------------------------------------------------------------------------
+    // Construct boundaries (Lid Driven Cavity)
+    if (_geom_name.compare("NONE") == 0) {
+        if (not _grid.moving_wall_cells().empty()) {
+            _boundaries.push_back(
+                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
     }
-//-----------------------------------------------------------------------------------------------------------
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    else {
+        //General case of BCs
+        if (not _grid.inflow_cells().empty()) {
+            std::map<int, double> vel_map, temp_map;
+            vel_map[GeometryType::fluid_inlet_u] = UIN;
+            vel_map[GeometryType::fluid_inlet_v] = VIN;
+            temp_map[GeometryType::inlet_temp] = in_temp;
+            _boundaries.push_back(
+                std::make_unique<InflowBoundary>(_grid.inflow_cells(), vel_map, temp_map));
+        }
+
     }
 }
 //-----------------------------------------------------------------------------------------------------------

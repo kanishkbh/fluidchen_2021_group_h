@@ -17,6 +17,16 @@ enum class border_position {
     RIGHT,
 };
 
+enum GeometryType {
+    obstacle_id,
+    fluid_outlet,
+    fluid_inlet_v,
+    fluid_inlet_u,
+    inlet_temp,
+    fluid_interior,
+};
+
+
 namespace border {
 const int TOP = 0;
 const int BOTTOM = 1;

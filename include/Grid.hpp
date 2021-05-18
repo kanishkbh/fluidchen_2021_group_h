@@ -52,11 +52,25 @@ class Grid {
     double dy() const;
 
     /**
-     * @brief Access inflow cells
+     * @brief Access fluid cells
      *
      * @param[out] vector of fluid cells
      */
     const std::vector<Cell *> &fluid_cells() const;
+
+    /**
+     * @brief Access inflow cells
+     *
+     * @param[out] vector of fluid cells
+     */
+    const std::vector<Cell *> &inflow_cells() const;
+
+    /**
+     * @brief Access outflow cells
+     *
+     * @param[out] vector of fluid cells
+     */
+    const std::vector<Cell *> &outflow_cells() const;
 
     /**
      * @brief Access moving wall cells
