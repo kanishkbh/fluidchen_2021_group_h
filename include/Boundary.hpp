@@ -51,7 +51,6 @@ class FixedWallBoundary : public MovingWallBoundary {
   public:
     FixedWallBoundary(std::vector<Cell *> cells);
     virtual ~FixedWallBoundary() = default;
-    virtual void apply(Fields &field);
 
   private:
     std::vector<Cell *> _cells;

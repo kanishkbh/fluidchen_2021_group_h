@@ -64,7 +64,6 @@ InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double uin, double vin
 void InflowBoundary::apply(Fields &field) {
 
     int i = 0, j = 0;
-    auto w = _velocity;
 
     /// cycle through all cells
     for (auto this_cell : _cells) {
@@ -107,7 +106,6 @@ OutFlowBoundary::OutFlowBoundary(std::vector<Cell *> cells, double pressure) : _
 void OutFlowBoundary::apply(Fields &field) {
 
     int i = 0, j = 0;
-    auto w = _velocity;
 
     /// cycle through all cells
     for (auto this_cell : _cells) {
@@ -124,7 +122,7 @@ void OutFlowBoundary::apply(Fields &field) {
 
             switch (border) {
             case border_position::BOTTOM:
-                field.v(i, j - 1) = _field.v(i, j - 2);
+                field.v(i, j - 1) = field.v(i, j - 2);
                 // field.u(i, j) = 2 * w - field.u(i, j - 1); // Unchanged tangential speed ?
                 field.p(i, j) = field.p(i, j - 1);
                 break;
@@ -162,7 +160,7 @@ void OutFlowBoundary::apply(Fields &field) {
 
             switch (border) {
             case border_position::BOTTOM:
-                field.v(i, j - 1) = fluid.v(i, j - 2);
+                field.v(i, j - 1) = field.v(i, j - 2);
                 break;
 
             case border_position::TOP:

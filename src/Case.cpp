@@ -119,43 +119,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
     _tolerance = eps;
-    //-----------------------------------------------------------------------------------------------------------
-    // Construct boundaries (Lid Driven Cavity)
-    if (_geom_name.compare("NONE") == 0) {
-        if (not _grid.moving_wall_cells().empty()) {
-            _boundaries.push_back(
-                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
-        }
-        if (not _grid.fixed_wall_cells().empty()) {
-            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
-        }
-    }
-    else {
-        //Shared map of BCs, to complete
-        std::map<int, double> vel_map, temp_map;
-        vel_map[GeometryType::fluid_inlet_u] = UIN;
-        vel_map[GeometryType::fluid_inlet_v] = VIN;
-        temp_map[GeometryType::inlet_temp] = in_temp;
-        //temp_map[GeometryType::]
-
-        // General case of BCs
-        if (not _grid.inflow_cells().empty()) {
-
-            _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), vel_map, temp_map));
-        }
-
-        if (not _grid.outflow_cells().empty()) {
-            _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.outflow_cells()), PI);
-        }
-
-        if (not _grid.moving_wall_cells().empty()) {
-            _boundaries.push_back(
-                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), vel_map, temp_map));
-        }
-        if (not _grid.fixed_wall_cells().empty()) {
-            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(), temp_map));
-        }
-    }
+//-----------------------------------------------------------------------------------------------------------
+    // Construct boundaries 
+    _wall_velocity = 0; //TODO
+    _u_in = UIN;
+    _v_in = VIN;
+    _p_i = PI;
+    setupBoundaryConditions();
 }
 //-----------------------------------------------------------------------------------------------------------
 void Case::set_file_names(std::string file_name) {
@@ -379,4 +349,35 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
+}
+
+void Case::setupBoundaryConditions() {
+    if (_geom_name.compare("NONE") == 0) {
+        if (not _grid.moving_wall_cells().empty()) {
+            _boundaries.push_back(
+                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
+    } else {
+
+        // General case of BCs
+        if (not _grid.inflow_cells().empty()) {
+
+            _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), _u_in, _v_in));
+        }
+
+        if (not _grid.outflow_cells().empty()) {
+            _boundaries.push_back(std::make_unique<OutFlowBoundary>(_grid.outflow_cells(), _p_i));
+        }
+
+        if (not _grid.moving_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), _wall_velocity));
+        }
+        /* To change when adding temperatures */
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
+    }
 }
