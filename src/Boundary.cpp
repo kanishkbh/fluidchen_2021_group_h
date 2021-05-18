@@ -2,13 +2,12 @@
 #include <cmath>
 #include <iostream>
 
-
-//A fixed wall is just a moving wall with 0 velocity
+// A fixed wall is just a moving wall with 0 velocity
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : MovingWallBoundary(cells, 0) {}
 
 //-----------------------------------------------------------------------------------------------------------
-MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells), _velocity(wall_velocity) {}
-
+MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity)
+    : _cells(cells), _velocity(wall_velocity) {}
 
 void MovingWallBoundary::apply(Fields &field) {
 
@@ -19,7 +18,11 @@ void MovingWallBoundary::apply(Fields &field) {
     for (auto this_cell : _cells) {
         i = this_cell->i();
         j = this_cell->j();
-        for (const auto &border : this_cell->borders()) {
+
+        // Different regime depending on the number of fluid neighbors. If there are 2, one is vertical and one horizontal
+        if (this_cell->borders().size() == 1) {
+            auto border = this_cell->borders()[0];
+
             int i_n = this_cell->neighbour(border)->i();
             int j_n = this_cell->neighbour(border)->j();
 
@@ -52,10 +55,44 @@ void MovingWallBoundary::apply(Fields &field) {
                 throw std::runtime_error("Unknown border type !");
                 break;
             }
+        } else if (this_cell->borders().size() == 2) {
+            // NB : pressure is taken as average !
+            field.p(i, j) = 0;
+            for (const auto &border : this_cell->borders()) {
+                int i_n = this_cell->neighbour(border)->i();
+                int j_n = this_cell->neighbour(border)->j();
+
+                switch (border) {
+                case border_position::BOTTOM:
+                    field.v(i, j - 1) = 0;
+                    field.p(i, j) += 0.5 * field.p(i, j - 1);
+                    break;
+
+                case border_position::TOP:
+                    field.v(i, j) = 0;
+                    field.p(i, j) += 0.5 * field.p(i, j + 1);
+                    break;
+
+                case border_position::LEFT:
+                    field.u(i - 1, j) = 0;
+                    field.p(i, j) += 0.5 * field.p(i - 1, j);
+                    break;
+
+                case border_position::RIGHT:
+                    field.u(i, j) = 0;
+                    field.p(i, j) += 0.5 * field.p(i + 1, j);
+                    break;
+
+                default:
+                    throw std::runtime_error("Unknown border type !");
+                    break;
+                }
+            }
+        } else {
+            throw std::runtime_error("Invalid BC : obstacle with invalid borders number");
         }
     }
 }
-
 
 //-----------------------------------------------------------------------------------------------------------
 InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double uin, double vin) : _cells(cells), _u_in(uin), _v_in(vin) {}
