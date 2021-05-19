@@ -89,8 +89,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
         _dt = _tau * std::min({k1,k2,k3});
-        std::cout << "Max speeds : " << _U.max() << ", " << _V.max() << std::endl;
-        std::cout << "dt : " << _dt << std::endl;
+
 
         return _dt;
     }
