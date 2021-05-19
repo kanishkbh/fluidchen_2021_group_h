@@ -31,24 +31,28 @@ void MovingWallBoundary::apply(Fields &field) {
                 field.v(i, j - 1) = 0;
                 field.u(i, j) = 2 * w - field.u(i, j - 1); // Average of velocities is w
                 field.p(i, j) = field.p(i, j - 1);
+                field.g(i, j-1) = field.v(i, j-1);
                 break;
 
             case border_position::TOP:
                 field.v(i, j) = 0;
                 field.u(i, j) = 2 * w - field.u(i, j + 1); // Average of velocities is w
                 field.p(i, j) = field.p(i, j + 1);
+                field.g(i, j) = field.v(i, j);
                 break;
 
             case border_position::LEFT:
                 field.u(i - 1, j) = 0;
                 field.v(i, j) = 2 * w - field.v(i - 1, j); // 0.5*(v + v [left]) = w
                 field.p(i, j) = field.p(i - 1, j);
+                field.f(-i, j) = field.u(i-1, j);
                 break;
 
             case border_position::RIGHT:
                 field.u(i, j) = 0;
                 field.v(i, j) = 2 * w - field.v(i + 1, j); // v = - v[right]
                 field.p(i, j) = field.p(i + 1, j);
+                field.f(i, j) = field.u(i, j);
                 break;
 
             default:
@@ -66,21 +70,25 @@ void MovingWallBoundary::apply(Fields &field) {
                 case border_position::BOTTOM:
                     field.v(i, j - 1) = 0;
                     field.p(i, j) += 0.5 * field.p(i, j - 1);
+                    field.g(i, j - 1) = field.v(i, j - 1);
                     break;
 
                 case border_position::TOP:
                     field.v(i, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i, j + 1);
+                    field.g(i, j) = field.v(i, j);
                     break;
 
                 case border_position::LEFT:
                     field.u(i - 1, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i - 1, j);
+                    field.f(i - 1, j) = field.u(i - 1, j);
                     break;
 
                 case border_position::RIGHT:
                     field.u(i, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i + 1, j);
+                    field.f(i, j) = field.u(i, j);
                     break;
 
                 default:
@@ -115,24 +123,28 @@ void InflowBoundary::apply(Fields &field) {
                 field.v(i, j - 1) = _v_in;
                 field.u(i, j) = 2 * _u_in - field.u(i, j - 1);
                 field.p(i, j) = field.p(i, j - 1);
+                field.g(i, j - 1) = field.v(i, j - 1);
                 break;
 
             case border_position::TOP:
                 field.v(i, j) = _v_in;
                 field.u(i, j) = 2 * _u_in - field.u(i, j + 1);
                 field.p(i, j) = field.p(i, j + 1);
+                field.g(i, j) = field.v(i, j);
                 break;
 
             case border_position::LEFT:
                 field.u(i - 1, j) = _u_in;
                 field.v(i, j) = 2 * _v_in - field.v(i - 1, j);
                 field.p(i, j) = field.p(i - 1, j);
+                field.f(i - 1, j) = field.u(i - 1, j);
                 break;
 
             case border_position::RIGHT:
                 field.v(i, j) = 2 * _v_in - field.v(i + 1, j);
                 field.u(i, j) = _u_in;
                 field.p(i, j) = field.p(i + 1, j);
+                field.f(i, j) = field.u(i, j);
                 break;
 
             default:
