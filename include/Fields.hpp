@@ -86,6 +86,10 @@ class Fields {
     /// pressure matrix access and modify
     Matrix<double> &p_matrix();
 
+    /// For loggin purpose
+    const Matrix<double> &u_matrix() const {return _U;}
+    const Matrix<double> &v_matrix() const {return _V;}
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;

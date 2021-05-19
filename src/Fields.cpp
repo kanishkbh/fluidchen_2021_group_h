@@ -32,11 +32,7 @@ void Fields::calculate_fluxes(Grid &grid) {
         }
     }
 
-    // Boundary conditions.
-    for(auto j=1; j<=jmax; ++j){
-            _F(0,j) = _U(0,j);
-            _F(imax, j) = _U(imax, j);
-        }
+
 //-----------------------------------------------------------------------------------------------------------    
 // G computation         
     for(auto j=1; j<jmax; ++j){
@@ -45,11 +41,7 @@ void Fields::calculate_fluxes(Grid &grid) {
                                  -Discretization::convection_v(_U,_V,i,j) +_gy);
         }
     }
-    // Boundary conditions.
-    for(auto i=1;i<=imax;++i){
-        _G(i,0) = _V(i,0);
-        _G(i,jmax) = _V(i,jmax);
-    }
+
 //-----------------------------------------------------------------------------------------------------------
 }
 
@@ -72,16 +64,14 @@ void Fields::calculate_velocities(Grid &grid) {
     double kappa2 = _dt/grid.dy();
     int jmax = grid.jmax();
     int imax = grid.imax();
-    for(auto j=1;j<=jmax;++j){
-        for (auto i=1;i<imax;++i){
-            _U(i,j) = _F(i,j) - kappa1*(_P(i+1,j)-_P(i,j));
-        }
+
+    for (const auto& cell_ptr : grid.fluid_cells()) {
+        int i = cell_ptr->i();
+        int j = cell_ptr->j();
+        _U(i,j) = _F(i,j) - kappa1*(_P(i+1,j)-_P(i,j));
+        _V(i,j) = _G(i,j) - kappa2*(_P(i,j+1)-_P(i,j));
     }
-    for(auto j=1;j<jmax;++j){
-        for(auto i=1;i<=imax;++i){
-            _V(i,j) = _G(i,j) - kappa2*(_P(i,j+1)-_P(i,j));
-        }
-    }
+    
 }
 //-----------------------------------------------------------------------------------------------------------
 
@@ -99,7 +89,9 @@ double Fields::calculate_dt(Grid &grid) {
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
         _dt = _tau * std::min({k1,k2,k3});
-        
+        std::cout << "Max speeds : " << _U.max() << ", " << _V.max() << std::endl;
+        std::cout << "dt : " << _dt << std::endl;
+
         return _dt;
     }
 }

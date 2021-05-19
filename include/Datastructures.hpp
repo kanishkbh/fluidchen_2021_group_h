@@ -3,7 +3,8 @@
 #include <vector>
 #include <cmath>        // std::abs
 #include <algorithm>
-
+#include <iostream>
+#include <iomanip>
 
 /**
  * @brief General 2D data structure around std::vector, in column
@@ -113,6 +114,22 @@ template <typename T> class Matrix {
             [](const T a, const T b) {
             return (std::fabs(a) < std::fabs(b));
             }));
+    }
+
+    // Utility for debugging
+    void pretty_print(std::ostream& os) const {
+        auto f = os.flags();
+        os << "-------------------------------" << std::endl;
+        os << std::setiosflags(std::ios::fixed);
+        os << std::setprecision(8);
+        for (int j = jmax() - 1; j >= 0; --j) {
+            for (int i = 0; i < imax(); ++i) {
+                os << (*this)(i, j) << ' ';
+            }
+            os << std::endl;
+        }
+        os << "-------------------------------" << std::endl;
+        os.flags(f);
     }
 
   private:
