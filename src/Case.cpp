@@ -121,11 +121,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     _tolerance = eps;
 //-----------------------------------------------------------------------------------------------------------
     // Construct boundaries 
+
     _wall_velocity = 0; //TODO
     _u_in = UIN;
     _v_in = VIN;
     _p_i = PI;
     setupBoundaryConditions();
+
 }
 //-----------------------------------------------------------------------------------------------------------
 void Case::set_file_names(std::string file_name) {
@@ -231,6 +233,7 @@ void Case::simulate() {
 
         double res;
         unsigned iter = 0;
+
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
             // Apply the Boundary conditions (again, despite being redundant on velocity)
@@ -239,6 +242,8 @@ void Case::simulate() {
             }
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
+        
+
         
         
         // Update velocity
@@ -376,8 +381,18 @@ void Case::setupBoundaryConditions() {
             _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), _wall_velocity));
         }
         /* To change when adding temperatures */
-        if (not _grid.fixed_wall_cells().empty()) {
-            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        // We don't want to update inner parts of obstacles : check if the cell has 1 or 2 fluid neighbors
+        std::vector<Cell *> fixed_outer_walls;
+        for (auto cell_ptr : _grid.fixed_wall_cells()) {
+            if (cell_ptr->borders().size() > 2)
+                throw std::runtime_error("A boundary cell has too may fluid cells as neighbor !");
+            else if (cell_ptr->borders().size() > 0)
+                fixed_outer_walls.push_back(cell_ptr);
+            
         }
+        if (not fixed_outer_walls.empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(fixed_outer_walls));
+        }
+
     }
 }
