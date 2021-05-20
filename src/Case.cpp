@@ -33,7 +33,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double VI;      /* velocity y-direction */
     double TI;      /* Initial temperature */
     double beta;    /* Thermal expansion coefficient */
-    double Pr;      /* Prandtl number */
+    double Pr{1};   /* Prandtl number. If not read, shouldn't influence dt => alpha = Nu */
     double PI;      /* pressure */
     double GX;      /* gravitation x-direction */
     double GY;      /* gravitation y-direction */
