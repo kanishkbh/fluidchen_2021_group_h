@@ -70,23 +70,23 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 _outflow_cells.push_back(&_cells(i, j));
                 break;
             case 3:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_3);
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL);
                 _fixed_wall_cells.push_back(&_cells(i, j));
                 break;
             case 4:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_4);
-                _fixed_wall_cells.push_back(&_cells(i, j));
+                _cells(i, j) = Cell(i, j, cell_type::INSULATED_WALL);
+                _insulated_wall_cells.push_back(&_cells(i, j));
                 break;
             case 5:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_5);
-                _fixed_wall_cells.push_back(&_cells(i, j));
+                _cells(i, j) = Cell(i, j, cell_type::COLD_WALL);
+                _cold_wall_cells.push_back(&_cells(i, j));
                 break;
             case 6:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_6);
-                _fixed_wall_cells.push_back(&_cells(i, j));
+                _cells(i, j) = Cell(i, j, cell_type::HEATED_WALL);
+                _hot_wall_cells.push_back(&_cells(i, j));
                 break;
             case 7:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_7);
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_OTHER);
                 _fixed_wall_cells.push_back(&_cells(i, j));
                 break;
             case 8:

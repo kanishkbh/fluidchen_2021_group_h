@@ -39,11 +39,11 @@ enum class cell_type {
     FLUID,
     INFLOW,
     OUTFLOW,
-    FIXED_WALL_3,
-    FIXED_WALL_4,
-    FIXED_WALL_5,
-    FIXED_WALL_6,
-    FIXED_WALL_7,
+    FIXED_WALL,
+    INSULATED_WALL,
+    COLD_WALL,
+    HEATED_WALL,
+    FIXED_WALL_OTHER,
     MOVING_WALL,
     DEFAULT
 };

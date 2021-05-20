@@ -103,7 +103,10 @@ class Grid {
     std::vector<Cell *> _fluid_cells; // Index 0 in PGM
     std::vector<Cell *> _inflow_cells; // Index 1 in PGM
     std::vector<Cell *> _outflow_cells; // Index 2 in PGM
-    std::vector<Cell *> _fixed_wall_cells; // Index 3-7 in PGM
+    std::vector<Cell *> _fixed_wall_cells; // Index 3&7 in PGM
+    std::vector<Cell *> _insulated_wall_cells; // Indexc 4 in PGM 
+    std::vector<Cell *> _cold_wall_cells; // Index 5 in PGM 
+    std::vector<Cell *> _hot_wall_cells; // Index 6 in PGM 
     std::vector<Cell *> _moving_wall_cells; // Index 8 in PGM
 
     Domain _domain;

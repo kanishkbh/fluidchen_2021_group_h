@@ -29,3 +29,17 @@ For the first worksheet, we've studied effects of changing viscosity, time stepp
 ### Time stepping
 
 Time stepping in the `.dat` files is given by `dt` and `tau`. **If `tau` is postive, adapatative time stepping (with `tau` as safety factor) is used and `dt` is discarded. Otherwise, fixed time stepping is used with step size `dt`.**
+
+### Defining Geometry File 
+
+As prescribed, we use a pgm file to define the geometry of the domain that we simulate. Use the following as a reference should you choose to define your geometry for the simulation domain.  
+
+FLUID           - 0 
+INFLOW          - 1 
+OUTFLOW         - 2
+FIXED WALL      - 3 
+INSULATED WALL  - 4 
+COLD WALL       - 5 
+HEATED WALL     - 6 
+FIXEDWALL OTHER - 7
+MOVING WALL     - 8 
