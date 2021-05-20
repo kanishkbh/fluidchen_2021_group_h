@@ -31,6 +31,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double nu;      /* viscosity   */
     double UI;      /* velocity x-direction */
     double VI;      /* velocity y-direction */
+    double TI;      /* Initial temperature */
+    double beta;    /* Thermal expansion coefficient */
+    double Pr;      /* Prandtl number */
     double PI;      /* pressure */
     double GX;      /* gravitation x-direction */
     double GY;      /* gravitation y-direction */
@@ -78,6 +81,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
                 if (var == "in_temp") file >> in_temp;
+                if (var == "TI") file >> TI;
+                if (var == "prandtl") file >> Pr;
+                if (var == "beta") file >> beta;
             }
         }
     }
@@ -110,7 +116,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     _grid = Grid(_geom_name, domain);
 
 //-----------------------------------------------------------------------------------------------------------    
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, Pr, beta);
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
@@ -224,8 +230,11 @@ void Case::simulate() {
         for (auto& boundary_ptr : _boundaries) {
             boundary_ptr->apply(_field);
         }
+        
+        //Update temperatures
+        _field.calculate_T(_grid);
 
-        // Fluxes
+        // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
 
         // Poisson Pressure Equation

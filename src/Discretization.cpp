@@ -71,6 +71,53 @@ double Discretization::convection_v(const Matrix<double> &U, const Matrix<double
     return k5+k6;
 }
 //-----------------------------------------------------------------------------------------------------------
+double Discretization::convection_u_T(const Matrix<double> &U, const Matrix<double> &T, int i, int j) {
+	
+	double idx = 1/_dx;
+    // temporary variables 
+
+    double u = U(i,j);
+    double u_left = U(i-1,j);
+    
+    double t = T(i,j);
+    double t_left = T(i-1,j);
+    double t_right = T(i+1,j);
+    
+
+    /* Without donor cell */
+	double d_uT_1 = 0.5 * idx * (u * (t + t_right) + u_left * (t_left + t));
+    /* Donor cell contribution */
+    double d_uT_2 = 0.5 * idx * _gamma * (fabs(u) * (t - t_right) + fabs(u_left) * (t_left - t));
+
+
+
+    return d_uT_1 + d_uT_2;
+}
+
+//-----------------------------------------------------------------------------------------------------------
+double Discretization::convection_v_T(const Matrix<double> &V, const Matrix<double> &T, int i, int j) {
+	
+    double idy = 1/_dy;
+    // temporary variables 
+
+    double v = V(i,j);
+    double v_bottom = V(i,j-1);
+    
+    double t = T(i,j);
+    double t_top = T(i,j+1);
+    double t_bottom = T(i,j-1);
+    
+
+    /* Without donor cell */
+	double d_vT_1 = 0.5 * idy * (v * (t + t_top) + v_bottom * (t_bottom + t));
+    /* Donor cell contribution */
+    double d_vT_2 = 0.5 * idy * _gamma * (fabs(v) * (t - t_top) + fabs(v_bottom) * (t_bottom - t));
+
+
+
+    return d_vT_1 + d_vT_2;
+}
+//-----------------------------------------------------------------------------------------------------------
 
 double Discretization::diffusion(const Matrix<double> &_U, int i, int j) {
         

@@ -4,15 +4,25 @@
 #include <iostream>
 #include<cmath> 
 
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
-    : _nu(nu), _dt(dt), _tau(tau) {
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI, double Pr, double beta)
+    : _nu(nu), _dt(dt), _tau(tau), _pr(Pr), _beta(beta),
+    _U(imax + 2, jmax + 2, UI),
+    _V(imax + 2, jmax + 2, VI),
+    _P(imax + 2, jmax + 2, PI),
+    _T(imax + 2, jmax + 2, TI),
+    _F(imax + 2, jmax + 2, 0.0),
+    _G(imax + 2, jmax + 2, 0.0),
+    _RS(imax + 2, jmax + 2, 0.0) {
+
+    /*
     _U = Matrix<double>(imax + 2, jmax + 2, UI);
     _V = Matrix<double>(imax + 2, jmax + 2, VI);
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
+    _T = Matrix<double>(imax + 2, jmax + 2, TI);
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);*/
 }
 
 
@@ -28,7 +38,8 @@ void Fields::calculate_fluxes(Grid &grid) {
     for(auto j = 1; j <= jmax; j++){
         for(auto i=1; i < imax; ++i){
         _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
-                                 - Discretization::convection_u(_U,_V,i,j) +_gx);
+                                 - Discretization::convection_u(_U,_V,i,j) + _gx 
+                                 - _gx * _beta * 0.5*(_T(i,j) + _T(i+1, j)));
         }
     }
 
@@ -38,11 +49,35 @@ void Fields::calculate_fluxes(Grid &grid) {
     for(auto j=1; j<jmax; ++j){
         for(auto i=1; i<=imax; ++i){        
         _G(i,j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j))
-                                 -Discretization::convection_v(_U,_V,i,j) +_gy);
+                                 -Discretization::convection_v(_U,_V,i,j) + _gy
+                                 - _gy * _beta * 0.5 *(_T(i,j) + _T(i, j+1)));
         }
     }
 
 //-----------------------------------------------------------------------------------------------------------
+}
+
+void Fields::calculate_T(Grid &grid) {
+
+
+    int imax = grid.imax();
+    int jmax = grid.jmax();
+
+    // In-place update !
+    auto new_T = Matrix<double>(imax + 2, jmax + 2);
+
+    double alpha = _nu/_pr;
+
+    for(auto j = 1; j <= jmax; j++){
+        for(auto i=1; i < imax; ++i){
+            new_T(i,j) = _T(i,j) + _dt*(alpha*(Discretization::laplacian(_U,i,j))
+                                 - Discretization::convection_u_T(_U,_T,i,j) - Discretization::convection_v_T(_V,_T,i,j));
+        }
+    }
+
+    //Replace _T par updated version
+    _T = std::move(new_T);
+
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -88,9 +123,10 @@ double Fields::calculate_dt(Grid &grid) {
         double k1 = (0.5/_nu) * 1/(1/(dx*dx)+(1/dy*dy));
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
-        _dt = _tau * std::min({k1,k2,k3});
-
-
+        double alpha = _nu/_pr;
+        double k4 = (0.5/alpha) * 1/(1/(dx*dx)+(1/dy*dy));
+        _dt = _tau * std::min({k1, k2, k3, k4});
+        
         return _dt;
     }
 }

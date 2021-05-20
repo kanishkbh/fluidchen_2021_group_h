@@ -23,9 +23,11 @@ class Fields {
      * @param[in] initial x-velocity
      * @param[in] initial y-velocity
      * @param[in] initial pressure
-     *
+     * @param[in] initial temperature
+     * @param[in] Prandtl number
+     * @param[in] Thermal coefficient expansion (default ~= air at 20°C)
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI);
+    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI = 0, double Pr = 1, double beta=0.0034);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -35,6 +37,14 @@ class Fields {
      *
      */
     void calculate_fluxes(Grid &grid);
+
+    /**
+     * @brief Update temperatures through a diffusion time step
+     *
+     * @param[in] grid in which the temperatures are calculated
+     *
+     */
+    void calculate_T(Grid &grid);
 
     /**
      * @brief Right hand side calculations using the fluxes for the pressure
@@ -97,6 +107,8 @@ class Fields {
     Matrix<double> _V;
     /// pressure matrix
     Matrix<double> _P;
+    /// Temperature matrix
+    Matrix<double> _T;
     /// x-momentum flux matrix
     Matrix<double> _F;
     /// y-momentum flux matrix
@@ -106,6 +118,10 @@ class Fields {
 
     /// kinematic viscosity
     double _nu;
+    /// Prandtl number
+    double _pr;
+    /// thermal expansion coefficient
+    double _beta;
     /// gravitional accelearation in x direction
     double _gx{0.0};
     /// gravitional accelearation in y direction
@@ -114,4 +130,5 @@ class Fields {
     double _dt;
     /// adaptive timestep coefficient
     double _tau;
+    
 };
