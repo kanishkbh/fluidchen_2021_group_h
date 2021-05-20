@@ -107,6 +107,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
+    std::cout << _geom_name << std::endl; 
     _grid = Grid(_geom_name, domain);
 
 //-----------------------------------------------------------------------------------------------------------    
