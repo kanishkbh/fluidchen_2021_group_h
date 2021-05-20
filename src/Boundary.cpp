@@ -215,3 +215,77 @@ void TemperatureDirichlet::apply(Fields &field) {
 
     }
 }
+
+TemperatureAdiabatic::TemperatureAdiabatic(std::vector<Cell *> cells) : _cells(cells) {}
+
+void TemperatureAdiabatic::apply(Fields &field) {
+
+    int i, j;
+
+    /// cycle through all cells
+    for (auto this_cell : _cells) {
+        i = this_cell->i();
+        j = this_cell->j();
+
+        // Different regime depending on the number of fluid neighbors. If there are 2, one is vertical and one horizontal
+        if (this_cell->borders().size() == 1) {
+            auto border = this_cell->borders()[0];
+
+            int i_n = this_cell->neighbour(border)->i();
+            int j_n = this_cell->neighbour(border)->j();
+
+            switch (border) {
+            case border_position::BOTTOM:
+                field.t(i, j) = field.p(i, j - 1);
+                break;
+
+            case border_position::TOP:
+                field.t(i, j) = field.p(i, j + 1);
+                break;
+
+            case border_position::LEFT:
+                field.t(i, j) = field.p(i - 1, j);
+                break;
+
+            case border_position::RIGHT:
+                field.t(i, j) = field.p(i + 1, j);
+                break;
+
+            default:
+                throw std::runtime_error("Unknown border type !");
+                break;
+            }
+        } else if (this_cell->borders().size() == 2) {
+            // NB : Temperature is taken as average => we set it to 0 then add 0.5 each time
+            field.t(i, j) = 0;
+            for (const auto &border : this_cell->borders()) {
+                int i_n = this_cell->neighbour(border)->i();
+                int j_n = this_cell->neighbour(border)->j();
+
+                switch (border) {
+                case border_position::BOTTOM:
+                    field.p(i, j) += 0.5 * field.p(i, j - 1);
+                    break;
+
+                case border_position::TOP:
+                    field.p(i, j) += 0.5 * field.p(i, j + 1);
+                    break;
+
+                case border_position::LEFT:
+                    field.p(i, j) += 0.5 * field.p(i - 1, j);
+                    break;
+
+                case border_position::RIGHT:
+                    field.p(i, j) += 0.5 * field.p(i + 1, j);
+                    break;
+
+                default:
+                    throw std::runtime_error("Unknown border type !");
+                    break;
+                }
+            }
+        } else {
+            throw std::runtime_error("Invalid BC : obstacle with invalid borders number");
+        }
+    }
+}

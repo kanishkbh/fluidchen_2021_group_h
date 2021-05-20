@@ -98,3 +98,16 @@ class TemperatureDirichlet : public Boundary {
     std::vector<Cell *> _cells;
     double _temp{0};
 };
+
+/**
+ * @brief Zero-temperature gradient BC
+ */
+class TemperatureAdiabatic : public Boundary {
+  public:
+    TemperatureAdiabatic(std::vector<Cell *> cells);
+    virtual ~TemperatureAdiabatic() = default;
+    virtual void apply(Fields &field);
+
+  private:
+    std::vector<Cell *> _cells;
+};
