@@ -199,3 +199,19 @@ void OutFlowBoundary::apply(Fields &field) {
         }
     }
 }
+
+TemperatureDirichlet::TemperatureDirichlet(std::vector<Cell *> cells, double temp) : _cells(cells), _temp(temp) {}
+
+void TemperatureDirichlet::apply(Fields &field) {
+
+    int i, j ;
+
+    /// cycle through all cells
+
+    for (auto this_cell : _cells) {
+        i = this_cell->i();
+        j = this_cell->j();
+        field.t(i, j) = _temp;
+
+    }
+}

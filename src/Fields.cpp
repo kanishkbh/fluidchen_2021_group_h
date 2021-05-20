@@ -136,6 +136,7 @@ double &Fields::u(int i, int j) { return _U(i, j); }
 double &Fields::v(int i, int j) { return _V(i, j); }
 double &Fields::f(int i, int j) { return _F(i, j); }
 double &Fields::g(int i, int j) { return _G(i, j); }
+double &Fields::t(int i, int j) { return _T(i, j); }
 double &Fields::rs(int i, int j) { return _RS(i, j); }
 
 Matrix<double> &Fields::p_matrix() { return _P; }

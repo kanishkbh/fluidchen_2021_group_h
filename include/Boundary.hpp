@@ -84,3 +84,17 @@ class OutFlowBoundary : public Boundary {
     std::vector<Cell *> _cells;
     double _pressure{0};
 };
+
+/**
+ * @brief Fixed temperature BC
+ */
+class TemperatureDirichlet : public Boundary {
+  public:
+    TemperatureDirichlet(std::vector<Cell *> cells, double temp);
+    virtual ~TemperatureDirichlet() = default;
+    virtual void apply(Fields &field);
+
+  private:
+    std::vector<Cell *> _cells;
+    double _temp{0};
+};

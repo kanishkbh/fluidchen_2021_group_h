@@ -90,6 +90,9 @@ class Fields {
     /// y-momentum flux index based access and modify
     double &g(int i, int j);
 
+    ///temperature index based access and modify
+    double &t(int i, int j);
+
     /// get timestep size
     double dt() const;
 
