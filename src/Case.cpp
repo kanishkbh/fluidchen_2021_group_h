@@ -26,7 +26,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     _geom_name = file_name.substr(0, file_name.length()-4) + ".pgm";
-    
     std::ifstream file(file_name);
     double nu;      /* viscosity   */
     double UI;      /* velocity x-direction */
@@ -81,9 +80,16 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
                 if (var == "in_temp") file >> in_temp;
-                if (var == "TI") file >> TI;
-                if (var == "prandtl") file >> Pr;
-                if (var == "beta") file >> beta;
+                if (var == "TI") file >> TI; /* Initial temperature*/ 
+                if (var == "prandtl") file >> Pr; /* Thermal diffusivity */ 
+                if (var == "beta") file >> beta; /* Expansion coefficient*/ 
+                if (var == "num_walls") file >> _num_walls; 
+                if (var == "wall_temp_3") file >> _wall_temp_3; 
+                if (var == "wall_temp_4") file >> _wall_temp_4; 
+                if (var == "wall_temp_5") file >> _wall_temp_5; 
+                if (var == "wall_vel_3") file >> _wall_velocity_3;
+                if (var == "wall_vel_4") file >> _wall_velocity_4;
+                if (var == "wall_vel_5") file >> _wall_velocity_5; 
             }
         }
     }
@@ -114,7 +120,6 @@ Case::Case(std::string file_name, int argn, char **args) {
 //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
     _grid = Grid(_geom_name, domain);
-
 //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, Pr, beta);
 //-----------------------------------------------------------------------------------------------------------
@@ -365,8 +370,13 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.size_y = jmax_domain;
 }
 
+
+// Issue with lid driven cavity. The left corner and right corner elements of the moving wall 
+// have no neighbours. So throwing a run time error might not be the best fix. 
+
 void Case::setupBoundaryConditions() {
-    if (_geom_name.compare("NONE") == 0) {
+    std::string path2 = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
+    if (_geom_name.compare(path2) == 0) {
         if (not _grid.moving_wall_cells().empty()) {
             _boundaries.push_back(
                 std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
@@ -389,7 +399,29 @@ void Case::setupBoundaryConditions() {
         if (not _grid.moving_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), _wall_velocity));
         }
+
+        // 0 - Fluid 
+        // 1 - Inflow 
+        // 2 - Outflow 
+        // 3 - Non temp Fixed wall 
+        // 4 - DBC wall 
+        // 5 - DBC wall 
+        // 6 - Adiabatic wall 
+        
+        if(not _grid.wall_6_cells().empty()){
+            _boundaries.push_back(std::make_unique<TemperatureAdiabatic>(_grid.wall_6_cells()));
+        }
+
+        if(not _grid.wall_4_cells().empty()){
+            _boundaries.push_back(std::make_unique<TemperatureDirichlet>(_grid.wall_4_cells(),_wall_temp_4));
+        }
+
+        if(not _grid.wall_5_cells().empty()){
+            _boundaries.push_back(std::make_unique<TemperatureDirichlet>(_grid.wall_5_cells(),_wall_temp_5));
+        }
+
         /* To change when adding temperatures */
+
         // We don't want to update inner parts of obstacles : check if the cell has 1 or 2 fluid neighbors
         std::vector<Cell *> fixed_outer_walls;
         for (auto cell_ptr : _grid.fixed_wall_cells()) {

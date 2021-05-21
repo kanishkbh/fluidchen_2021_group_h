@@ -18,7 +18,6 @@ void MovingWallBoundary::apply(Fields &field) {
     for (auto this_cell : _cells) {
         i = this_cell->i();
         j = this_cell->j();
-
         // Different regime depending on the number of fluid neighbors. If there are 2, one is vertical and one horizontal
         if (this_cell->borders().size() == 1) {
             auto border = this_cell->borders()[0];
@@ -45,7 +44,7 @@ void MovingWallBoundary::apply(Fields &field) {
                 field.u(i - 1, j) = 0;
                 field.v(i, j) = 2 * w - field.v(i - 1, j); // 0.5*(v + v [left]) = w
                 field.p(i, j) = field.p(i - 1, j);
-                field.f(-i, j) = field.u(i-1, j);
+                field.f(i, j) = field.u(i-1, j);
                 break;
 
             case border_position::RIGHT:
@@ -65,27 +64,30 @@ void MovingWallBoundary::apply(Fields &field) {
             for (const auto &border : this_cell->borders()) {
                 int i_n = this_cell->neighbour(border)->i();
                 int j_n = this_cell->neighbour(border)->j();
-
                 switch (border) {
                 case border_position::BOTTOM:
+                    field.u(i,j) = -field.u(i,j-1); // Change
                     field.v(i, j - 1) = 0;
                     field.p(i, j) += 0.5 * field.p(i, j - 1);
                     field.g(i, j - 1) = field.v(i, j - 1);
                     break;
 
                 case border_position::TOP:
+                    field.u(i,j) = -field.u(i,j+1); // Change 
                     field.v(i, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i, j + 1);
                     field.g(i, j) = field.v(i, j);
                     break;
 
                 case border_position::LEFT:
+                    field.v(i,j) = -field.v(i-1,j); // Change 
                     field.u(i - 1, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i - 1, j);
                     field.f(i - 1, j) = field.u(i - 1, j);
                     break;
 
                 case border_position::RIGHT:
+                    field.v(i,j) = -field.v(i+1,j); // Change 
                     field.u(i, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i + 1, j);
                     field.f(i, j) = field.u(i, j);
@@ -96,8 +98,10 @@ void MovingWallBoundary::apply(Fields &field) {
                     break;
                 }
             }
-        } else {
-            throw std::runtime_error("Invalid BC : obstacle with invalid borders number");
+        } else if(this_cell->borders().size()==0) {
+            continue;
+        } else { 
+            throw std::runtime_error("Invalid BC for MV : obstacle with invalid borders number");
         }
     }
 }
@@ -205,14 +209,97 @@ TemperatureDirichlet::TemperatureDirichlet(std::vector<Cell *> cells, double tem
 void TemperatureDirichlet::apply(Fields &field) {
 
     int i, j ;
-
     /// cycle through all cells
 
-    for (auto this_cell : _cells) {
-        i = this_cell->i();
-        j = this_cell->j();
-        field.t(i, j) = _temp;
+    for(auto current_cell : _cells) {
+         i = current_cell->i();
+         j = current_cell->j(); 
+         
+        if(current_cell->borders().size()==1){
+            const auto border = current_cell->borders()[0];
 
+            switch(border){
+            
+            case border_position::TOP: 
+                field.t(i,j) = 2*_temp - field.t(i,j+1);
+                field.u(i,j) = -field.u(i,j+1);
+                field.v(i,j) = 0; 
+                field.p(i,j) = field.p(i,j+1);
+                field.g(i,j) = field.v(i,j); 
+                break; 
+            case border_position::BOTTOM: 
+                field.t(i,j) = 2*_temp - field.t(i,j-1);
+                field.u(i,j) = - field.u(i,j-1);
+                field.v(i,j-1) = 0; 
+                field.p(i,j) = field.p(i,j-1);
+                field.g(i,j-1) = field.v(i,j-1); 
+                break; 
+            case border_position::LEFT :
+                field.t(i,j) = 2*_temp - field.t(i-1,j);
+                field.u(i-1,j) = 0; 
+                field.v(i,j) = -field.v(i-1,j);
+                field.p(i,j) = field.p(i-1,j);
+                field.f(i,j) = field.u(i-1,j); 
+                break; 
+            case border_position::RIGHT :
+                field.t(i,j) = 2*_temp - field.t(i+1,j);
+                field.u(i, j) = 0;
+                field.v(i, j) = -field.v(i + 1, j);
+                field.p(i, j) = field.p(i + 1, j);
+                field.f(i, j) = field.u(i, j);
+                break; 
+            default :
+                std::runtime_error("Invalid border position (1) : @ Dirichlet BC"); 
+                break; 
+            }
+        }
+        else if(current_cell->borders().size()==2) {
+            for(auto border:current_cell->borders()){
+                field.t(i,j) = 0; 
+                switch(border){
+                
+                case border_position::TOP:
+                    field.t(i,j) += _temp - 0.5 * field.t(i,j+1);
+                    field.u(i,j) = -field.u(i,j+1); // Change 
+                    field.v(i, j) = 0;
+                    field.p(i, j) += 0.5 * field.p(i, j + 1);
+                    field.g(i, j) = field.v(i, j);
+                    break; 
+
+                case border_position::BOTTOM:
+                    field.t(i,j) += _temp - 0.5 * field.t(i,j-1);
+                    field.u(i,j) = -field.u(i,j-1); // Change
+                    field.v(i, j - 1) = 0;
+                    field.p(i, j) += 0.5 * field.p(i, j - 1);
+                    field.g(i, j - 1) = field.v(i, j - 1);
+                    break; 
+                case border_position::LEFT:
+                    field.t(i,j) += _temp - 0.5 * field.t(i-1,j);
+                    field.v(i,j) = -field.v(i-1,j); // Change 
+                    field.u(i - 1, j) = 0;
+                    field.p(i, j) += 0.5 * field.p(i - 1, j);
+                    field.f(i - 1, j) = field.u(i - 1, j);
+                    break; 
+                case border_position::RIGHT: 
+                    field.t(i,j) += _temp - 0.5 * field.t(i+1,j);
+                    field.v(i,j) = -field.v(i+1,j); // Change 
+                    field.u(i, j) = 0;
+                    field.p(i, j) += 0.5 * field.p(i + 1, j);
+                    field.f(i, j) = field.u(i, j);
+                    break; 
+                default:    
+                    std::runtime_error("Invalid border position (2) : @ Dirichlet BC");
+                }
+            }
+        }
+
+        else if(current_cell->borders().size()==0){
+            continue; 
+        }
+        
+        else {
+            std::runtime_error("Invalid Boundary Conditions @ TemperatureDirichlet");
+        }
     }
 }
 
@@ -234,21 +321,39 @@ void TemperatureAdiabatic::apply(Fields &field) {
             int i_n = this_cell->neighbour(border)->i();
             int j_n = this_cell->neighbour(border)->j();
 
+
+        // We have homogenous Neumann BC for the Adiabatic wall 
             switch (border) {
             case border_position::BOTTOM:
-                field.t(i, j) = field.p(i, j - 1);
+                field.t(i, j) = field.t(i, j - 1);
+                field.u(i,j) = - field.u(i,j-1);
+                field.v(i,j-1) = 0; 
+                field.p(i,j) = field.p(i,j-1);
+                field.g(i,j-1) = field.v(i,j-1); 
                 break;
 
             case border_position::TOP:
-                field.t(i, j) = field.p(i, j + 1);
+                field.t(i, j) = field.t(i, j + 1);
+                field.u(i,j) = -field.u(i,j+1);
+                field.v(i,j) = 0; 
+                field.p(i,j) = field.p(i,j+1);
+                field.g(i,j) = field.v(i,j);
                 break;
 
             case border_position::LEFT:
-                field.t(i, j) = field.p(i - 1, j);
+                field.t(i, j) = field.t(i - 1, j);
+                field.u(i-1,j) = 0; 
+                field.v(i,j) = -field.v(i-1,j);
+                field.p(i,j) = field.p(i-1,j);
+                field.f(i,j) = field.u(i-1,j);
                 break;
 
             case border_position::RIGHT:
-                field.t(i, j) = field.p(i + 1, j);
+                field.t(i, j) = field.t(i + 1, j);
+                field.u(i, j) = 0;
+                field.v(i, j) = -field.v(i + 1, j);
+                field.p(i, j) = field.p(i + 1, j);
+                field.f(i, j) = field.u(i, j);
                 break;
 
             default:
@@ -264,19 +369,35 @@ void TemperatureAdiabatic::apply(Fields &field) {
 
                 switch (border) {
                 case border_position::BOTTOM:
+                    field.t(i, j) += 0.5 * field.t(i, j - 1);
+                    field.u(i,j) = -field.u(i,j-1); // Change
+                    field.v(i, j - 1) = 0;
                     field.p(i, j) += 0.5 * field.p(i, j - 1);
+                    field.g(i, j - 1) = field.v(i, j - 1);
                     break;
 
                 case border_position::TOP:
+                    field.t(i, j) += 0.5 * field.t(i, j + 1);
+                    field.u(i,j) = -field.u(i,j+1); // Change 
+                    field.v(i, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i, j + 1);
+                    field.g(i, j) = field.v(i, j);
                     break;
 
                 case border_position::LEFT:
+                    field.t(i, j) += 0.5 * field.t(i - 1, j);
+                    field.v(i,j) = -field.v(i-1,j); // Change 
+                    field.u(i - 1, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i - 1, j);
+                    field.f(i - 1, j) = field.u(i - 1, j);
                     break;
 
                 case border_position::RIGHT:
+                    field.t(i, j) += 0.5 * field.t(i + 1, j);
+                    field.v(i,j) = -field.v(i+1,j); // Change 
+                    field.u(i, j) = 0;
                     field.p(i, j) += 0.5 * field.p(i + 1, j);
+                    field.f(i, j) = field.u(i, j);
                     break;
 
                 default:
@@ -284,7 +405,12 @@ void TemperatureAdiabatic::apply(Fields &field) {
                     break;
                 }
             }
-        } else {
+        }
+            else if(this_cell->borders().size()==0){
+                continue;
+            }
+            
+             else {
             throw std::runtime_error("Invalid BC : obstacle with invalid borders number");
         }
     }

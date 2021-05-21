@@ -61,8 +61,15 @@ class Case {
     std::vector<std::unique_ptr<Boundary>> _boundaries;
 
     // Boundary conditions parameters
-    double _wall_velocity, _u_in, _v_in, _p_i;
+    double _num_walls, _u_in, _v_in, _p_i;
 
+    // Wall velocities 
+    double _wall_velocity; 
+    double _wall_velocity_3,_wall_velocity_4,_wall_velocity_5; 
+
+    // Wall temperatures 
+    double _wall_temp_3, _wall_temp_4, _wall_temp_5;
+  
     /// Solver convergence tolerance
     double _tolerance;
 

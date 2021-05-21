@@ -14,8 +14,9 @@ Grid::Grid(std::string geom_name, Domain &domain) {
     _domain = domain;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
-
-    if (geom_name.compare("NONE")) {
+    // std::string path = "../example_cases/Benchmark/LidDrivenCavity/LidDrivenCavity.pgm";
+    std::string path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
+    if (geom_name.compare(path)) {
         std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                     std::vector<int>(_domain.domain_size_y + 2, 0));
         parse_geometry_file(geom_name, geometry_data);
@@ -75,15 +76,15 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 break;
             case 4:
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_4);
-                _fixed_wall_cells.push_back(&_cells(i, j));
+                _wall_4_cells.push_back(&_cells(i, j));
                 break;
             case 5:
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_5);
-                _fixed_wall_cells.push_back(&_cells(i, j));
+                _wall_5_cells.push_back(&_cells(i, j));
                 break;
             case 6:
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_6);
-                _fixed_wall_cells.push_back(&_cells(i, j));
+                _wall_6_cells.push_back(&_cells(i, j));
                 break;
             case 7:
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_7);
@@ -309,3 +310,9 @@ const std::vector<Cell *> &Grid::outflow_cells() const { return _outflow_cells;}
 const std::vector<Cell *> &Grid::fixed_wall_cells() const { return _fixed_wall_cells; }
 
 const std::vector<Cell *> &Grid::moving_wall_cells() const { return _moving_wall_cells; }
+
+const std::vector<Cell *> &Grid::wall_4_cells() const {return _wall_4_cells;}
+
+const std::vector<Cell *> &Grid::wall_5_cells() const {return _wall_5_cells;}
+
+const std::vector<Cell *> &Grid::wall_6_cells() const {return _wall_6_cells; }
