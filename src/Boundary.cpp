@@ -202,19 +202,74 @@ void OutFlowBoundary::apply(Fields &field) {
 
 TemperatureDirichlet::TemperatureDirichlet(std::vector<Cell *> cells, double temp) : _cells(cells), _temp(temp) {}
 
+TemperatureDirichlet::TemperatureDirichlet(std::vector<Cell *> cells, double temp) : _cells(cells), _temp(temp) {}
+
 void TemperatureDirichlet::apply(Fields &field) {
 
     int i, j ;
-
     /// cycle through all cells
 
-    for (auto this_cell : _cells) {
-        i = this_cell->i();
-        j = this_cell->j();
-        field.t(i, j) = _temp;
+    for(auto current_cell : _cells) {
+         i = current_cell->i();
+         j = current_cell->j(); 
+         
+        if(current_cell->borders().size()==1){
+            const auto border = current_cell->borders()[0];
 
+            switch(border){
+            
+            case border_position::TOP: 
+                field.t(i,j) = 2*_temp - field.t(i,j+1);
+                break; 
+            case border_position::BOTTOM: 
+                field.t(i,j) = 2*_temp - field.t(i,j-1);
+                break; 
+            case border_position::LEFT :
+                field.t(i,j) = 2*_temp - field.t(i-1,j);
+                break; 
+            case border_position::RIGHT :
+                field.t(i,j) = 2*_temp - field.t(i+1,j);
+                break; 
+            default :
+                std::runtime_error("Invalid border position (1) : @ Dirichlet BC"); 
+                break; 
+            }
+        }
+        else if(current_cell->borders().size()==2) {
+            // NB : Temperature is taken as average => we set it to 0 then add 0.5 each time
+            for(auto border:current_cell->borders()){
+                field.t(i,j) = 0; 
+                switch(border){
+                
+                case border_position::TOP:
+                    field.t(i,j) += _temp - 0.5 * field.t(i,j+1);
+                    break; 
+
+                case border_position::BOTTOM:
+                    field.t(i,j) += _temp - 0.5 * field.t(i,j-1);
+                    break; 
+                case border_position::LEFT:
+                    field.t(i,j) += _temp - 0.5 * field.t(i-1,j);
+                    break; 
+                case border_position::RIGHT: 
+                    field.t(i,j) += _temp - 0.5 * field.t(i+1,j);
+                    break; 
+                default:    
+                    std::runtime_error("Invalid border position (2) : @ Dirichlet BC");
+                }
+            }
+        }
+
+        else if(current_cell->borders().size()==0){
+            continue; 
+        }
+        
+        else {
+            std::runtime_error("Invalid Boundary Conditions @ TemperatureDirichlet");
+        }
     }
 }
+
 
 TemperatureAdiabatic::TemperatureAdiabatic(std::vector<Cell *> cells) : _cells(cells) {}
 
