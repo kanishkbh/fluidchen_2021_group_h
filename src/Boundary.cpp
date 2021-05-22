@@ -45,7 +45,7 @@ void MovingWallBoundary::apply(Fields &field) {
                 field.u(i - 1, j) = 0;
                 field.v(i, j) = 2 * w - field.v(i - 1, j); // 0.5*(v + v [left]) = w
                 field.p(i, j) = field.p(i - 1, j);
-                field.f(-i, j) = field.u(i-1, j);
+                field.f(i, j) = field.u(i-1, j);
                 break;
 
             case border_position::RIGHT:
