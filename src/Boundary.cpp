@@ -202,8 +202,6 @@ void OutFlowBoundary::apply(Fields &field) {
 
 TemperatureDirichlet::TemperatureDirichlet(std::vector<Cell *> cells, double temp) : _cells(cells), _temp(temp) {}
 
-TemperatureDirichlet::TemperatureDirichlet(std::vector<Cell *> cells, double temp) : _cells(cells), _temp(temp) {}
-
 void TemperatureDirichlet::apply(Fields &field) {
 
     int i, j ;
