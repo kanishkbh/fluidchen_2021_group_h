@@ -27,7 +27,7 @@ class Fields {
      * @param[in] Prandtl number
      * @param[in] Thermal coefficient expansion (default ~= air at 20°C)
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI = 0, double Pr = 1, double beta=0.0034);
+    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI = 0, double Pr = 1, double beta=0.0034, double gx=0, double gy=0);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -102,6 +102,7 @@ class Fields {
     /// For loggin purpose
     const Matrix<double> &u_matrix() const {return _U;}
     const Matrix<double> &v_matrix() const {return _V;}
+    const Matrix<double> &t_matrix() const {return _T;}
 
   private:
     /// x-velocity matrix

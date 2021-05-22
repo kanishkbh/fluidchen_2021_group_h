@@ -2,17 +2,13 @@
 
 #include <algorithm>
 #include <iostream>
-#include<cmath> 
+#include<cmath>
 
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI, double Pr, double beta)
-    : _nu(nu), _dt(dt), _tau(tau), _pr(Pr), _beta(beta),
-    _U(imax + 2, jmax + 2, UI),
-    _V(imax + 2, jmax + 2, VI),
-    _P(imax + 2, jmax + 2, PI),
-    _T(imax + 2, jmax + 2, TI),
-    _F(imax + 2, jmax + 2, 0.0),
-    _G(imax + 2, jmax + 2, 0.0),
-    _RS(imax + 2, jmax + 2, 0.0) {
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI,
+               double Pr, double beta, double gx, double gy)
+    : _nu(nu), _dt(dt), _tau(tau), _pr(Pr), _beta(beta), _U(imax + 2, jmax + 2, UI), _V(imax + 2, jmax + 2, VI),
+      _P(imax + 2, jmax + 2, PI), _T(imax + 2, jmax + 2, TI), _F(imax + 2, jmax + 2, 0.0), _G(imax + 2, jmax + 2, 0.0),
+      _RS(imax + 2, jmax + 2, 0.0), _gx(gx), _gy(gy) {
 
     /*
     _U = Matrix<double>(imax + 2, jmax + 2, UI);
@@ -24,8 +20,6 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);*/
 }
-
-
 
 void Fields::calculate_fluxes(Grid &grid) {
 
@@ -64,16 +58,18 @@ void Fields::calculate_T(Grid &grid) {
     int jmax = grid.jmax();
 
     // In-place update !
-    auto new_T = Matrix<double>(imax + 2, jmax + 2);
+    auto new_T = _T;
 
     double alpha = _nu/_pr;
+    
 
-    for(auto j = 1; j <= jmax; j++){
-        for(auto i=1; i < imax; ++i){
-            new_T(i,j) = _T(i,j) + _dt*(alpha*(Discretization::laplacian(_U,i,j))
+    for (auto cell : grid.fluid_cells()) {
+        auto i = cell->i();
+        auto j = cell->j();
+        new_T(i,j) = _T(i,j) + _dt*(alpha*(Discretization::laplacian(_T,i,j))
                                  - Discretization::convection_u_T(_U,_T,i,j) - Discretization::convection_v_T(_V,_T,i,j));
-        }
     }
+
 
     //Replace _T par updated version
     _T = std::move(new_T);

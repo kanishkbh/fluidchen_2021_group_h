@@ -94,10 +94,12 @@ Case::Case(std::string file_name, int argn, char **args) {
             }
         }
     }
+    
     else {
         std::cerr << "Couldn't open file " << file_name << ". Aborting." << std::endl;
         exit(EXIT_FAILURE);
     }
+
     file.close();
 
 
@@ -123,7 +125,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     _grid = Grid(_geom_name, domain);
 
 //-----------------------------------------------------------------------------------------------------------    
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, Pr, beta);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, Pr, beta, GX, GY);
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
@@ -229,7 +231,7 @@ void Case::simulate() {
 
     logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
 
- 
+
     /* Main loop */
     while (t < _t_end) {
           
@@ -240,6 +242,7 @@ void Case::simulate() {
         
         //Update temperatures
         _field.calculate_T(_grid);
+        
 
         // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
@@ -258,9 +261,7 @@ void Case::simulate() {
             }
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
-        
-
-        
+                
         
         // Update velocity
         _field.calculate_velocities(_grid);
@@ -432,9 +433,13 @@ void Case::setupBoundaryConditions() {
             for (auto& pair : outer_walls_by_ID) {
                 cell_type ID = pair.first;
                 if (std::fabs(_fixed_wall_temp[ID] + 1) < 0.001)
-                    _boundaries.push_back(std::make_unique<TemperatureAdiabatic>(pair.second));
+                    {
+                        _boundaries.push_back(std::make_unique<TemperatureAdiabatic>(pair.second));
+                    }
                 else
-                    _boundaries.push_back(std::make_unique<TemperatureDirichlet>(pair.second, _fixed_wall_temp[ID]));
+                    {
+                        _boundaries.push_back(std::make_unique<TemperatureDirichlet>(pair.second, _fixed_wall_temp[ID]));
+                    }
             }
         }
 
