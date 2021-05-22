@@ -5,8 +5,8 @@
 #include<cmath>
 
 Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI,
-               double Pr, double beta, double gx, double gy)
-    : _nu(nu), _dt(dt), _tau(tau), _pr(Pr), _beta(beta), _U(imax + 2, jmax + 2, UI), _V(imax + 2, jmax + 2, VI),
+               double alpha, double beta, double gx, double gy)
+    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _U(imax + 2, jmax + 2, UI), _V(imax + 2, jmax + 2, VI),
       _P(imax + 2, jmax + 2, PI), _T(imax + 2, jmax + 2, TI), _F(imax + 2, jmax + 2, 0.0), _G(imax + 2, jmax + 2, 0.0),
       _RS(imax + 2, jmax + 2, 0.0), _gx(gx), _gy(gy) {
 
@@ -59,14 +59,12 @@ void Fields::calculate_T(Grid &grid) {
 
     // In-place update !
     auto new_T = _T;
-
-    double alpha = _nu/_pr;
     
 
     for (auto cell : grid.fluid_cells()) {
         auto i = cell->i();
         auto j = cell->j();
-        new_T(i,j) = _T(i,j) + _dt*(alpha*(Discretization::laplacian(_T,i,j))
+        new_T(i,j) = _T(i,j) + _dt*(_alpha*(Discretization::laplacian(_T,i,j))
                                  - Discretization::convection_u_T(_U,_T,i,j) - Discretization::convection_v_T(_V,_T,i,j));
     }
 
@@ -119,8 +117,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k1 = (0.5/_nu) * 1/(1/(dx*dx)+(1/dy*dy));
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
-        double alpha = _nu/_pr;
-        double k4 = (0.5/alpha) * 1/(1/(dx*dx)+(1/dy*dy));
+        double k4 = (0.5/_alpha) * 1/(1/(dx*dx)+(1/dy*dy));
         _dt = _tau * std::min({k1, k2, k3, k4});
         
         return _dt;

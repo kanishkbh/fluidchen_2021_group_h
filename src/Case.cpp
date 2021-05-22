@@ -33,7 +33,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double VI;      /* velocity y-direction */
     double TI;      /* Initial temperature */
     double beta;    /* Thermal expansion coefficient */
-    double Pr{1};   /* Prandtl number. If not read, shouldn't influence dt => alpha = Nu */
+    double alpha{0};/* Heat diffusivity */
     double PI;      /* pressure */
     double GX;      /* gravitation x-direction */
     double GY;      /* gravitation y-direction */
@@ -82,7 +82,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "VIN") file >> VIN;
                 if (var == "in_temp") file >> in_temp;
                 if (var == "TI") file >> TI;
-                if (var == "prandtl") file >> Pr;
+                if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;
                 if (var == "T_IN") file >> _T_IN;
                 if (var == "moving_wall_temp") file >> _moving_wall_temp;
@@ -125,7 +125,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     _grid = Grid(_geom_name, domain);
 
 //-----------------------------------------------------------------------------------------------------------    
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, Pr, beta, GX, GY);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
