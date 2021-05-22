@@ -62,6 +62,9 @@ class Case {
 
     // Boundary conditions parameters
     double _wall_velocity, _u_in, _v_in, _p_i;
+    // Temperature BC
+    double _T_IN{0}, _moving_wall_temp{0};
+    std::map<cell_type, double> _fixed_wall_temp;
 
     /// Solver convergence tolerance
     double _tolerance;

@@ -84,6 +84,13 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "TI") file >> TI;
                 if (var == "prandtl") file >> Pr;
                 if (var == "beta") file >> beta;
+                if (var == "T_IN") file >> _T_IN;
+                if (var == "moving_wall_temp") file >> _moving_wall_temp;
+                if (var == "wall_temp_3") file >> _fixed_wall_temp[cell_type::FIXED_WALL_3];
+                if (var == "wall_temp_4") file >> _fixed_wall_temp[cell_type::FIXED_WALL_4];
+                if (var == "wall_temp_5") file >> _fixed_wall_temp[cell_type::FIXED_WALL_5];
+                if (var == "wall_temp_6") file >> _fixed_wall_temp[cell_type::FIXED_WALL_6];
+                if (var == "wall_temp_7") file >> _fixed_wall_temp[cell_type::FIXED_WALL_7];
             }
         }
     }
@@ -377,20 +384,34 @@ void Case::setupBoundaryConditions() {
     } else {
 
         // General case of BCs
+
+        /**
+         *  Temperature BCs :
+         *  - If wall_temp_K is -1, we interpret it as an adiabatic wall, otherwise it's a Dirichlet fixed temperature BC.
+         *  - Inflow is always Dirichlet
+         *  - Outflow is adiabatic (?)
+         * */
         if (not _grid.inflow_cells().empty()) {
 
             _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), _u_in, _v_in));
+            _boundaries.push_back(std::make_unique<TemperatureDirichlet>(_grid.inflow_cells(), _T_IN));
         }
 
         if (not _grid.outflow_cells().empty()) {
             _boundaries.push_back(std::make_unique<OutFlowBoundary>(_grid.outflow_cells(), _p_i));
+            _boundaries.push_back(std::make_unique<TemperatureAdiabatic>(_grid.outflow_cells()));
         }
 
         if (not _grid.moving_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), _wall_velocity));
+            if (std::fabs(_moving_wall_temp + 1) < 0.001) //Float comparison
+                _boundaries.push_back(std::make_unique<TemperatureAdiabatic>(_grid.moving_wall_cells()));
+            else
+                _boundaries.push_back(std::make_unique<TemperatureDirichlet>(_grid.moving_wall_cells(), _moving_wall_temp));
+
         }
-        /* To change when adding temperatures */
         // We don't want to update inner parts of obstacles : check if the cell has 1 or 2 fluid neighbors
+        // Wel also split the temperature BCs depending on the wall ID
         std::vector<Cell *> fixed_outer_walls;
         for (auto cell_ptr : _grid.fixed_wall_cells()) {
             if (cell_ptr->borders().size() > 2)
@@ -401,7 +422,22 @@ void Case::setupBoundaryConditions() {
         }
         if (not fixed_outer_walls.empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(fixed_outer_walls));
+            std::map<cell_type, std::vector<Cell *>> outer_walls_by_ID;
+            for (auto cell_ptr : fixed_outer_walls) {
+                // An empty vector is default constructed
+                outer_walls_by_ID[cell_ptr->type()].push_back(cell_ptr);
+            }
+
+            //Create a BC for each (non empty) wall ID
+            for (auto& pair : outer_walls_by_ID) {
+                cell_type ID = pair.first;
+                if (std::fabs(_fixed_wall_temp[ID] + 1) < 0.001)
+                    _boundaries.push_back(std::make_unique<TemperatureAdiabatic>(pair.second));
+                else
+                    _boundaries.push_back(std::make_unique<TemperatureDirichlet>(pair.second, _fixed_wall_temp[ID]));
+            }
         }
+
 
     }
 }
