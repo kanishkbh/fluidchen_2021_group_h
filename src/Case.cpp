@@ -262,7 +262,7 @@ void Case::simulate() {
 
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
-            // Apply the Boundary conditions (again, despite being redundant on velocity)
+            // Apply the Boundary conditions (only on pressure)
             for (auto& boundary_ptr : _boundaries) {
                 boundary_ptr->apply(_field, true);
             }
@@ -273,7 +273,8 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
-        // Update logging data & output
+        // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
+        // output the current state.
         logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
         if (output_counter >= _output_freq)
             {
@@ -282,7 +283,7 @@ void Case::simulate() {
             }
 
 
-        // Update time and dt 
+        // Update time elapsed since last VTK write, total time and dt 
         output_counter += dt;
         t += dt;
         timestep += 1;
