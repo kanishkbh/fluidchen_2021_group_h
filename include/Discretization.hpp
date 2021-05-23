@@ -20,16 +20,6 @@ class Discretization {
     Discretization(double dx, double dy, double gamma);
 
     /**
-     * @brief Diffusion discretization in 2D using central differences
-     *
-     * @param[in] data to be discretized
-     * @param[in] x index
-     * @param[in] y index
-     *
-     */
-    static double diffusion(const Matrix<double> &A, int i, int j);
-
-    /**
      * @brief Convection in x direction using donor-cell scheme
      * (with the global value of _gamma, from the last constructor call)
      *

@@ -113,20 +113,7 @@ double Discretization::convection_v_T(const Matrix<double> &V, const Matrix<doub
 
     return d_vT_1 + d_vT_2;
 }
-//-----------------------------------------------------------------------------------------------------------
 
-double Discretization::diffusion(const Matrix<double> &_U, int i, int j) {
-        
-        // loop invariants xxxxxxxxxxxx Not really, this is a refactored code xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-        double idx2 = 1/(_dx*_dx);
-        double idy2 = 1/(_dy*_dy);
-        // k1 := discretization of D2x u 
-        double k1 = idx2*(_U(i+i,j) + _U(i-1,j) - 2*_U(i,j));
-        // k2 := discretization of D2y u
-        double k2 = idy2*(_U(i,j+1) + _U(i,j-1) - 2*_U(i,j));
-
-        return k1+k2;
-}
 //-----------------------------------------------------------------------------------------------------------
 
 double Discretization::laplacian(const Matrix<double> &P, int i, int j) {
