@@ -21,13 +21,13 @@ namespace filesystem = std::filesystem;
 #include <vtkTuple.h>
 
 
-std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
+//  std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
 //-----------------------------------------------------------------------------------------------------------
 
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
-    _geom_name = file_name.substr(0, file_name.length()-4) + ".pgm";
+    // _geom_name = file_name.substr(0, file_name.length()-4) + _geom_name;
     
     std::ifstream file(file_name);
     double nu;      /* viscosity   */
@@ -62,6 +62,10 @@ Case::Case(std::string file_name, int argn, char **args) {
             if (var[0] == '#') { /* ignore comment line*/
                 file.ignore(MAX_LINE_LENGTH, '\n');
             } else {
+                if (var == "geo_file") { 
+                    file >> _geom_name;
+                    _geom_name = file_name.substr(0, file_name.find_last_of('/')+1) + _geom_name;
+                }
                 if (var == "xlength") file >> xlength;
                 if (var == "ylength") file >> ylength;
                 if (var == "nu") file >> nu;
@@ -108,7 +112,7 @@ Case::Case(std::string file_name, int argn, char **args) {
 //-----------------------------------------------------------------------------------------------------------
     std::map<int, double> wall_vel;
     //Should be deprecated soon
-    if (_geom_name.compare(lid_path) == 0) {
+    if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
 //-----------------------------------------------------------------------------------------------------------
@@ -376,7 +380,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 }
 
 void Case::setupBoundaryConditions() {
-    if (_geom_name.compare(lid_path) == 0) {
+    if (_geom_name.compare("NONE") == 0) {
         if (not _grid.moving_wall_cells().empty()) {
             _boundaries.push_back(
                 std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
