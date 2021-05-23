@@ -331,19 +331,19 @@ void TemperatureAdiabatic::apply(Fields &field, bool pressure_only) {
 
             switch (border) {
             case border_position::BOTTOM:
-                field.t(i, j) = field.p(i, j - 1);
+                field.t(i, j) = field.t(i, j - 1);
                 break;
 
             case border_position::TOP:
-                field.t(i, j) = field.p(i, j + 1);
+                field.t(i, j) = field.t(i, j + 1);
                 break;
 
             case border_position::LEFT:
-                field.t(i, j) = field.p(i - 1, j);
+                field.t(i, j) = field.t(i - 1, j);
                 break;
 
             case border_position::RIGHT:
-                field.t(i, j) = field.p(i + 1, j);
+                field.t(i, j) = field.t(i + 1, j);
                 break;
 
             default:
@@ -359,19 +359,19 @@ void TemperatureAdiabatic::apply(Fields &field, bool pressure_only) {
 
                 switch (border) {
                 case border_position::BOTTOM:
-                    field.p(i, j) += 0.5 * field.p(i, j - 1);
+                    field.t(i, j) += 0.5 * field.t(i, j - 1);
                     break;
 
                 case border_position::TOP:
-                    field.p(i, j) += 0.5 * field.p(i, j + 1);
+                    field.t(i, j) += 0.5 * field.t(i, j + 1);
                     break;
 
                 case border_position::LEFT:
-                    field.p(i, j) += 0.5 * field.p(i - 1, j);
+                    field.t(i, j) += 0.5 * field.t(i - 1, j);
                     break;
 
                 case border_position::RIGHT:
-                    field.p(i, j) += 0.5 * field.p(i + 1, j);
+                    field.t(i, j) += 0.5 * field.t(i + 1, j);
                     break;
 
                 default:
