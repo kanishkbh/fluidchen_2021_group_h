@@ -11,7 +11,7 @@ MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_ve
 
 void MovingWallBoundary::apply(Fields &field, bool pressure_only) {
 
-    int i = 0, j = 0;
+    int i, j;
     auto w = _velocity;
 
     /// cycle through all cells
@@ -74,7 +74,7 @@ void MovingWallBoundary::apply(Fields &field, bool pressure_only) {
                 break;
             }
         } else if (this_cell->borders().size() == 2) {
-            // NB : pressure is taken as average !
+            // NB : pressure is taken as average ! => We set it to 0 then add two halves
             field.p(i, j) = 0;
             for (const auto &border : this_cell->borders()) {
                 int i_n = this_cell->neighbour(border)->i();
@@ -103,7 +103,6 @@ void MovingWallBoundary::apply(Fields &field, bool pressure_only) {
                 case border_position::LEFT:
                     if (!pressure_only) {
                         field.u(i - 1, j) = 0;
-
                         field.f(i - 1, j) = field.u(i - 1, j);
                     }
                     field.p(i, j) += 0.5 * field.p(i - 1, j);
@@ -139,7 +138,7 @@ InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double uin, double vin
 
 void InflowBoundary::apply(Fields &field, bool pressure_only) {
 
-    int i = 0, j = 0;
+    int i, j;
 
     /// cycle through all cells
     for (auto this_cell : _cells) {
