@@ -16,16 +16,16 @@ make
 ### Guidelines to generate Geometry file
 Create a PGM file that models the bitwise representation of the domain for simulation.
 
-Use the following legend as reference : 
-0 - Fluid element 
-1 - Inflow element 
-2 - Outflow element
-3 - Fixed wall (with a predefined temperature or not)
-4 - Fixed wall (with a predefined temperature or not)
-5 - Adiabatic wall 
-6 - Miscellaneous wall 1  
-7 - Miscellaneous wall 2 
-8 - Moving wall 
+    Use the following legend as reference : 
+    0 - Fluid element 
+    1 - Inflow element 
+    2 - Outflow element
+    3 - Fixed wall (with a predefined temperature or not)
+    4 - Fixed wall (with a predefined temperature or not)
+    5 - Adiabatic wall 
+    6 - Miscellaneous wall 1  
+    7 - Miscellaneous wall 2 
+    8 - Moving wall 
 
 ### Guidelines to generate the parameter data file 
 For a simulation that involves energy considerations (with negligible advection), inflow and outflows BCs : 
