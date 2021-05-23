@@ -16,7 +16,7 @@ class Fields {
      * @brief Constructor for the fields
      *
      * @param[in] kinematic viscosity
-     * @param[in] initial timestep size
+     * @param[in] initial timestep size (or fixed)
      * @param[in] adaptive timestep coefficient
      * @param[in] number of cells in x direction
      * @param[in] number of cells in y direction
@@ -24,13 +24,15 @@ class Fields {
      * @param[in] initial y-velocity
      * @param[in] initial pressure
      * @param[in] initial temperature
-     * @param[in] Prandtl number
+     * @param[in] Thermal diffusivity
      * @param[in] Thermal coefficient expansion (default ~= air at 20°C)
+     * @param[in] Gravity in x-direction
+     * @param[in] Gravity in y-direction
      */
     Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI = 0, double alpha = 0.0, double beta=0.0034, double gx=0, double gy=0);
 
     /**
-     * @brief Calculates the convective and diffusive fluxes in x and y
+     * @brief Calculates the convective and diffusive pseud-fluxes in x and y
      * direction based on explicit discretization of the momentum equations
      *
      * @param[in] grid in which the fluxes are calculated
@@ -39,7 +41,7 @@ class Fields {
     void calculate_fluxes(Grid &grid);
 
     /**
-     * @brief Update temperatures through a diffusion time step
+     * @brief Update temperatures through a convection-diffusion time step
      *
      * @param[in] grid in which the temperatures are calculated
      *
@@ -56,7 +58,7 @@ class Fields {
     void calculate_rs(Grid &grid);
 
     /**
-     * @brief Velocity calculation using pressure values
+     * @brief Velocity calculation using pressure values and F&G fields
      *
      * @param[in] grid in which the calculations are done
      *
@@ -65,43 +67,71 @@ class Fields {
 
     /**
      * @brief Adaptive step size calculation using x-velocity condition,
-     * y-velocity condition and CFL condition
+     * y-velocity condition and CFL condition. If fixed dt is used, return it.
      *
      * @param[in] grid in which the calculations are done
      *
      */
     double calculate_dt(Grid &grid);
 
-    /// x-velocity index based access and modify
+    /**
+     * @brief x-velocity index based access and modify
+     * */
     double &u(int i, int j);
 
-    /// y-velocity index based access and modify
+    /**
+     * @brief y-velocity index based access and modify
+     * */
     double &v(int i, int j);
 
-    /// pressure index based access and modify
+    /**
+     * @brief pressure index based access and modify
+     * */
     double &p(int i, int j);
 
-    /// RHS index based access and modify
+    /**
+     * @brief PPE right hand side index based access and modify
+     * */
     double &rs(int i, int j);
 
-    /// x-momentum flux index based access and modify
+    /**
+     * @brief x-momentum pseudo-flux (F field) index based access and modify
+     * */
     double &f(int i, int j);
 
-    /// y-momentum flux index based access and modify
+    /**
+     * @brief y-momentum pseudo-flux (G field) index based access and modify
+     * */
     double &g(int i, int j);
 
-    ///temperature index based access and modify
+    /**
+     * @brief Temperature index based access and modify
+     * */
     double &t(int i, int j);
 
-    /// get timestep size
+    /**
+     * @brief get current timestep (without recomputing it)
+     * */
     double dt() const;
 
-    /// pressure matrix access and modify
+    /**
+     * @brief Access a matrix reference to the pressure
+     * */
     Matrix<double> &p_matrix();
 
-    /// For loggin purpose
+    /**
+     * @brief Access a matrix const reference to U
+     * */
     const Matrix<double> &u_matrix() const {return _U;}
+
+    /**
+     * @brief Access a matrix const reference to V
+     * */
     const Matrix<double> &v_matrix() const {return _V;}
+
+    /**
+     * @brief Access a matrix const reference to T
+     * */
     const Matrix<double> &t_matrix() const {return _T;}
 
   private:

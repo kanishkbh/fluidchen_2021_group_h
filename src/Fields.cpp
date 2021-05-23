@@ -10,30 +10,16 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
       _P(imax + 2, jmax + 2, PI), _T(imax + 2, jmax + 2, TI), _F(imax + 2, jmax + 2, 0.0), _G(imax + 2, jmax + 2, 0.0),
       _RS(imax + 2, jmax + 2, 0.0), _gx(gx), _gy(gy) {
 
-    /*
-    _U = Matrix<double>(imax + 2, jmax + 2, UI);
-    _V = Matrix<double>(imax + 2, jmax + 2, VI);
-    _P = Matrix<double>(imax + 2, jmax + 2, PI);
-    _T = Matrix<double>(imax + 2, jmax + 2, TI);
 
-    _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);*/
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
 
 
-    int imax = grid.imax();
-    int jmax = grid.jmax();
-
-//-----------------------------------------------------------------------------------------------------------
-
-
     for (auto cell : grid.fluid_cells()) {
         auto i = cell->i();
         auto j = cell->j();
-        //If it's a boundary, leave it to the BCs
+        //If it's a boundary, leave it to the BCs to fix its value
         if (cell->neighbour(border_position::RIGHT)->type() == cell_type::FLUID)
         {
             _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
@@ -53,10 +39,6 @@ void Fields::calculate_fluxes(Grid &grid) {
 
 void Fields::calculate_T(Grid &grid) {
 
-
-    int imax = grid.imax();
-    int jmax = grid.jmax();
-
     // In-place update !
     auto new_T = _T;
     
@@ -67,7 +49,6 @@ void Fields::calculate_T(Grid &grid) {
         new_T(i,j) = _T(i,j) + _dt*(_alpha*(Discretization::laplacian(_T,i,j))
                                  - Discretization::convection_u_T(_U,_T,i,j) - Discretization::convection_v_T(_V,_T,i,j));
     }
-
 
     //Replace _T par updated version
     _T = std::move(new_T);
@@ -95,7 +76,7 @@ void Fields::calculate_velocities(Grid &grid) {
     int jmax = grid.jmax();
     int imax = grid.imax();
 
-    for (const auto& cell_ptr : grid.fluid_cells()) {
+    for (const cell_ptr : grid.fluid_cells()) {
         int i = cell_ptr->i();
         int j = cell_ptr->j();
         _U(i,j) = _F(i,j) - kappa1*(_P(i+1,j)-_P(i,j));
@@ -109,7 +90,7 @@ double Fields::calculate_dt(Grid &grid) {
 
     // If the safety parameter tau is negative, this is interpreted as "use a fixed dt".
 
-    if(_tau<0){
+    if(_tau < 0){
         return _dt;
     } 
     else {
