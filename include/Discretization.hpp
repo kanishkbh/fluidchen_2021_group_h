@@ -31,6 +31,7 @@ class Discretization {
 
     /**
      * @brief Convection in x direction using donor-cell scheme
+     * (with the global value of _gamma, from the last constructor call)
      *
      * @param[in] x-velocity field
      * @param[in] y-velocity field
@@ -43,6 +44,7 @@ class Discretization {
 
     /**
      * @brief Convection in y direction using donor-cell scheme
+     * (with the global value of _gamma, from the last constructor call)
      *
      * @param[in] x-velocity field
      * @param[in] y-velocity field
@@ -54,7 +56,8 @@ class Discretization {
     static double convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j);
 
     /**
-     * @brief Convection in x direction using donor-cell scheme
+     * @brief Heat-Convection in x direction (i.e. d(uT)/dx) using donor-cell scheme
+     * (with the global value of _gamma, from the last constructor call)
      *
      * @param[in] x-velocity field
      * @param[in] y-velocity field
@@ -66,7 +69,8 @@ class Discretization {
     static double convection_u_T(const Matrix<double> &U, const Matrix<double> &T, int i, int j);
 
     /**
-     * @brief Convection in x direction using donor-cell scheme
+     * @brief Heat-Convection in y direction (i.e. d(vT)/dy) using donor-cell scheme 
+     * (with the global value of _gamma, from the last constructor call)
      *
      * @param[in] x-velocity field
      * @param[in] y-velocity field

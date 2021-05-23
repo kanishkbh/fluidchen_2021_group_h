@@ -76,7 +76,7 @@ void Fields::calculate_velocities(Grid &grid) {
     int jmax = grid.jmax();
     int imax = grid.imax();
 
-    for (const cell_ptr : grid.fluid_cells()) {
+    for (auto cell_ptr : grid.fluid_cells()) {
         int i = cell_ptr->i();
         int j = cell_ptr->j();
         _U(i,j) = _F(i,j) - kappa1*(_P(i+1,j)-_P(i,j));
