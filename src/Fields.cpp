@@ -28,27 +28,27 @@ void Fields::calculate_fluxes(Grid &grid) {
     int jmax = grid.jmax();
 
 //-----------------------------------------------------------------------------------------------------------
-// F computation 
-    for(auto j = 1; j <= jmax; j++){
-        for(auto i=1; i < imax; ++i){
-        _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
+
+
+    for (auto cell : grid.fluid_cells()) {
+        auto i = cell->i();
+        auto j = cell->j();
+        //If it's a boundary, leave it to the BCs
+        if (cell->neighbour(border_position::RIGHT)->type() == cell_type::FLUID)
+        {
+            _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
                                  - Discretization::convection_u(_U,_V,i,j) + _gx 
                                  - _gx * _beta * 0.5*(_T(i,j) + _T(i+1, j)));
         }
-    }
-
-
-//-----------------------------------------------------------------------------------------------------------    
-// G computation         
-    for(auto j=1; j<jmax; ++j){
-        for(auto i=1; i<=imax; ++i){        
-        _G(i,j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j))
+        if (cell->neighbour(border_position::TOP)->type() == cell_type::FLUID)
+        {
+            _G(i,j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j))
                                  -Discretization::convection_v(_U,_V,i,j) + _gy
                                  - _gy * _beta * 0.5 *(_T(i,j) + _T(i, j+1)));
         }
+        
     }
 
-//-----------------------------------------------------------------------------------------------------------
 }
 
 void Fields::calculate_T(Grid &grid) {
@@ -80,11 +80,12 @@ void Fields::calculate_rs(Grid &grid) {
     double idt = 1/_dt;
     double idx = 1/grid.dx();
     double idy = 1/grid.dy();
-    for(auto j=1;j<=grid.jmax();++j){
-        for(auto i=1;i<=grid.imax();++i){
-            _RS(i,j) = idt*( idx*(_F(i,j)-_F(i-1,j)) + idy*(_G(i,j)-_G(i,j-1)) );
-        }
-    } 
+
+    for (auto cell : grid.fluid_cells()) {
+        auto i = cell->i();
+        auto j = cell->j();
+        _RS(i,j) = idt*( idx*(_F(i,j)-_F(i-1,j)) + idy*(_G(i,j)-_G(i,j-1)) );
+    }
 }
 //-----------------------------------------------------------------------------------------------------------
 // Compute velocity updates 
