@@ -100,16 +100,6 @@ class Discretization {
      */
     static double sor_helper(const Matrix<double> &P, int i, int j);
 
-    /**
-     * @brief Linear interpolation
-     *
-     * @param[in] data to be interpolated
-     * @param[in] x index
-     * @param[in] y index
-     * @param[out] result
-     *
-     */
-    static double interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset);
 
   private:
     static double _dx;
