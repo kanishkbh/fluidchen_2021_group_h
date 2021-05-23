@@ -1,9 +1,9 @@
 ![](FluidchenLogo.png)
 
 ### What this (solver) is and is not.  
-        This is a solver for incompressible Navier Stokes equations that is not essentially dimensionless. (More on the equation to follow.)
-        It includes provision for doing coupled temperature simulation, in the domain of flow where advection is negligible. 
-        Any scenario besides the ones mentioned, is beyond the scope of this solver. 
+This is a solver for incompressible Navier Stokes equations that is not essentially dimensionless. (More on the equation to follow.)
+It includes provision for doing coupled temperature simulation, in the domain of flow where advection is negligible. 
+Any scenario besides the ones mentioned, is beyond the scope of this solver. 
 
 ## Building
 After cloning the repo, navigate to the directory 'fluidchen-skeleton' and build the files as follows:
