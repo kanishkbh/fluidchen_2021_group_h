@@ -18,7 +18,7 @@ class Boundary {
      *
      * @param[in] Field to be applied
      */
-    virtual void apply(Fields &field) = 0;
+    virtual void apply(Fields &field, bool pressure_only = false) = 0;
     virtual ~Boundary() = default;
 };
 
@@ -35,7 +35,7 @@ class MovingWallBoundary : public Boundary {
     MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity);
 
     virtual ~MovingWallBoundary() = default;
-    virtual void apply(Fields &field);
+    virtual void apply(Fields &field, bool pressure_only = false);
 
   private:
     std::vector<Cell *> _cells;
@@ -64,7 +64,7 @@ class InflowBoundary : public Boundary {
   public:
     InflowBoundary(std::vector<Cell *> cells, double u_in, double v_in);
     virtual ~InflowBoundary() = default;
-    virtual void apply(Fields &field);
+    virtual void apply(Fields &field, bool pressure_only = false);
 
   private:
     std::vector<Cell *> _cells;
@@ -78,7 +78,7 @@ class OutFlowBoundary : public Boundary {
   public:
     OutFlowBoundary(std::vector<Cell *> cells, double pressure);
     virtual ~OutFlowBoundary() = default;
-    virtual void apply(Fields &field);
+    virtual void apply(Fields &field, bool pressure_only = false);
 
   private:
     std::vector<Cell *> _cells;
@@ -92,7 +92,7 @@ class TemperatureDirichlet : public Boundary {
   public:
     TemperatureDirichlet(std::vector<Cell *> cells, double temp);
     virtual ~TemperatureDirichlet() = default;
-    virtual void apply(Fields &field);
+    virtual void apply(Fields &field, bool pressure_only = false);
 
   private:
     std::vector<Cell *> _cells;
@@ -106,7 +106,7 @@ class TemperatureAdiabatic : public Boundary {
   public:
     TemperatureAdiabatic(std::vector<Cell *> cells);
     virtual ~TemperatureAdiabatic() = default;
-    virtual void apply(Fields &field);
+    virtual void apply(Fields &field, bool pressure_only = false);
 
   private:
     std::vector<Cell *> _cells;

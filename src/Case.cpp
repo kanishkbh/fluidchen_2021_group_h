@@ -257,7 +257,7 @@ void Case::simulate() {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
             // Apply the Boundary conditions (again, despite being redundant on velocity)
             for (auto& boundary_ptr : _boundaries) {
-                boundary_ptr->apply(_field);
+                boundary_ptr->apply(_field, true);
             }
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
