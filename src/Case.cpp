@@ -20,6 +20,8 @@ namespace filesystem = std::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
+
+std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
 //-----------------------------------------------------------------------------------------------------------
 
 Case::Case(std::string file_name, int argn, char **args) {
@@ -106,7 +108,7 @@ Case::Case(std::string file_name, int argn, char **args) {
 //-----------------------------------------------------------------------------------------------------------
     std::map<int, double> wall_vel;
     //Should be deprecated soon
-    if (_geom_name.compare("NONE") == 0) {
+    if (_geom_name.compare(lid_path) == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
 //-----------------------------------------------------------------------------------------------------------
@@ -374,7 +376,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 }
 
 void Case::setupBoundaryConditions() {
-    if (_geom_name.compare("NONE") == 0) {
+    if (_geom_name.compare(lid_path) == 0) {
         if (not _grid.moving_wall_cells().empty()) {
             _boundaries.push_back(
                 std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));

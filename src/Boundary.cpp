@@ -123,7 +123,11 @@ void MovingWallBoundary::apply(Fields &field, bool pressure_only) {
                     break;
                 }
             }
-        } else {
+        }
+        else if(this_cell->borders().size()==0){
+            continue; 
+        }
+        else {
             throw std::runtime_error("Invalid BC : obstacle with invalid borders number");
         }
     }

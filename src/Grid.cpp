@@ -8,14 +8,15 @@
 #include <vector>
 #include <cassert>
 
+
 //-----------------------------------------------------------------------------------------------------------
 Grid::Grid(std::string geom_name, Domain &domain) {
 
     _domain = domain;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
-
-    if (geom_name.compare("NONE")) {
+    std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
+    if (geom_name.compare(lid_path)) {
         std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                     std::vector<int>(_domain.domain_size_y + 2, 0));
         parse_geometry_file(geom_name, geometry_data);
