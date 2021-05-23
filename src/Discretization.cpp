@@ -85,9 +85,9 @@ double Discretization::convection_u_T(const Matrix<double> &U, const Matrix<doub
     
 
     /* Without donor cell */
-	double d_uT_1 = 0.5 * idx * (u * (t + t_right) + u_left * (t_left + t));
+	double d_uT_1 = 0.5 * idx * (u * (t + t_right) - u_left * (t_left + t));
     /* Donor cell contribution */
-    double d_uT_2 = 0.5 * idx * _gamma * (fabs(u) * (t - t_right) + fabs(u_left) * (t_left - t));
+    double d_uT_2 = 0.5 * idx * _gamma * (fabs(u) * (t - t_right) - fabs(u_left) * (t_left - t));
 
 
 
@@ -109,9 +109,9 @@ double Discretization::convection_v_T(const Matrix<double> &V, const Matrix<doub
     
 
     /* Without donor cell */
-	double d_vT_1 = 0.5 * idy * (v * (t + t_top) + v_bottom * (t_bottom + t));
+	double d_vT_1 = 0.5 * idy * (v * (t + t_top) - v_bottom * (t_bottom + t));
     /* Donor cell contribution */
-    double d_vT_2 = 0.5 * idy * _gamma * (fabs(v) * (t - t_top) + fabs(v_bottom) * (t_bottom - t));
+    double d_vT_2 = 0.5 * idy * _gamma * (fabs(v) * (t - t_top) - fabs(v_bottom) * (t_bottom - t));
 
 
 

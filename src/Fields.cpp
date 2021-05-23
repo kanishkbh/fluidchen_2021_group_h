@@ -118,7 +118,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k1 = (0.5/_nu) * 1/(1/(dx*dx)+(1/dy*dy));
         double k2 = dx/(_U.max() + 1e-8); //Epsilon to ensure no division by 0
         double k3 = dy/(_V.max() + 1e-8);
-        double k4 = (0.5/_alpha) * 1/(1/(dx*dx)+(1/dy*dy));
+        double k4 = (0.5/_alpha) * 1/((1/(dx*dx))+(1/(dy*dy)));
         _dt = _tau * std::min({k1, k2, k3, k4});
         
         return _dt;
