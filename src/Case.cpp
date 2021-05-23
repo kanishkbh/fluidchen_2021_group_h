@@ -338,19 +338,28 @@ void Case::output_vtk(int timestep, int my_rank) {
     Temperature->SetName("temperature");
     Temperature->SetNumberOfComponents(1);
 
-
     // Velocity Array
     vtkDoubleArray *Velocity = vtkDoubleArray::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
-    // Print pressure and temperature from bottom to top
+    // Geometry Array (Worksheet 2)
+    // TODO: see if there's a IntArray instead of DoubleArray
+    vtkDoubleArray *Geometry = vtkDoubleArray::New();
+    Geometry->SetName("geometry");
+    Geometry->SetNumberOfComponents(1);
+
+    // Print pressure , temperature and geometry from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);
             double temperature = _field.t(i,j);         // worksheet 2
             Temperature->InsertNextTuple(&temperature); // worksheet 2
+            float geometry = (int)_grid.cell(i,j).type(); // worksheet 2
+            Geometry->InsertNextTuple(&geometry);       // worksheet 2
+            // TODO: For Efficiency, Geometry need not be printed afresh in every time step. 
+            // Take it out of here and put in Case constructor.
         }
     }
 
@@ -376,6 +385,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Add Temperature to Structured Grid (worksheet 2)
     structuredGrid->GetCellData()->AddArray(Temperature);
 
+    // Add Geometry to Structured Grid (worksheet 2)
+    structuredGrid->GetCellData()->AddArray(Geometry);
 
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
