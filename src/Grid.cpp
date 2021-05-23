@@ -23,7 +23,7 @@ Grid::Grid(std::string geom_name, Domain &domain) {
         parse_geometry_file(geom_name, geometry_data);
         assign_cell_types(geometry_data);
     } else {
-        std::cerr << "Building LidDrivenCavity (default)." << std::endl;
+        std::cerr << "No geometry file given in .dat file. Building rectangular domain (Lid Driven Cavity) without obstacles." << std::endl;
         build_lid_driven_cavity();
     }
 }
