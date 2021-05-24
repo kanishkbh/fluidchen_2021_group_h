@@ -1,7 +1,7 @@
 #--------------------------------------------
 #           geometry file            
 #--------------------------------------------
-geo_file    ChannelWithObstacle.pgm
+geo_file    HydroStatic.pgm
 
 iproc       1
 jproc       1
@@ -25,14 +25,14 @@ jmax        80
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           1
-t_end        1
+t_end        5
 tau          -1
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     5.0
+dt_value     0.5
 
 #--------------------------------------------
 #               pressure
