@@ -85,24 +85,23 @@ void MovingWallBoundary::apply(Fields &field, bool pressure_only) {
             // what = 4 -> TB
             // what = 5 -> LR
             int what;
-            auto &b = this_cell->borders();
-            if ( (std::find(b.begin(), b.end(), border_position::TOP) != b.end()) && 
-                  std::find(b.begin(), b.end(), border_position::RIGHT) != b.end())
+            if ( this_cell->is_border(border_position::TOP) && 
+                  this_cell->is_border(border_position::RIGHT))
                 what = 0;
-            else if ( (std::find(b.begin(), b.end(), border_position::TOP) != b.end()) && 
-                       std::find(b.begin(), b.end(), border_position::LEFT) != b.end())
+            else if ( this_cell->is_border(border_position::TOP) && 
+                       this_cell->is_border(border_position::LEFT))
                 what = 1;
-            else if ( (std::find(b.begin(), b.end(), border_position::BOTTOM) != b.end()) && 
-                       std::find(b.begin(), b.end(), border_position::RIGHT) != b.end())
+            else if ( this_cell->is_border(border_position::BOTTOM) && 
+                       this_cell->is_border(border_position::RIGHT))
                 what = 2;
-            else if ( (std::find(b.begin(), b.end(), border_position::BOTTOM) != b.end()) && 
-                       std::find(b.begin(), b.end(), border_position::LEFT) != b.end())
+            else if ( this_cell->is_border(border_position::BOTTOM) && 
+                       this_cell->is_border(border_position::LEFT))
                 what = 3;
-            else if ( (std::find(b.begin(), b.end(), border_position::TOP) != b.end()) && 
-                       std::find(b.begin(), b.end(), border_position::BOTTOM) != b.end())
+            else if ( this_cell->is_border(border_position::TOP) && 
+                       this_cell->is_border(border_position::BOTTOM))
                 what = 4;
-            else if ( (std::find(b.begin(), b.end(), border_position::LEFT) != b.end()) && 
-                       std::find(b.begin(), b.end(), border_position::RIGHT) != b.end())
+            else if ( this_cell->is_border(border_position::LEFT) && 
+                       this_cell->is_border(border_position::RIGHT))
                 what = 5;
             else
                 throw std::runtime_error("Two-Borders classification error.");
