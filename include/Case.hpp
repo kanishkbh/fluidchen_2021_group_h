@@ -60,8 +60,20 @@ class Case {
     std::unique_ptr<PressureSolver> _pressure_solver;
     std::vector<std::unique_ptr<Boundary>> _boundaries;
 
+    // Boundary conditions parameters
+    double _wall_velocity, _u_in, _v_in, _p_i;
+    // Temperature BC
+    double _T_IN{0}, _moving_wall_temp{0};
+    std::map<cell_type, double> _fixed_wall_temp;
+    // Inflow parameters
+    bool _use_pressure_input = false;
+    double _P_IN{0};
+    // Use energy ?
+    bool _use_energy = false;
+
     /// Solver convergence tolerance
     double _tolerance;
+    
 
     /// Maximum number of iterations for the solver
     int _max_iter;
@@ -95,4 +107,7 @@ class Case {
     void output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts);
 
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
+
+    // Utility function to fill _boundaries
+    void setupBoundaryConditions();
 };

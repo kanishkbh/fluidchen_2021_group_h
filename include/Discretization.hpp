@@ -20,17 +20,8 @@ class Discretization {
     Discretization(double dx, double dy, double gamma);
 
     /**
-     * @brief Diffusion discretization in 2D using central differences
-     *
-     * @param[in] data to be discretized
-     * @param[in] x index
-     * @param[in] y index
-     *
-     */
-    static double diffusion(const Matrix<double> &A, int i, int j);
-
-    /**
      * @brief Convection in x direction using donor-cell scheme
+     * (with the global value of _gamma, from the last constructor call)
      *
      * @param[in] x-velocity field
      * @param[in] y-velocity field
@@ -43,6 +34,7 @@ class Discretization {
 
     /**
      * @brief Convection in y direction using donor-cell scheme
+     * (with the global value of _gamma, from the last constructor call)
      *
      * @param[in] x-velocity field
      * @param[in] y-velocity field
@@ -52,6 +44,32 @@ class Discretization {
      *
      */
     static double convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j);
+
+    /**
+     * @brief Heat-Convection in x direction (i.e. d(uT)/dx) using donor-cell scheme
+     * (with the global value of _gamma, from the last constructor call)
+     *
+     * @param[in] x-velocity field
+     * @param[in] y-velocity field
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double convection_u_T(const Matrix<double> &U, const Matrix<double> &T, int i, int j);
+
+    /**
+     * @brief Heat-Convection in y direction (i.e. d(vT)/dy) using donor-cell scheme 
+     * (with the global value of _gamma, from the last constructor call)
+     *
+     * @param[in] x-velocity field
+     * @param[in] y-velocity field
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double convection_v_T(const Matrix<double> &V, const Matrix<double> &T, int i, int j);
 
     /**
      * @brief Laplacian term discretization using central difference
@@ -76,16 +94,6 @@ class Discretization {
      */
     static double sor_helper(const Matrix<double> &P, int i, int j);
 
-    /**
-     * @brief Linear interpolation
-     *
-     * @param[in] data to be interpolated
-     * @param[in] x index
-     * @param[in] y index
-     * @param[out] result
-     *
-     */
-    static double interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset);
 
   private:
     static double _dx;
