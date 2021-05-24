@@ -278,7 +278,7 @@ void OutFlowBoundary::apply(Fields &field, bool pressure_only) {
                 if (!pressure_only)
                     {
                         field.v(i, j) = field.v(i, j + 1);
-                        fielg.g(i, j) = field.v(i, j);
+                        field.g(i, j) = field.v(i, j);
                     }
                 field.p(i, j) = 2 * _pressure - field.p(i, j + 1);
                 break;
