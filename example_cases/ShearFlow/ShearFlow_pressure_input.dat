@@ -1,22 +1,19 @@
 #--------------------------------------------
 #           geometry file            
 #--------------------------------------------
-geo_file    HydroStatic.pgm
-
-iproc       1
-jproc       1
+geo_file     ShearFlow.pgm
 
 #--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
-xlength      1
-ylength      10
+xlength      10
+ylength      2
 
 #--------------------------------------------
 #            number of cells
 #--------------------------------------------
-imax        4
-jmax        80
+imax         100
+jmax         20
 
 #--------------------------------------------
 #               time steps
@@ -24,61 +21,61 @@ jmax        80
 # t_end: final time
 # tau: safety factor for time step size control
 #--------------------------------------------
-dt           1
-t_end        5
-tau          -1
+dt           0.05
+t_end        30
+tau          0.45
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     0.5
+dt_value     0.1
 
 #--------------------------------------------
 #               pressure
-# itermax: maximum number of pressure iterations
-# eps: tolerance for pressure iteration (residual < eps)
-# omg: relaxation factor for SOR
-# gamma: upwind differencing factor
 #--------------------------------------------
-itermax      50000
+itermax      500
 eps          0.001
 omg          1.7
 gamma        0.5
 
 #--------------------------------------------
-#     kinematic viscosity
+#         kinematic viscosity
 #--------------------------------------------
-nu        0.001
+nu           0.2
 
 #--------------------------------------------
-#        gravity / external forces
+#        gravity
 #--------------------------------------------
-GX          0
-GY          -10
+GX           0.0
+GY           0.0
 
 #--------------------------------------------
 #         initial pressure
 #--------------------------------------------
-PI          0
+PI           0.0
 
 #--------------------------------------------
 #       initial velocity
 #--------------------------------------------
-UI          0
-VI          0
-
+use_pressure_input 1
+UI           0.0
+VI           0.0
+PIN			 10.0
 #--------------------------------------------
 #       inlet velocity
 #--------------------------------------------
-UIN          1.0
-VIN          0
+UIN          1.0 
+VIN          0.0
+#--------------------------------------------
+#          energy
+# TI:     initial temperature
+# beta:   thermal expansion coefficient
+# alpha:  thermal diffusivity (nu/Pr)
+#--------------------------------------------
+energy_eq    off
+TI           0.0
+beta         0.0
+alpha        0.0
 
-#--------------------------------------------
-#          wall clusterss
-# num_of_walls:     number of walls
-# wall_temp<num>    wall temperature
-# - enter -1 for adiabatic wall
-#--------------------------------------------
-num_of_walls            1
-wall_vel_3              0
+
