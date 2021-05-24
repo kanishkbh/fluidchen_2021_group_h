@@ -53,6 +53,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double VIN;          /* Inlet vertical velocity */
     double in_temp;      /* Inlet (Dirichlet) Temperature */
     int use_pressure{0}; /* If non-zero, use pressure BC instead of inflow velocity*/
+    std::string energy_eq; /* If "on", enable heat transfer */
 
     if (file.is_open()) {
 
@@ -99,10 +100,11 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "wall_temp_7") file >> _fixed_wall_temp[cell_type::FIXED_WALL_7];
                 if (var == "use_pressure_input") file >> use_pressure;
                 if (var == "PIN") file >> _P_IN;
+                if (var == "energy_eq") file >> energy_eq;
             }
         }
     }
-    
+
     else {
         std::cerr << "Couldn't open file " << file_name << ". Aborting." << std::endl;
         exit(EXIT_FAILURE);
@@ -110,11 +112,16 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     file.close();
 
-    // Update the boolean for pressure input
+    // Update the boolean for pressure input and heat equation
+    if (energy_eq == "on") {
+        std::cout << "Enabling heat transfer." << std::endl;
+        _use_energy = true;
+    } else {
+        std::cout << "Heat transfer disabled." << std::endl;
+    }
     _use_pressure_input = (use_pressure != 0);
 
-
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
     std::map<int, double> wall_vel;
     //Should be deprecated soon
     if (_geom_name.compare("NONE") == 0) {
@@ -253,7 +260,9 @@ void Case::simulate() {
         }
         
         //Update temperatures
-        _field.calculate_T(_grid);
+        // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
+        if (_use_energy)
+            _field.calculate_T(_grid);
         
 
         // Fluxes (with *new* temperatures)
@@ -340,8 +349,10 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Temperature Array (Worksheet 2): implemented analogous to pressure array
     vtkDoubleArray *Temperature = vtkDoubleArray::New();
-    Temperature->SetName("temperature");
-    Temperature->SetNumberOfComponents(1);
+    if (_use_energy) {
+        Temperature->SetName("temperature");
+        Temperature->SetNumberOfComponents(1);
+    }
 
     // Velocity Array
     vtkDoubleArray *Velocity = vtkDoubleArray::New();
@@ -354,17 +365,27 @@ void Case::output_vtk(int timestep, int my_rank) {
     Geometry->SetName("geometry");
     Geometry->SetNumberOfComponents(1);
 
-    // Print pressure , temperature and geometry from bottom to top
+    // Print pressure and geometry from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);
-            double temperature = _field.t(i,j);         // worksheet 2
-            Temperature->InsertNextTuple(&temperature); // worksheet 2
-            float geometry = (int)_grid.cell(i,j).type(); // worksheet 2
-            Geometry->InsertNextTuple(&geometry);       // worksheet 2
-            // TODO: For Efficiency, Geometry need not be printed afresh in every time step. 
+
+            float geometry = (int)_grid.cell(i, j).type(); // worksheet 2
+            Geometry->InsertNextTuple(&geometry);          // worksheet 2
+            // TODO: For Efficiency, Geometry need not be printed afresh in every time step.
             // Take it out of here and put in Case constructor.
+        }
+    }
+
+    // Print temperature
+    if (_use_energy) {
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+
+                double temperature = _field.t(i, j);        // worksheet 2
+                Temperature->InsertNextTuple(&temperature); // worksheet 2
+            }
         }
     }
 
@@ -388,7 +409,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->GetPointData()->AddArray(Velocity);
 
     // Add Temperature to Structured Grid (worksheet 2)
-    structuredGrid->GetCellData()->AddArray(Temperature);
+    if (_use_energy)
+        structuredGrid->GetCellData()->AddArray(Temperature);
 
     // Add Geometry to Structured Grid (worksheet 2)
     structuredGrid->GetCellData()->AddArray(Geometry);

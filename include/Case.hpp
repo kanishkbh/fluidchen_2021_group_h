@@ -68,6 +68,8 @@ class Case {
     // Inflow parameters
     bool _use_pressure_input = false;
     double _P_IN{0};
+    // Use energy ?
+    bool _use_energy = false;
 
     /// Solver convergence tolerance
     double _tolerance;
