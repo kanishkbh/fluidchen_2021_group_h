@@ -11,6 +11,3 @@ Makefile
 doxygen_doc
 compile_commands.json
 .clangd
-sexample_cases
-
-

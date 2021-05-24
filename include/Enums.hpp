@@ -17,16 +17,6 @@ enum class border_position {
     RIGHT,
 };
 
-enum GeometryType {
-    obstacle_id,
-    fluid_outlet,
-    fluid_inlet_v,
-    fluid_inlet_u,
-    inlet_temp,
-    fluid_interior,
-};
-
-
 namespace border {
 const int TOP = 0;
 const int BOTTOM = 1;
@@ -37,13 +27,7 @@ const int RIGHT = 3;
 enum class cell_type {
 
     FLUID,
-    INFLOW,
-    OUTFLOW,
-    FIXED_WALL_3,
-    FIXED_WALL_4,
-    FIXED_WALL_5,
-    FIXED_WALL_6,
-    FIXED_WALL_7,
+    FIXED_WALL,
     MOVING_WALL,
     DEFAULT
 };
