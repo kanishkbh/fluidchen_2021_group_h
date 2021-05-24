@@ -452,7 +452,7 @@ void Case::setupBoundaryConditions() {
         std::vector<Cell *> fixed_outer_walls;
         for (auto cell_ptr : _grid.fixed_wall_cells()) {
             if (cell_ptr->borders().size() > 2)
-                throw std::runtime_error("A boundary cell has too may fluid cells as neighbor !");
+                throw std::runtime_error("A boundary cell has too may fluid cells as neighbors !\n Check input geometry file for Forbidden cells.(Three or more neighbours)");
             else if (cell_ptr->borders().size() > 0)
                 fixed_outer_walls.push_back(cell_ptr);
             
