@@ -65,9 +65,13 @@ class Case {
     // Temperature BC
     double _T_IN{0}, _moving_wall_temp{0};
     std::map<cell_type, double> _fixed_wall_temp;
+    // Inflow parameters
+    bool _use_pressure_input = false;
+    double _P_IN{0};
 
     /// Solver convergence tolerance
     double _tolerance;
+    
 
     /// Maximum number of iterations for the solver
     int _max_iter;

@@ -30,29 +30,29 @@ Case::Case(std::string file_name, int argn, char **args) {
     // _geom_name = file_name.substr(0, file_name.length()-4) + _geom_name;
     
     std::ifstream file(file_name);
-    double nu;      /* viscosity   */
-    double UI;      /* velocity x-direction */
-    double VI;      /* velocity y-direction */
-    double TI;      /* Initial temperature */
-    double beta;    /* Thermal expansion coefficient */
-    double alpha{0};/* Heat diffusivity */
-    double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
-    double xlength; /* length of the domain x-dir.*/
-    double ylength; /* length of the domain y-dir.*/
-    double dt;      /* time step */
-    int imax;       /* number of cells x-direction*/
-    int jmax;       /* number of cells y-direction*/
-    double gamma;   /* uppwind differencing factor*/
-    double omg;     /* relaxation factor */
-    double tau;     /* safety factor for time step*/
-    int itermax;    /* max. number of iterations for pressure per time step */
-    double eps;     /* accuracy bound for pressure*/
-    double UIN;     /* Inlet horizontal velocity */
-    double VIN;     /* Inlet vertical velocity */
-    double in_temp; /* Inlet (Dirichlet) Temperature */
-
+    double nu;           /* viscosity   */
+    double UI;           /* velocity x-direction */
+    double VI;           /* velocity y-direction */
+    double TI;           /* Initial temperature */
+    double beta;         /* Thermal expansion coefficient */
+    double alpha{0};     /* Heat diffusivity */
+    double PI;           /* pressure */
+    double GX;           /* gravitation x-direction */
+    double GY;           /* gravitation y-direction */
+    double xlength;      /* length of the domain x-dir.*/
+    double ylength;      /* length of the domain y-dir.*/
+    double dt;           /* time step */
+    int imax;            /* number of cells x-direction*/
+    int jmax;            /* number of cells y-direction*/
+    double gamma;        /* uppwind differencing factor*/
+    double omg;          /* relaxation factor */
+    double tau;          /* safety factor for time step*/
+    int itermax;         /* max. number of iterations for pressure per time step */
+    double eps;          /* accuracy bound for pressure*/
+    double UIN;          /* Inlet horizontal velocity */
+    double VIN;          /* Inlet vertical velocity */
+    double in_temp;      /* Inlet (Dirichlet) Temperature */
+    int use_pressure{0}; /* If non-zero, use pressure BC instead of inflow velocity*/
 
     if (file.is_open()) {
 
@@ -97,6 +97,8 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "wall_temp_5") file >> _fixed_wall_temp[cell_type::FIXED_WALL_5];
                 if (var == "wall_temp_6") file >> _fixed_wall_temp[cell_type::FIXED_WALL_6];
                 if (var == "wall_temp_7") file >> _fixed_wall_temp[cell_type::FIXED_WALL_7];
+                if (var == "use_pressure_input") file >> use_pressure;
+                if (var == "PIN") file >> _P_IN;
             }
         }
     }
@@ -107,6 +109,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
 
     file.close();
+
+    // Update the boolean for pressure input
+    _use_pressure_input = (use_pressure != 0);
 
 
 //-----------------------------------------------------------------------------------------------------------
@@ -430,7 +435,12 @@ void Case::setupBoundaryConditions() {
          * */
         if (not _grid.inflow_cells().empty()) {
 
-            _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), _u_in, _v_in));
+            if (_use_pressure_input) {
+                _boundaries.push_back(std::make_unique<OutFlowBoundary>(_grid.inflow_cells(), _P_IN));
+            }
+            else {
+                _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), _u_in, _v_in));
+            }
             _boundaries.push_back(std::make_unique<TemperatureDirichlet>(_grid.inflow_cells(), _T_IN));
         }
 
