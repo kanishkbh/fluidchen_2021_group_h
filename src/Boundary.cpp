@@ -76,52 +76,101 @@ void MovingWallBoundary::apply(Fields &field, bool pressure_only) {
         } else if (this_cell->borders().size() == 2) {
             // NB : pressure is taken as average ! => We set it to 0 then add two halves
             field.p(i, j) = 0;
-            for (const auto &border : this_cell->borders()) {
-                int i_n = this_cell->neighbour(border)->i();
-                int j_n = this_cell->neighbour(border)->j();
+            
+            /// neighbor set classification:
+            // what = 0 -> TR
+            // what = 1 -> TL
+            // what = 2 -> BR
+            // what = 3 -> BL
+            // what = 4 -> TB
+            // what = 5 -> LR
+            int what;
+            if ( this_cell->is_border(border_position::TOP) && 
+                  this_cell->is_border(border_position::RIGHT))
+                what = 0;
+            else if ( this_cell->is_border(border_position::TOP) && 
+                       this_cell->is_border(border_position::LEFT))
+                what = 1;
+            else if ( this_cell->is_border(border_position::BOTTOM) && 
+                       this_cell->is_border(border_position::RIGHT))
+                what = 2;
+            else if ( this_cell->is_border(border_position::BOTTOM) && 
+                       this_cell->is_border(border_position::LEFT))
+                what = 3;
+            else if ( this_cell->is_border(border_position::TOP) && 
+                       this_cell->is_border(border_position::BOTTOM))
+                what = 4;
+            else if ( this_cell->is_border(border_position::LEFT) && 
+                       this_cell->is_border(border_position::RIGHT))
+                what = 5;
+            else
+                throw std::runtime_error("Two-Borders classification error.");
 
-                switch (border) {
-                case border_position::BOTTOM:
-                    if (!pressure_only) {
-                        field.v(i, j - 1) = 0;
-                        field.g(i, j - 1) = field.v(i, j - 1);
-                    }
-
-                    field.p(i, j) += 0.5 * field.p(i, j - 1);
-
-                    break;
-
-                case border_position::TOP:
-                    if (!pressure_only) {
-                        field.v(i, j) = 0;
-                        field.g(i, j) = field.v(i, j);
-                    }
-                    field.p(i, j) += 0.5 * field.p(i, j + 1);
-
-                    break;
-
-                case border_position::LEFT:
-                    if (!pressure_only) {
-                        field.u(i - 1, j) = 0;
-                        field.f(i - 1, j) = field.u(i - 1, j);
-                    }
-                    field.p(i, j) += 0.5 * field.p(i - 1, j);
-                    break;
-
-                case border_position::RIGHT:
-                    if (!pressure_only) {
-                        field.u(i, j) = 0;
-                        field.f(i, j) = field.u(i, j);
-                    }
-                    field.p(i, j) += 0.5 * field.p(i + 1, j);
-
-                    break;
-
-                default:
-                    throw std::runtime_error("Unknown border type !");
-                    break;
+            switch (what) {
+            case 0: // TOP and RIGHT fluid neighbours
+                if (!pressure_only) {
+                    field.u(i, j) = 0;
+                    field.v(i, j) = 0;
+                    field.u(i-1, j) = -field.u(i-1,j+1);
+                    field.v(i,j-1)  = -field.v(i+1,j-1);
+                    field.g(i,j) = field.v(i,j);
+                    field.f(i,j) = field.u(i,j);
                 }
+                field.p(i, j) = 0.5 * ( field.p(i,j+1) + field.p(i+1,j) );
+
+                break;
+
+            case 1: // TOP and LEFT fluid neighbours
+                if (!pressure_only) {
+                    field.u(i-1, j) = 0;
+                    field.v(i, j) = 0;
+                    field.u(i, j) = -field.u(i,j+1);
+                    field.v(i,j-1)  = -field.v(i-1,j-1);
+                    field.g(i,j) = field.v(i,j);
+                    field.f(i,j) = field.u(i,j);
+                }
+                field.p(i,j) = 0.5 * ( field.p(i,j+1) + field.p(i+1,j) );
+
+                break;
+
+            case 2: // BOTTOM and RIGHT fluid
+                if (!pressure_only) {
+                    field.u(i-1, j) = 0;
+                    field.v(i,j) = 0;
+                    field.u(i,j) = -field.u(i,j+1);
+                    field.v(i,j-1)  = -field.v(i-1,j-1);
+                    field.g(i,j) = field.v(i,j);
+                    field.f(i,j) = field.u(i,j);
+                }
+                field.p(i,j) = 0.5 * ( field.p(i,j+1) + field.p(i+1,j) );
+
+                break;
+
+            case 3: // BOTTOM and LEFT fluid
+                if (!pressure_only) {
+                    field.u(i,j) = 0;
+                    field.v(i,j-1) = 0;
+                    field.u(i-1,j) = -field.u(i-1,j-1);
+                    field.v(i,j)  = -field.v(i+1,j);
+                    field.g(i,j) = field.v(i,j);
+                    field.f(i,j) = field.u(i,j);
+                }
+                field.p(i,j) = 0.5 * ( field.p(i,j-1) + field.p(i+1,j) );
+                break;
+
+            case 4: // TOP and BOTTOM fluid
+                throw std::runtime_error("one cell thick wall not allowed !");
+                break;
+
+            case 5: // LEFT and RIGHT fluid
+                throw std::runtime_error("one cell thick wall not allowed !"); 
+                break;
+
+            default:
+                throw std::runtime_error("Unknown border type !");
+                break;
             }
+            
         }
         else if(this_cell->borders().size()==0){
             continue; 
@@ -211,36 +260,50 @@ void OutFlowBoundary::apply(Fields &field, bool pressure_only) {
             throw std::runtime_error("Outflow must only have one neighboring fluid cell.");
         //field.p(i, j) = _pressure;
 
-        if (!pressure_only) {
-            for (const auto &border : this_cell->borders()) {
-                int i_n = this_cell->neighbour(border)->i();
-                int j_n = this_cell->neighbour(border)->j();
+        for (const auto &border : this_cell->borders()) {
+            int i_n = this_cell->neighbour(border)->i();
+            int j_n = this_cell->neighbour(border)->j();
 
-                switch (border) {
-                case border_position::BOTTOM:
-                    field.v(i, j - 1) = field.v(i, j - 2);
-                    field.p(i, j) = 2*_pressure - field.p(i, j - 1);
-                    break;
+            switch (border) {
+            case border_position::BOTTOM:
+                if (!pressure_only)
+                    {
+                        field.v(i, j - 1) = field.v(i, j - 2);
+                        field.g(i, j - 1) = field.v(i, j - 1);
+                    }
+                field.p(i, j) = 2 * _pressure - field.p(i, j - 1);
+                break;
 
-                case border_position::TOP:
-                    field.v(i, j) = field.v(i, j + 1);
-                    field.p(i, j) = 2*_pressure - field.p(i, j + 1);
-                    break;
+            case border_position::TOP:
+                if (!pressure_only)
+                    {
+                        field.v(i, j) = field.v(i, j + 1);
+                        field.g(i, j) = field.v(i, j);
+                    }
+                field.p(i, j) = 2 * _pressure - field.p(i, j + 1);
+                break;
 
-                case border_position::LEFT:
-                    field.u(i - 1, j) = field.u(i - 2, j);
-                    field.p(i, j) = 2*_pressure - field.p(i - 1, j);
-                    break;
+            case border_position::LEFT:
+                if (!pressure_only)
+                    {
+                        field.u(i - 1, j) = field.u(i - 2, j);
+                        field.f(i - 1, j) = field.u(i - 1, j);
+                    }
+                field.p(i, j) = 2 * _pressure - field.p(i - 1, j);
+                break;
 
-                case border_position::RIGHT:
-                    field.u(i, j) = field.u(i + 1, j);
-                    field.p(i, j) = 2*_pressure - field.p(i + 1, j);
-                    break;
+            case border_position::RIGHT:
+                if (!pressure_only)
+                    {
+                        field.u(i, j) = field.u(i + 1, j);
+                        field.f(i, j) = field.u(i,j);
+                    }
+                field.p(i, j) = 2 * _pressure - field.p(i + 1, j);
+                break;
 
-                default:
-                    throw std::runtime_error("Unknown border type !");
-                    break;
-                }
+            default:
+                throw std::runtime_error("Unknown border type !");
+                break;
             }
         }
     }
