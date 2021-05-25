@@ -127,35 +127,35 @@ void MovingWallBoundary::apply(Fields &field, bool pressure_only) {
                     field.u(i, j) = -field.u(i,j+1);
                     field.v(i,j-1)  = -field.v(i-1,j-1);
                     field.g(i,j) = field.v(i,j);
-                    field.f(i,j) = field.u(i,j);
+                    field.f(i-1,j) = field.u(i-1,j);
                 }
-                field.p(i,j) = 0.5 * ( field.p(i,j+1) + field.p(i+1,j) );
+                field.p(i,j) = 0.5 * ( field.p(i,j+1) + field.p(i-1,j) );
 
                 break;
 
             case 2: // BOTTOM and RIGHT fluid
                 if (!pressure_only) {
-                    field.u(i-1, j) = 0;
-                    field.v(i,j) = 0;
-                    field.u(i,j) = -field.u(i,j+1);
-                    field.v(i,j-1)  = -field.v(i-1,j-1);
-                    field.g(i,j) = field.v(i,j);
+                    field.u(i,j) = 0;
+                    field.v(i,j-1) = 0;
+                    field.u(i-1,j) = -field.u(i-1,j-1);
+                    field.v(i,j)  = -field.v(i+1,j);
+                    field.g(i,j-1) = field.v(i,j-1);
                     field.f(i,j) = field.u(i,j);
                 }
-                field.p(i,j) = 0.5 * ( field.p(i,j+1) + field.p(i+1,j) );
+                field.p(i,j) = 0.5 * ( field.p(i+1,j) + field.p(i,j-1) );
 
                 break;
 
             case 3: // BOTTOM and LEFT fluid
                 if (!pressure_only) {
-                    field.u(i,j) = 0;
+                    field.u(i-1,j) = 0;
                     field.v(i,j-1) = 0;
-                    field.u(i-1,j) = -field.u(i-1,j-1);
-                    field.v(i,j)  = -field.v(i+1,j);
-                    field.g(i,j) = field.v(i,j);
-                    field.f(i,j) = field.u(i,j);
+                    field.u(i,j) = -field.u(i,j-1);
+                    field.v(i,j)  = -field.v(i-1,j);
+                    field.g(i,j-1) = field.v(i,j-1);
+                    field.f(i-1,j) = field.u(i-1,j);
                 }
-                field.p(i,j) = 0.5 * ( field.p(i,j-1) + field.p(i+1,j) );
+                field.p(i,j) = 0.5 * ( field.p(i,j-1) + field.p(i-1,j) );
                 break;
 
             case 4: // TOP and BOTTOM fluid
