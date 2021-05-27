@@ -2,6 +2,7 @@
 #include "Enums.hpp"
 #include "PressureSolver.hpp"
 
+#include <mpi.h>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -54,6 +55,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double in_temp;      /* Inlet (Dirichlet) Temperature */
     int use_pressure{0}; /* If non-zero, use pressure BC instead of inflow velocity*/
     std::string energy_eq; /* If "on", enable heat transfer */
+    int iproc{1}, jproc{1};
 
     if (file.is_open()) {
 
@@ -101,23 +103,37 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "use_pressure_input") file >> use_pressure;
                 if (var == "PIN") file >> _P_IN;
                 if (var == "energy_eq") file >> energy_eq;
+                if (var == "iproc") file >> iproc;
+                if (var == "jproc") file >> jproc;
             }
         }
     }
-
     else {
         std::cerr << "Couldn't open file " << file_name << ". Aborting." << std::endl;
         exit(EXIT_FAILURE);
     }
 
+    // Check number of processes matches. If only one process, no partition.
+    int num_processes;
+    MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+    MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
+    assert (iproc * jproc == num_processes || num_processes = 1);
+    if (num_processes == 1) {
+        iproc = 1;
+        jproc = 1;
+    }
+
+    
     file.close();
 
     // Update the boolean for pressure input and heat equation
-    if (energy_eq == "on") {
-        std::cout << "Enabling heat transfer." << std::endl;
-        _use_energy = true;
-    } else {
-        std::cout << "Heat transfer disabled." << std::endl;
+    if (_rank == 0) {
+        if (energy_eq == "on") {
+            std::cout << "Enabling heat transfer." << std::endl;
+            _use_energy = true;
+        } else {
+            std::cout << "Heat transfer disabled." << std::endl;
+        }
     }
     _use_pressure_input = (use_pressure != 0);
 
@@ -434,6 +450,19 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
+
+    /* TODO : assign bounds */
+    if (_rank == 0) {
+
+        for (int ip = 0; ip < _iproc; ++ip) {
+            for (int jp = 0; jp < _jproc; ++jp)
+                {
+                    // Assign to process ip + iproc * jp the bounds of the reigion (ip, jp)
+                    // The will be used to build the geometry and become each case's imin/max and jmin/max on the matrices
+                }
+        }
+
+    }
 }
 
 void Case::setupBoundaryConditions() {
