@@ -459,6 +459,14 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                 {
                     // Assign to process ip + iproc * jp the bounds of the reigion (ip, jp)
                     // The will be used to build the geometry and become each case's imin/max and jmin/max on the matrices
+                    int target_rank = ip + _iproc * jp;
+
+                    /**
+                     * Handling rounding :
+                     * Let N be the number of internal cells on a row (i.e. not counting the outer boundaries)
+                     * Let P = iproc. Then N = L*P + r with L = floor(N/P) and k = N % P
+                     * The r first subdomains will have L+1 true cells (+ ghosts) and the (P-r) lasts will have L cells.
+                     */
                 }
         }
 
