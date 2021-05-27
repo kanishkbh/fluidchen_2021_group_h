@@ -2,7 +2,9 @@
 
 #include <vector>
 #include <cmath>        // std::abs
-
+#include <algorithm>
+#include <iostream>
+#include <iomanip>
 
 /**
  * @brief General 2D data structure around std::vector, in column
@@ -13,6 +15,51 @@ template <typename T> class Matrix {
 
   public:
     Matrix<T>() = default;
+
+    /**
+     * @brief Move constructor
+     * @param[in] Matrix from which data must be moved
+     * */
+    
+    Matrix<T>(Matrix<T>&& rhs) : _imax(rhs._imax), _jmax(rhs._jmax) {
+        _container = std::move(rhs._container);
+    }
+
+    /**
+     * @brief Copy constructor
+     * @param[in] Matrix from which data must be copied
+     * */
+    
+    Matrix<T>(const Matrix<T>& rhs) : _imax(rhs._imax), _jmax(rhs._jmax), _container(rhs._container) {
+    }
+
+    /**
+     * @brief Copy assignment
+     * @param[in] Matrix from which data must be copied
+     * */
+    
+    Matrix<T>& operator=(const Matrix<T>& rhs) {
+        _imax = rhs._imax;
+        _jmax = rhs._jmax;
+        _container = rhs._container;
+
+
+        return *this;
+    }
+
+    /**
+     * @brief Move assignment
+     * @param[in] Matrix from which data must be moved
+     * */
+    
+    Matrix<T>& operator=(Matrix<T>&& rhs) {
+        _imax = rhs._imax;
+        _jmax = rhs._jmax;
+        _container = std::move(rhs._container);
+
+
+        return *this;
+    }
 
     /**
      * @brief Constructor with initial value
@@ -108,16 +155,26 @@ template <typename T> class Matrix {
 
     /// Returns the absolute maximum from the fluid domain.
     T max() const {
-        T max_elem = 0; 
-        for(auto j=0; j < _jmax; ++j){
-            for(auto i=0; i < _imax; ++i){
-                if(std::abs(_container.at(j*_imax+i)) > max_elem){
-                    max_elem = _container.at(j*_imax+i);
+        return std::fabs(*std::max_element(_container.cbegin(), _container.cend(), 
+            [](const T a, const T b) {
+            return (std::fabs(a) < std::fabs(b));
+            }));
+    }
 
-                }
+    // Utility for debugging
+    void pretty_print(std::ostream& os) const {
+        auto f = os.flags();
+        os << "-------------------------------" << std::endl;
+        os << std::setiosflags(std::ios::fixed);
+        os << std::setprecision(8);
+        for (int j = jmax() - 1; j >= 0; --j) {
+            for (int i = 0; i < imax(); ++i) {
+                os << (*this)(i, j) << ' ';
             }
+            os << std::endl;
         }
-        return max_elem; 
+        os << "-------------------------------" << std::endl;
+        os.flags(f);
     }
 
   private:
