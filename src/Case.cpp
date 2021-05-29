@@ -495,7 +495,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     // Print the partition
     std::cout << "(" << _rank << ") works on x-domain " << domain.imin << '-' << domain.imax 
-    << " and on y-domain " << domain.jmin << '-' << domain.jmax << std::endl;
+    << " and on y-domain " << domain.jmin << '-' << domain.jmax 
+    << ". Domain size is " << domain.size_x << 'x' << domain.size_y << std::endl;
 }
 
 void Case::setupBoundaryConditions() {
