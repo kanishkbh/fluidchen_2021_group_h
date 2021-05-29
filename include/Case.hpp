@@ -76,6 +76,7 @@ class Case {
     
     // MPI Rank, geometry data
     int _rank{0};
+    int _iproc{1}, _jproc{1};
     int _local_imin, _local_imax, _local_jmin, _local_jmax;
     bool must_share_right, must_share_left, must_share_top, must_share_bottom;
 

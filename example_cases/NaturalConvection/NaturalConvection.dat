@@ -9,6 +9,9 @@ geo_file     NaturalConvection.pgm
 xlength      1.0
 ylength      1.0
 
+iproc 2
+jproc 2
+
 #--------------------------------------------
 #            number of cells
 #--------------------------------------------

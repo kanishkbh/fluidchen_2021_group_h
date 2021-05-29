@@ -55,7 +55,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     double in_temp;      /* Inlet (Dirichlet) Temperature */
     int use_pressure{0}; /* If non-zero, use pressure BC instead of inflow velocity*/
     std::string energy_eq; /* If "on", enable heat transfer */
-    int iproc{1}, jproc{1};
 
     if (file.is_open()) {
 
@@ -103,8 +102,8 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "use_pressure_input") file >> use_pressure;
                 if (var == "PIN") file >> _P_IN;
                 if (var == "energy_eq") file >> energy_eq;
-                if (var == "iproc") file >> iproc;
-                if (var == "jproc") file >> jproc;
+                if (var == "iproc") file >> _iproc;
+                if (var == "jproc") file >> _jproc;
             }
         }
     }
@@ -115,12 +114,12 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     // Check number of processes matches. If only one process, no partition.
     int num_processes;
-    MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
-    assert (iproc * jproc == num_processes || num_processes = 1);
+    assert (_iproc * _jproc == num_processes || num_processes == 1);
     if (num_processes == 1) {
-        iproc = 1;
-        jproc = 1;
+        _iproc = 1;
+        _jproc = 1;
     }
 
     
@@ -444,15 +443,13 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
 
-    /* TODO : assign bounds */
+    /* Partition the domain in the main process */
     if (_rank == 0) {
+        int Lx = imax_domain / _iproc;
+        int Ly = jmax_domain / _jproc;
+        int rx = imax_domain % _iproc;
+        int ry = jmax_domain % _jproc;
 
         for (int ip = 0; ip < _iproc; ++ip) {
             for (int jp = 0; jp < _jproc; ++jp)
@@ -464,13 +461,41 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     /**
                      * Handling rounding :
                      * Let N be the number of internal cells on a row (i.e. not counting the outer boundaries)
-                     * Let P = iproc. Then N = L*P + r with L = floor(N/P) and k = N % P
+                     * Let P = iproc. Then N = L*P + r with L = floor(N/P) and r = N % P
                      * The r first subdomains will have L+1 true cells (+ ghosts) and the (P-r) lasts will have L cells.
+                     * Similar reasoning for vertical boundaries
                      */
+
+                    int boundary_data[6]; //imin, imax, jmin, jmax, size_x, size_y of the current rank, in terms of the global grid
+                    
+                    boundary_data[0] = ip * Lx + std::min(rx, ip);
+                    boundary_data[1] = boundary_data[0] + Lx + 1 + (ip < rx ? 1 : 0); //Add domain_size + 1 to the left boundary
+                    boundary_data[2] = jp * Ly + std::min(ry, jp);
+                    boundary_data[3] = boundary_data[2] + Ly + 1 + (jp < ry ? 1 : 0);
+                    boundary_data[4] = Lx + (ip < rx ? 1 : 0);
+                    boundary_data[5] = Ly + (jp < ry ? 1 : 0);
+
+                    MPI_Send(boundary_data, 6, MPI_INT, target_rank, MessageTag::DOMAIN, MPI_COMM_WORLD);
                 }
         }
 
     }
+
+
+    // Read local values from the master rank
+    int boundary_data[6];
+    MPI_Recv(boundary_data, 6, MPI_INT, 0, MessageTag::DOMAIN, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    domain.imin = boundary_data[0];
+    domain.imax = boundary_data[1];
+    domain.jmin = boundary_data[2];  
+    domain.jmax = boundary_data[3];
+    domain.size_x = boundary_data[4];
+    domain.size_y = boundary_data[5];
+
+    // Print the partition
+    std::cout << "(" << _rank << ") works on x-domain " << domain.imin << '-' << domain.imax 
+    << " and on y-domain " << domain.jmin << '-' << domain.jmax << std::endl;
 }
 
 void Case::setupBoundaryConditions() {

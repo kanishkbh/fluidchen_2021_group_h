@@ -17,6 +17,13 @@ enum class border_position {
     RIGHT,
 };
 
+namespace MessageTag {
+    enum {
+        DOMAIN,
+    };
+
+}
+
 enum GeometryType {
     obstacle_id,
     fluid_outlet,
