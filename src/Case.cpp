@@ -469,9 +469,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     int boundary_data[6]; //imin, imax, jmin, jmax, size_x, size_y of the current rank, in terms of the global grid
                     
                     boundary_data[0] = ip * Lx + std::min(rx, ip);
-                    boundary_data[1] = boundary_data[0] + Lx + 1 + (ip < rx ? 1 : 0); //Add domain_size + 1 to the left boundary
+                    boundary_data[1] = boundary_data[0] + Lx + 2 + (ip < rx ? 1 : 0); //Add domain_size + 1 to the left boundary
                     boundary_data[2] = jp * Ly + std::min(ry, jp);
-                    boundary_data[3] = boundary_data[2] + Ly + 1 + (jp < ry ? 1 : 0);
+                    boundary_data[3] = boundary_data[2] + Ly + 2 + (jp < ry ? 1 : 0);
                     boundary_data[4] = Lx + (ip < rx ? 1 : 0);
                     boundary_data[5] = Ly + (jp < ry ? 1 : 0);
 
