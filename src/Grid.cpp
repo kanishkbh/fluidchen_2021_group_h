@@ -18,8 +18,9 @@ Grid::Grid(std::string geom_name, Domain &domain) {
     // std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
     if (geom_name.compare("NONE")) {
         std::cerr << "Building geometry data from: " << geom_name << std::endl;
-        std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
-                                                    std::vector<int>(_domain.domain_size_y + 2, 0));
+        // We use size_x, not domain_size_x, since each process has a different grid
+        std::vector<std::vector<int>> geometry_data(_domain.size_x + 2,
+                                                    std::vector<int>(_domain.size_y + 2, 0));
         parse_geometry_file(geom_name, geometry_data);
         assign_cell_types(geometry_data);
     } else {
@@ -250,7 +251,6 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 }
 //-----------------------------------------------------------------------------------------------------------
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
-
     int numcols, numrows, depth;
 
     std::ifstream infile(filedoc);
@@ -272,16 +272,23 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     ss >> numrows >> numcols;
     // Fourth line : depth
     ss >> depth;
-    assert(numrows == _domain.size_x + 2);
-    assert(numcols == _domain.size_y + 2);
+    
+    assert(numrows == _domain.domain_size_x + 2);
+    assert(numcols == _domain.domain_size_y + 2);
 
+    // We read the global array (which is a bit redundant) then assign geometry_data to the specific part of the subdomain
     int array[numrows][numcols];
 
     // Following lines : data
     for (int col = numcols - 1; col > -1; --col) {
         for (int row = 0; row < numrows; ++row) {
-            ss >> geometry_data[row][col];
+            ss >> array[row][col];
         }
+    }
+
+    for (int i = _domain.imin; i < _domain.imax; ++i) {
+        for (int j = _domain.jmin; j < _domain.jmax; ++j)
+            geometry_data[i - _domain.imin][j - _domain.jmin] = array[i][j];
     }
 
     infile.close();
