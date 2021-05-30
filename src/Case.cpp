@@ -307,7 +307,7 @@ void Case::simulate() {
         logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
         if (output_counter >= _output_freq)
             {
-                output_vtk(output_id++);
+                output_vtk(output_id++, _rank);
                 output_counter -= _output_freq;
             }
 
@@ -458,6 +458,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     // The will be used to build the geometry and become each case's imin/max and jmin/max on the matrices
                     int target_rank = ip + _iproc * jp;
 
+                   
+                        
+
                     /**
                      * Handling rounding :
                      * Let N be the number of internal cells on a row (i.e. not counting the outer boundaries)
@@ -466,7 +469,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                      * Similar reasoning for vertical boundaries
                      */
 
-                    int boundary_data[6]; //imin, imax, jmin, jmax, size_x, size_y of the current rank, in terms of the global grid
+                    //0-5 : imin, imax, jmin, jmax, size_x, size_y of the current rank, in terms of the global grid
+                    int boundary_data[10]; 
                     
                     boundary_data[0] = ip * Lx + std::min(rx, ip);
                     boundary_data[1] = boundary_data[0] + Lx + 2 + (ip < rx ? 1 : 0); //Add domain_size + 1 to the left boundary
@@ -475,7 +479,29 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     boundary_data[4] = Lx + (ip < rx ? 1 : 0);
                     boundary_data[5] = Ly + (jp < ry ? 1 : 0);
 
-                    MPI_Send(boundary_data, 6, MPI_INT, target_rank, MessageTag::DOMAIN, MPI_COMM_WORLD);
+                     // Assign neighbor ranks. Default value of -1 no neighbor (i.e. true border)
+                     // 6-9 : left, right, top, bottom
+                    if (ip == 0)
+                        boundary_data[6] = -1;
+                    else
+                        boundary_data[6] = target_rank - 1;
+
+                    if (ip == _iproc - 1)
+                        boundary_data[7] = -1;
+                    else
+                        boundary_data[7] = target_rank + 1;
+
+                    if (jp == 0)
+                        boundary_data[8] = -1;
+                    else
+                        boundary_data[8] = target_rank + _iproc;
+
+                    if (jp == _jproc - 1)
+                        boundary_data[9] = -1;
+                    else
+                        boundary_data[9] = target_rank - _iproc;
+
+                    MPI_Send(boundary_data, 10, MPI_INT, target_rank, MessageTag::DOMAIN, MPI_COMM_WORLD);
                 }
         }
 
@@ -483,8 +509,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
 
     // Read local values from the master rank
-    int boundary_data[6];
-    MPI_Recv(boundary_data, 6, MPI_INT, 0, MessageTag::DOMAIN, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    int boundary_data[10];
+    MPI_Recv(boundary_data, 10, MPI_INT, 0, MessageTag::DOMAIN, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     domain.imin = boundary_data[0];
     domain.imax = boundary_data[1];
@@ -492,6 +518,11 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = boundary_data[3];
     domain.size_x = boundary_data[4];
     domain.size_y = boundary_data[5];
+
+    _left_neighbor_rank = boundary_data[6];
+    _right_neighbor_rank = boundary_data[7];
+    _top_neighbor_rank = boundary_data[8];
+    _bottom_neighbor_rank = boundary_data[9];
 
     // Print the partition
     std::cout << "(" << _rank << ") works on x-domain " << domain.imin << '-' << domain.imax 
