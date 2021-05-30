@@ -246,25 +246,25 @@ void Case::set_file_names(std::string file_name) {
 //-----------------------------------------------------------------------------------------------------------
 
 void Case::simulate() {
-
     double t = 0.0;
     double dt = _field.calculate_dt(_grid);
     int timestep = 0;
     int output_id = 0;
     double output_counter = 0.0;
+    std::ofstream logger;
 
     /* Initialize the logger */
-    std::string outputname =
-        _dict_name + '/' + _case_name + "_log.txt";
+    if (_rank == 0) {
+        std::string outputname = _dict_name + '/' + _case_name + "_log.txt";
 
-    std::ofstream logger(outputname);
-    if (!logger.is_open())
-        std::cerr << "Couldn't open the file " << outputname << ". Simulation will run without logs" << std::endl;
-    else
-        std::cerr << "Starting to log in file " << outputname << std::endl;
+        logger = std::ofstream(outputname);
+        if (!logger.is_open())
+            std::cerr << "Couldn't open the file " << outputname << ". Simulation will run without logs" << std::endl;
+        else
+            std::cerr << "Starting to log in file " << outputname << std::endl;
 
-    logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
-
+        logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
+    }
 
     /* Main loop */
     while (t < _t_end) {
@@ -304,7 +304,9 @@ void Case::simulate() {
 
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
-        logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
+        if (_rank == 0)
+            logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
+            
         if (output_counter >= _output_freq)
             {
                 output_vtk(output_id++, _rank);
