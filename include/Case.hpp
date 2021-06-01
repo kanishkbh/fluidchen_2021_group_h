@@ -26,7 +26,7 @@ class Case {
      *
      * @param[in] Input file name
      */
-    Case(std::string file_name, int argn, char **args);
+    Case(std::string file_name, int argn, int args);
 
     /**
      * @brief Main function to simulate the flow until the end time.
@@ -106,7 +106,8 @@ class Case {
      */
     void output_simulation_logs(const std::vector<int>& pressure_iter, const std::vector<double>& dts);
 
-    void build_domain(Domain &domain, int imax_domain, int jmax_domain);
+    void build_domain(Domain &domain, int imax_domain, int jmax_domain,const int& local_imin,const int& local_jmin,
+                      const int& local_imax,const int& local_jmax);
 
     // Utility function to fill _boundaries
     void setupBoundaryConditions();

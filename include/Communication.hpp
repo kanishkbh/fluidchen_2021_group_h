@@ -30,6 +30,8 @@ class Processor {
 
     public: 
 
+        Processor() = default; 
+
         /**
         * @brief Constructor for Processor object
         *
@@ -62,4 +64,6 @@ class Processor {
         int jp() const;
         /// Getter of processor id
         int proc_id() const;
+        //  Getters for proecssor neighbours 
+        std::array<bool,4> get_neighbours() {return _neighbours_bool;}
 };

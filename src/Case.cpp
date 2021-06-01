@@ -153,27 +153,32 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     set_file_names(file_name);
 
 //-----------------------------------------------------------------------------------------------------------
-// TODO: BUILD processor object 
-// Processor communication; 
-// int pi = communication.pi(); 
-// int pj = communication.pj(); 
-// int iproc = communication.iproc(); 
-// int jproc = communication.jproc(); 
-// int local_imin = pi, 
-// int local_imax = local_imin + domain.x_length/iproc;
-// int local_jmin = pj; 
-// int local_jmax = local_jmin + domain.y_length/jproc; 
-//-----------------------------------------------------------------------------------------------------------
+    int ip = this_processor.ip(); 
+    int jp = this_processor.jp();
+    int local_size_x = (imax+2)/iproc; 
+    int local_size_y = (jmax + 2)/jproc;
+    if(ip == iproc-1){
+        local_size_x += (imax+2)%iproc; 
+    } 
+    if(jp == jproc-1){
+        local_size_y += (jmax + 2)&jproc;
+    }
+    //-------------------------------------------------------------------
+    int local_igeom_min = local_size_x * ip;   
+    int local_jgeom_min = local_size_y * jp;
+    int local_igeom_max = local_size_x * (ip+1); 
+    int local_jgeom_max = local_size_y * (jp+1);
+//----------------------------------------------------------------------------------------------------------
     // Build up the domain and include variables for local domain info as well
     Domain domain;
     domain.dx = xlength / (double)imax;
     domain.dy = ylength / (double)jmax;
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;  
-    build_domain(domain, imax, jmax,local_imin,local_jmin,local_imax,local_jmax);
+    build_domain(domain, imax, jmax,local_igeom_min,local_jgeom_min,local_igeom_max,local_jgeom_max);
 //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain); /
+    _grid = Grid(_geom_name, domain,this_processor); 
 
     // Are halo cells only fluid cells. 
 //-----------------------------------------------------------------------------------------------------------    
@@ -471,10 +476,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, const 
     domain.jmin = 0;
     domain.imax = imax_domain + 2;
     domain.jmax = jmax_domain + 2;
-    domain.local_imin(local_imin);
-    domain.local_imax (local_imax+2); 
-    domain.local_jmin(local_jmin+2);
-    domain.local_jmax(local_jmax);  
+    domain.local_igeom_min = local_imin;
+    domain.local_igeom_max = local_imax; 
+    domain.local_jgeom_min = local_jmin;
+    domain.local_jgeom_max = local_jmax;  
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
 }

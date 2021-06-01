@@ -10,6 +10,7 @@
 #include "Datastructures.hpp"
 #include "Domain.hpp"
 #include "Enums.hpp"
+#include "Communication.hpp"
 
 /**
  * @brief Data structure holds cells and related sub-containers
@@ -29,7 +30,7 @@ class Grid {
      * @param[in] cell size in y direction
      *
      */
-    Grid(std::string geom_name, Domain &domain);
+    Grid(std::string geom_name, Domain &domain,Processor& processor);
 
     /// index based cell access
     Cell cell(int i, int j) const;
@@ -86,6 +87,13 @@ class Grid {
      */
     const std::vector<Cell *> &fixed_wall_cells() const;
 
+
+    /**
+     * 
+     * @brief Find all the halo cells in the subdomain 
+     * 
+     */ 
+     void find_halo_cells(); 
   private:
     /**@brief Default lid driven cavity case generator
      *
@@ -100,12 +108,16 @@ class Grid {
     void parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data);
 
     Matrix<Cell> _cells;
+    Processor _processor; 
     std::vector<Cell *> _fluid_cells; // Index 0 in PGM
     std::vector<Cell *> _inflow_cells; // Index 1 in PGM
     std::vector<Cell *> _outflow_cells; // Index 2 in PGM
     std::vector<Cell *> _fixed_wall_cells; // Index 3-7 in PGM
     std::vector<Cell *> _moving_wall_cells; // Index 8 in PGM
-    std::vector<Cell *> _halo_cells; // Communication cells 
+    std::vector<Cell *> _halo_cells_top; // Communication cells
+    std::vector<Cell *> _halo_cells_bottom; 
+    std::vector<Cell *> _halo_cells_left; 
+    std::vector<Cell *> _halo_cells_right;  
     Domain _domain;
 
     double _dx;

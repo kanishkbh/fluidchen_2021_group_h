@@ -10,11 +10,15 @@
 
 
 //-----------------------------------------------------------------------------------------------------------
-Grid::Grid(std::string geom_name, Domain &domain) {
+Grid::Grid(std::string geom_name, Domain &domain, Processor& proc) {
 
     _domain = domain;
 
-    _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
+    int local_domain_width_i = domain.local_igeom_max - domain.local_igeom_min;
+    int local_domain_width_j = domain.local_jgeom_max - domain.local_jgeom_min; 
+    _cells = Matrix<Cell>(local_domain_width_i + 2, local_domain_width_j + 2);
+
+    _processor = proc; 
     // std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
     if (geom_name.compare("NONE")) {
         std::cerr << "Building geometry data from: " << geom_name << std::endl;
@@ -25,6 +29,38 @@ Grid::Grid(std::string geom_name, Domain &domain) {
     } else {
         std::cerr << "No geometry file given in .dat file. Building rectangular domain (Lid Driven Cavity) without obstacles." << std::endl;
         build_lid_driven_cavity();
+    }
+}
+
+void Grid::find_halo_cells() {
+    // Get processor neighbours 
+    auto neighbours = _processor.get_neighbours();   
+    for (auto n : neighbours){
+        if(_processor.has_neighbour(border_position::TOP)){
+            // Get for all j = local_jmin : local_jmax; i = domain.local_i_max; 
+            int j = _cells.jmax()-2; 
+            for(int i=0;i<=_cells.imax();++i){
+                _halo_cells_top.push_back(&_cells(i,j));
+            }
+        }
+        else if(_processor.has_neighbour(border_position::BOTTOM)){
+            int j = 1; 
+            for (int i=0;i<=_cells.imax();++j){
+                _halo_cells_bottom.push_back(&_cells(i,j));
+            }
+        }
+        else if(_processor.has_neighbour(border_position::LEFT)) {
+            int i = 1; 
+            for(int j=0;j<=_cells.jmax();++j){
+                _halo_cells_left.push_back(&_cells(i,j));
+            }
+        }
+        else if(_processor.has_neighbour(border_position::RIGHT)){
+            int i = _cells.imax()-2;
+            for(int j=0;j<=_cells.jmax();++j){
+                _halo_cells_right.push_back(&_cells(i,j));
+            }
+        }
     }
 }
 //-----------------------------------------------------------------------------------------------------------
@@ -45,6 +81,7 @@ void Grid::build_lid_driven_cavity() {
         }
     }
     assign_cell_types(geometry_data);
+    find_halo_cells(); 
 }
 //-----------------------------------------------------------------------------------------------------------
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
@@ -53,11 +90,9 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int j = 0; // Local index i = 0:local_imax
 
 // Change : 01/06/2021
-    for (int j_geom = _domain.local_jmin; j_geom < _domain.local_jmax; ++j_geom) {
-        {
-            i = 0;  
-        }
-        for (int i_geom = _domain.local_imin; i_geom < _domain.local_imax; ++i_geom) {
+    for (int j_geom = _domain.local_jgeom_min; j_geom < _domain.local_jgeom_max; ++j_geom) {
+        i = 0;  
+        for (int i_geom = _domain.local_igeom_min; i_geom < _domain.local_igeom_max; ++i_geom) {
             
             switch (geometry_data.at(i_geom).at(j_geom))
             {
@@ -108,6 +143,8 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         }
         ++j;
     }
+
+
 
     // Corner cell neighbour assigment
     // Bottom-Left Corner

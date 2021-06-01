@@ -36,9 +36,9 @@ struct Domain {
 
     // Local data - pertains to a local processor
 
-    int local_imin{-1};
-    int local_imax{-1};
+    int local_igeom_min{-1};
+    int local_igeom_max{-1};
 
-    int local_jmin{-1}; 
-    int local_jmax{-1}; 
+    int local_jgeom_min{-1}; 
+    int local_jgeom_max{-1}; 
 };
