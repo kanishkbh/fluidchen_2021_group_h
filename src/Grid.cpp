@@ -99,6 +99,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 _moving_wall_cells.push_back(&_cells(i, j));
                 break;
             
+            
             default:
             throw std::runtime_error("Invalid cell type !");
                 break;

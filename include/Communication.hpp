@@ -5,50 +5,47 @@
 
 /**
  * @brief An element of the matrix of processors that holds rank and neighbouring procssors.
- *
  */
+
 class Processor {
     
     private: 
-
-        /// x index
+        /// total number of processors in x and y direction
+        int _iproc{1}, _jproc{1};
+        /// x index of this processor
         int _ip{0};
-        /// y index
+        /// y index of this processor
         int _jp{0};
         /// Processor id (rank)
         int _id{0};
 
         /// Vector of bools that holds neighbor conditions. TOP-BOTTOM-LEFT-RIGHT
-        std::array<bool, 4> _neighbour_bool{false, false, false, false};
+        std::array<bool, 4> _neighbours_bool{false, false, false, false};
         
-        /// Pointers to neighbours. // TOP -  BOTTOM - LEFT - RIGHT
-        std::array<Processor *, 4> _neighbours;
+        /// ID if neighbour processors. // TOP,BOTTOM,LEFT,RIGHT
+        std::array<int, 4> _neighbours;
+        
+        /// Neigbour and neighbour_bool setter (called by constructor)
+        void set_neighbours();
 
     public: 
 
         /**
         * @brief Constructor for Processor object
         *
-        * @param[in] i x index of the processor
-        * @param[in] j y index of the processor
-        * @param[in] id of the processor
+        * @param[in] iproc number of processors in x direction
+        * @param[in] jproc number of processors in y direction
+        * @param[in] rank of this processor
         */
-        Processor(int i, int j, int id);
+        Processor(int iproc, int jproc, int rank);
 
         /**
         * @brief Neighbour getter for given positon
         *
-        * @param[in] border position
-        * @param[out] pointer to the neighboring cell
+        * @param[in] border_position at which neighbour id is required
+        * @param[out] id of the neighbouring processor
         */
-        const Processor* neighbour(border_position position) const;
-
-        /**
-        * @brief Neighbour setter for given positon
-        *
-        * @param[in] border position
-        */
-        void set_neighbour(Processor *processor, border_position position);
+        const int neighbour(border_position position) const;
 
         /**
         * @brief Check whether the given position (TOP/BOTTOM/LEFT/RIGHT) 
@@ -64,13 +61,5 @@ class Processor {
         /// Getter of y index
         int jp() const;
         /// Getter of processor id
-        int wall_id() const;
+        int proc_id() const;
 };
-
-// Ip and Jp getters 
-
-std::array<unsigned,2> coordinates(int rank) {
-    std::array<unsigned int,2> coord;
-    // coord houses ip and jp respectively 
-    coord[0] = rank /
-}
