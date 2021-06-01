@@ -49,14 +49,13 @@ void Grid::build_lid_driven_cavity() {
 //-----------------------------------------------------------------------------------------------------------
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
-    int i = 0;
-    int j = domain.local_jmin;
-
+    int i = 0; // Local index i = 0:local_imax
+    int j = 0; // Local index i = 0:local_imax
 
 // Change : 01/06/2021
     for (int j_geom = _domain.local_jmin; j_geom < _domain.local_jmax; ++j_geom) {
         {
-            i = domain.local_imin;
+            i = 0;  
         }
         for (int i_geom = _domain.local_imin; i_geom < _domain.local_imax; ++i_geom) {
             
@@ -97,8 +96,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             case 8:
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL);
                 _moving_wall_cells.push_back(&_cells(i, j));
-                break;
-            
+                break; 
             
             default:
             throw std::runtime_error("Invalid cell type !");

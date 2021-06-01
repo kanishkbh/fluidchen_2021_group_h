@@ -153,16 +153,15 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax,local_imin,local_jmin,local_imax,local_jmax);
 //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain);
+    _grid = Grid(_geom_name, domain); /
 
+    // Are halo cells only fluid cells. 
 //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
     _pressure_solver = std::make_unique<SOR>(omg);
-//-----------------------------------------------------------------------------------------------------------
-    _communication = Processor()
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -453,8 +452,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, const 
     domain.imax = imax_domain + 2;
     domain.jmax = jmax_domain + 2;
     domain.local_imin(local_imin);
-    domain.local_imax (local_imax+1); 
-    domain.local_jmin(local_jmin+1);
+    domain.local_imax (local_imax+2); 
+    domain.local_jmin(local_jmin+2);
     domain.local_jmax(local_jmax);  
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
