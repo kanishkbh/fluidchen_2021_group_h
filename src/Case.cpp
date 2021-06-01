@@ -9,6 +9,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <cmath> // for sqrt
 
 namespace filesystem = std::filesystem;
 
@@ -25,11 +26,30 @@ namespace filesystem = std::filesystem;
 //  std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
 //-----------------------------------------------------------------------------------------------------------
 
-Case::Case(std::string file_name, int argn, char **args) {
+Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     // _geom_name = file_name.substr(0, file_name.length()-4) + _geom_name;
     
+    /// Setup the current processor
+    // find closest integer factors of no_of_processors
+    int jproc, iproc;
+    int sr = std::sqrt(no_of_processors);
+    while( no_of_processors % sr != 0 && sr > 0) {
+        sr--;
+    }
+    if (!sr) std::runtime_error("no of processors couldn't be divided into sub-domains.");
+    jproc = sr;
+    iproc = sr/jproc;
+
+    // Creat an object to represent this processor
+    Processor this_processor(iproc, jproc, my_rank);
+
+    // Status update
+    std::cerr << "Processor (" << this_processor.ip() << "," << this_processor.jp() << ") ready." << std::endl;
+
+//-----------------------------------------------------------------------------------------------------------
+
     std::ifstream file(file_name);
     double nu;           /* viscosity   */
     double UI;           /* velocity x-direction */
