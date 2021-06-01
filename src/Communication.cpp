@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Processor::Processor(int i, int j, int id): -ip(i), _jp(j), _id(id) {}
+Processor::Processor(int i, int j, int id): _ip(i), _jp(j), _id(id) {}
 
 const Processor* Processor::neighbour(border_position position) {
     return _neighbours.at(static_cast<int>(position));
@@ -24,6 +24,6 @@ int Processor::jp() const {
     return _jp;
 }
 
-int Processor::id() const {
+int Processor::wall_id() const {
     return _id;
 }

@@ -32,4 +32,13 @@ struct Domain {
     int domain_size_x{-1};
     /// Number of cells in y direction, not-decomposed
     int domain_size_y{-1};
+
+
+    // Local data - pertains to a local processor
+
+    int local_imin{-1};
+    int local_imax{-1};
+
+    int local_jmin{-1}; 
+    int local_jmax{-1}; 
 };

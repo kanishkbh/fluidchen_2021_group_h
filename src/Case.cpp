@@ -1,6 +1,7 @@
 #include "Case.hpp"
 #include "Enums.hpp"
 #include "PressureSolver.hpp"
+#include"Communication.hpp" 
 
 #include <algorithm>
 #include <filesystem>
@@ -130,14 +131,26 @@ Case::Case(std::string file_name, int argn, char **args) {
 //-----------------------------------------------------------------------------------------------------------
     // Set file names for output directory
     set_file_names(file_name);
+
 //-----------------------------------------------------------------------------------------------------------
-    // Build up the domain
+// TODO: BUILD processor object 
+// Processor communication; 
+// int pi = communication.pi(); 
+// int pj = communication.pj(); 
+// int iproc = communication.iproc(); 
+// int jproc = communication.jproc(); 
+// int local_imin = pi, 
+// int local_imax = local_imin + domain.x_length/iproc;
+// int local_jmin = pj; 
+// int local_jmax = local_jmin + domain.y_length/jproc; 
+//-----------------------------------------------------------------------------------------------------------
+    // Build up the domain and include variables for local domain info as well
     Domain domain;
     domain.dx = xlength / (double)imax;
     domain.dy = ylength / (double)jmax;
     domain.domain_size_x = imax;
-    domain.domain_size_y = jmax;
-    build_domain(domain, imax, jmax);
+    domain.domain_size_y = jmax;  
+    build_domain(domain, imax, jmax,local_imin,local_jmin,local_imax,local_jmax);
 //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
     _grid = Grid(_geom_name, domain);
@@ -148,6 +161,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
     _pressure_solver = std::make_unique<SOR>(omg);
+//-----------------------------------------------------------------------------------------------------------
+    _communication = Processor()
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -286,6 +301,10 @@ void Case::simulate() {
         
         // Update velocity
         _field.calculate_velocities(_grid);
+
+
+        // Communicate data to the next door processor 
+
 
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
@@ -427,11 +446,16 @@ void Case::output_vtk(int timestep, int my_rank) {
     writer->Write();
 }
 
-void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
+void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, const int& local_imin,
+                        const int &local_jmin, const int& local_imax, const int& local_jmax ) {
     domain.imin = 0;
     domain.jmin = 0;
     domain.imax = imax_domain + 2;
     domain.jmax = jmax_domain + 2;
+    domain.local_imin(local_imin);
+    domain.local_imax (local_imax+1); 
+    domain.local_jmin(local_jmin+1);
+    domain.local_jmax(local_jmax);  
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
 }

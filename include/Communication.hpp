@@ -66,3 +66,11 @@ class Processor {
         /// Getter of processor id
         int wall_id() const;
 };
+
+// Ip and Jp getters 
+
+std::array<unsigned,2> coordinates(int rank) {
+    std::array<unsigned int,2> coord;
+    // coord houses ip and jp respectively 
+    coord[0] = rank /
+}

@@ -50,13 +50,15 @@ void Grid::build_lid_driven_cavity() {
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
     int i = 0;
-    int j = 0;
+    int j = domain.local_jmin;
 
-    for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
+
+// Change : 01/06/2021
+    for (int j_geom = _domain.local_jmin; j_geom < _domain.local_jmax; ++j_geom) {
         {
-            i = 0;
+            i = domain.local_imin;
         }
-        for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
+        for (int i_geom = _domain.local_imin; i_geom < _domain.local_imax; ++i_geom) {
             
             switch (geometry_data.at(i_geom).at(j_geom))
             {
