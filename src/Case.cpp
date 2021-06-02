@@ -129,11 +129,11 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (_rank == 0) {
         if (energy_eq == "on") {
             std::cout << "Enabling heat transfer." << std::endl;
-            _use_energy = true;
         } else {
             std::cout << "Heat transfer disabled." << std::endl;
         }
     }
+    _use_energy = energy_eq == "on";
     _use_pressure_input = (use_pressure != 0);
 
     //-----------------------------------------------------------------------------------------------------------
@@ -273,15 +273,31 @@ void Case::simulate() {
         for (auto& boundary_ptr : _boundaries) {
             boundary_ptr->apply(_field);
         }
-        
-        //Update temperatures
+
+        // Update temperatures
         // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
-        if (_use_energy)
+        if (_use_energy) {
             _field.calculate_T(_grid);
-        
+            communicate_right(_field.t_matrix(), MessageTag::T);
+            communicate_top(_field.t_matrix(), MessageTag::T);
+            communicate_left(_field.t_matrix(), MessageTag::T);
+            communicate_bottom(_field.t_matrix(), MessageTag::T);
+        }
 
         // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
+
+        // Communicate F and G
+        
+        communicate_right(_field.f_matrix(), MessageTag::F);
+        communicate_top(_field.f_matrix(), MessageTag::F);
+        communicate_left(_field.f_matrix(), MessageTag::F);
+        communicate_bottom(_field.f_matrix(), MessageTag::F);
+
+        communicate_right(_field.g_matrix(), MessageTag::G);
+        communicate_top(_field.g_matrix(), MessageTag::G);
+        communicate_left(_field.g_matrix(), MessageTag::G);
+        communicate_bottom(_field.g_matrix(), MessageTag::G);
 
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
@@ -493,12 +509,12 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     else
                         boundary_data[7] = target_rank + 1;
 
-                    if (jp == 0)
+                    if (jp == _jproc - 1)
                         boundary_data[8] = -1;
                     else
                         boundary_data[8] = target_rank + _iproc;
 
-                    if (jp == _jproc - 1)
+                    if (jp == 0)
                         boundary_data[9] = -1;
                     else
                         boundary_data[9] = target_rank - _iproc;
@@ -695,6 +711,7 @@ void Case::communicate_top(Matrix<double>& x, int tag) {
 }
 
 void Case::communicate_bottom(Matrix<double>& x, int tag) {
+
     if (_top_neighbor_rank == -1 && _bottom_neighbor_rank == -1)
         return; //No vertical communication
 
@@ -708,7 +725,7 @@ void Case::communicate_bottom(Matrix<double>& x, int tag) {
     }
 
     // Read and, if necessary, send
-    if (_top_neighbor_rank == -1)
+    if (_bottom_neighbor_rank == -1)
         MPI_Recv(in.data(), x.imax(), MPI_DOUBLE, _top_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     else {
         MPI_Sendrecv(out.data(), x.imax(), MPI_DOUBLE, _bottom_neighbor_rank, tag,

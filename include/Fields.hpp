@@ -119,6 +119,11 @@ class Fields {
      * */
     Matrix<double> &p_matrix();
 
+    /**
+     * @brief Access a matrix reference to the temperature
+     * */
+    Matrix<double> &t_matrix() {return _T;}
+
      /**
      * @brief Access a matrix reference to F
      * */
