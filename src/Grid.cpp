@@ -62,7 +62,8 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             {
             case 0:
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
-                _fluid_cells.push_back(&_cells(i, j));
+                if (i != 0 && i != imaxb()-1 && j != 0 && j != jmaxb()-1)
+                    _fluid_cells.push_back(&_cells(i, j));
                 break;
             case 1:
                 _cells(i, j) = Cell(i, j, cell_type::INFLOW);
