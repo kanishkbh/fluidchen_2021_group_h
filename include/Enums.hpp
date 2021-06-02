@@ -20,6 +20,13 @@ enum class border_position {
 namespace MessageTag {
     enum {
         DOMAIN,
+        F,
+        G,
+        T,
+        P,
+        U,
+        V,
+        TIMESTEP
     };
 
 }

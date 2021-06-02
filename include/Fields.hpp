@@ -119,6 +119,16 @@ class Fields {
      * */
     Matrix<double> &p_matrix();
 
+     /**
+     * @brief Access a matrix reference to F
+     * */
+    Matrix<double> &f_matrix() {return _F;}
+
+     /**
+     * @brief Access a matrix const reference to G
+     * */
+    Matrix<double> &g_matrix() {return _G;}
+
     /**
      * @brief Access a matrix const reference to U
      * */
