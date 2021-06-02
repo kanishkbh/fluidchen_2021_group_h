@@ -145,6 +145,16 @@ class Fields {
     const Matrix<double> &v_matrix() const {return _V;}
 
     /**
+     * @brief Access a matrix non-const reference to U
+     * */
+    Matrix<double> &u_matrix() {return _U;}
+
+    /**
+     * @brief Access a matrix non-const reference to V
+     * */
+    Matrix<double> &v_matrix() {return _V;}
+
+    /**
      * @brief Access a matrix const reference to T
      * */
     const Matrix<double> &t_matrix() const {return _T;}

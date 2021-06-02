@@ -307,6 +307,14 @@ void Case::simulate() {
 
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
+            
+            /* Compute TOTAL residual */
+
+
+            communicate_right(_field.p_matrix(), MessageTag::P);
+            communicate_top(_field.p_matrix(), MessageTag::P);
+            communicate_left(_field.p_matrix(), MessageTag::P);
+            communicate_bottom(_field.p_matrix(), MessageTag::P);
             // Apply the Boundary conditions (only on pressure)
             for (auto& boundary_ptr : _boundaries) {
                 boundary_ptr->apply(_field, true);
@@ -317,6 +325,16 @@ void Case::simulate() {
         
         // Update velocity
         _field.calculate_velocities(_grid);
+
+        communicate_right(_field.v_matrix(), MessageTag::V);
+        communicate_top(_field.v_matrix(), MessageTag::V);
+        communicate_left(_field.v_matrix(), MessageTag::V);
+        communicate_bottom(_field.v_matrix(), MessageTag::V);
+
+        communicate_right(_field.u_matrix(), MessageTag::U);
+        communicate_top(_field.u_matrix(), MessageTag::U);
+        communicate_left(_field.u_matrix(), MessageTag::U);
+        communicate_bottom(_field.u_matrix(), MessageTag::U);
 
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
@@ -335,6 +353,9 @@ void Case::simulate() {
         t += dt;
         timestep += 1;
         dt = _field.calculate_dt(_grid);
+
+        // Broadcast the smallest computed dt to all processes.
+        MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD); 
 
 
 
