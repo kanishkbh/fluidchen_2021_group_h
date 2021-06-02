@@ -309,7 +309,7 @@ void Case::simulate() {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
             
             /* Compute TOTAL residual */
-
+            MPI_Allreduce(&res, &res, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
             communicate_right(_field.p_matrix(), MessageTag::P);
             communicate_top(_field.p_matrix(), MessageTag::P);
