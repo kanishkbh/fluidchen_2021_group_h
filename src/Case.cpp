@@ -50,7 +50,7 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     // Status update
     std::cerr << "Processor (" << this_processor.ip() << "," << this_processor.jp() << ") ready." << std::endl;
 
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
 
     std::ifstream file(file_name);
     double nu;           /* viscosity   */
@@ -150,15 +150,19 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
     // Set file names for output directory
     set_file_names(file_name);
 
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
+    /// ip,jp are processor (or sub-domain) indices in x and y direction respectively
     int ip = this_processor.ip(); 
     int jp = this_processor.jp();
-    int local_size_x = (imax+2)/iproc; 
+    /// Calculate size of each sub-domain (no of cells)
+    int local_size_x = (imax+2)/iproc;      // note: imax,jmax is only the interior cells. +2 is required to include the boundary cells.
     int local_size_y = (jmax + 2)/jproc;
+    /// Give remainder cells to the last sub-domains 
+     // (when total no of is cells not divisible by the no processors in each direction)
     if(ip == iproc-1){
         local_size_x += (imax+2)%iproc; 
     } 
@@ -166,11 +170,12 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
         local_size_y += (jmax + 2)&jproc;
     }
     //-------------------------------------------------------------------
+    /// Calculating the indices of cells in geom_data (global) that correspond to this processor (sub-domain)
     int local_igeom_min = local_size_x * ip;   
     int local_jgeom_min = local_size_y * jp;
     int local_igeom_max = local_size_x * (ip+1); 
     int local_jgeom_max = local_size_y * (jp+1);
-//----------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------
     // Build up the domain and include variables for local domain info as well
     Domain domain;
     domain.dx = xlength / (double)imax;
@@ -178,22 +183,26 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;  
     build_domain(domain, imax, jmax,local_igeom_min,local_jgeom_min,local_igeom_max,local_jgeom_max);
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
     _grid = Grid(_geom_name, domain,this_processor); 
 
-    // Are halo cells only fluid cells. 
-//-----------------------------------------------------------------------------------------------------------    
+    // Are halo cells only fluid cells. - no, they can be anything. Simply depends on what the corresponding "real" cells in the adjacent sub-domain are.
+    //-----------------------------------------------------------------------------------------------------------    
+    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
-//-----------------------------------------------------------------------------------------------------------
+    
+    //-----------------------------------------------------------------------------------------------------------
+    
     _discretization = Discretization(domain.dx, domain.dy, gamma);
-//-----------------------------------------------------------------------------------------------------------
+    
+    //-----------------------------------------------------------------------------------------------------------
+    
     _pressure_solver = std::make_unique<SOR>(omg);
-//-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
-//-----------------------------------------------------------------------------------------------------------
     _tolerance = eps;
-//-----------------------------------------------------------------------------------------------------------
+    
+    //-----------------------------------------------------------------------------------------------------------
     // Construct boundaries 
 
     _wall_velocity = 0; //TODO
@@ -203,7 +212,9 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     setupBoundaryConditions();
 
 }
+
 //-----------------------------------------------------------------------------------------------------------
+
 void Case::set_file_names(std::string file_name) {
     std::string temp_dir;
     bool case_name_flag = true;
