@@ -8,62 +8,69 @@
 #include <vector>
 #include <cassert>
 
-
 //-----------------------------------------------------------------------------------------------------------
+
 Grid::Grid(std::string geom_name, Domain &domain, Processor& proc) {
 
     _domain = domain;
 
+    // TODO: domain should already have member variables called local_size_x and local_size_y 
+    // (corr to the size_x and size_y)
     int local_domain_width_i = domain.local_igeom_max - domain.local_igeom_min;
     int local_domain_width_j = domain.local_jgeom_max - domain.local_jgeom_min; 
     _cells = Matrix<Cell>(local_domain_width_i + 2, local_domain_width_j + 2);
 
     _processor = proc; 
-    // std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
+
     if (geom_name.compare("NONE")) {
         std::cerr << "Building geometry data from: " << geom_name << std::endl;
         std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                     std::vector<int>(_domain.domain_size_y + 2, 0));
         parse_geometry_file(geom_name, geometry_data);
         assign_cell_types(geometry_data);
+        // TODO: find_halo_cells() should be called here, right?
     } else {
         std::cerr << "No geometry file given in .dat file. Building rectangular domain (Lid Driven Cavity) without obstacles." << std::endl;
         build_lid_driven_cavity();
     }
 }
 
+//-----------------------------------------------------------------------------------------------------------
+
 void Grid::find_halo_cells() {
     // Get processor neighbours 
     auto neighbours = _processor.get_neighbours();   
-    for (auto n : neighbours){
-        if(_processor.has_neighbour(border_position::TOP)){
+    for (auto n : neighbours) {
+        if(_processor.has_neighbour(border_position::TOP)) {
             // Get for all j = local_jmin : local_jmax; i = domain.local_i_max; 
-            int j = _cells.jmax()-2; 
-            for(int i=0;i<=_cells.imax();++i){
+            int j = _cells.jmax() - 2; 
+            for(int i=0; i <= _cells.imax(); ++i) {
                 _halo_cells_top.push_back(&_cells(i,j));
             }
         }
-        else if(_processor.has_neighbour(border_position::BOTTOM)){
+        else if(_processor.has_neighbour(border_position::BOTTOM)) {
             int j = 1; 
-            for (int i=0;i<=_cells.imax();++j){
+            for (int i=0; i <= _cells.imax(); ++j) {
                 _halo_cells_bottom.push_back(&_cells(i,j));
             }
         }
         else if(_processor.has_neighbour(border_position::LEFT)) {
             int i = 1; 
-            for(int j=0;j<=_cells.jmax();++j){
+            for(int j=0; j <= _cells.jmax(); ++j) {
                 _halo_cells_left.push_back(&_cells(i,j));
             }
         }
-        else if(_processor.has_neighbour(border_position::RIGHT)){
-            int i = _cells.imax()-2;
-            for(int j=0;j<=_cells.jmax();++j){
+        else if(_processor.has_neighbour(border_position::RIGHT)) {
+            int i = _cells.imax() - 2;
+            for(int j=0; j <= _cells.jmax(); ++j) {
                 _halo_cells_right.push_back(&_cells(i,j));
             }
         }
     }
 }
+
 //-----------------------------------------------------------------------------------------------------------
+
 void Grid::build_lid_driven_cavity() {
     std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                 std::vector<int>(_domain.domain_size_y + 2, 0));
@@ -83,13 +90,15 @@ void Grid::build_lid_driven_cavity() {
     assign_cell_types(geometry_data);
     find_halo_cells(); 
 }
+
 //-----------------------------------------------------------------------------------------------------------
+
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
     int i = 0; // Local index i = 0:local_imax
     int j = 0; // Local index i = 0:local_imax
 
-// Change : 01/06/2021
+    // Change : 01/06/2021
     for (int j_geom = _domain.local_jgeom_min; j_geom < _domain.local_jgeom_max; ++j_geom) {
         i = 0;  
         for (int i_geom = _domain.local_igeom_min; i_geom < _domain.local_igeom_max; ++i_geom) {
@@ -286,7 +295,9 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         }
     }
 }
+
 //-----------------------------------------------------------------------------------------------------------
+
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
 
     int numcols, numrows, depth;

@@ -183,6 +183,7 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;  
     build_domain(domain, imax, jmax,local_igeom_min,local_jgeom_min,local_igeom_max,local_jgeom_max);
+    // TODO: also put local_size_x and local_size_y into domain
     //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
     _grid = Grid(_geom_name, domain,this_processor); 
@@ -191,6 +192,7 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     //-----------------------------------------------------------------------------------------------------------    
     
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
+    // TODO: size_x and size_y should become local_size_x and local_size.y
     
     //-----------------------------------------------------------------------------------------------------------
     
