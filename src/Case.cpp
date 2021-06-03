@@ -253,6 +253,10 @@ void Case::simulate() {
     double output_counter = 0.0;
     std::ofstream logger;
 
+    /* Get the total number of fluid cells to normalize the residuals */
+    int TOTAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
+    MPI_Allreduce(&TOTAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
     /* Initialize the logger */
     if (_rank == 0) {
         std::string outputname = _dict_name + '/' + _case_name + "_log.txt";
@@ -310,6 +314,7 @@ void Case::simulate() {
             
             /* Compute TOTAL residual */
             MPI_Allreduce(&res, &res, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            res /= TOTAL_NUMBER_OF_CELLS;
             res = std::sqrt(res);
 
             communicate_right(_field.p_matrix(), MessageTag::P);
