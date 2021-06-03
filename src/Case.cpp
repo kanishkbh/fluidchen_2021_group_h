@@ -317,14 +317,16 @@ void Case::simulate() {
             res /= TOTAL_NUMBER_OF_CELLS;
             res = std::sqrt(res);
 
-            communicate_right(_field.p_matrix(), MessageTag::P);
-            communicate_top(_field.p_matrix(), MessageTag::P);
-            communicate_left(_field.p_matrix(), MessageTag::P);
-            communicate_bottom(_field.p_matrix(), MessageTag::P);
             // Apply the Boundary conditions (only on pressure)
             for (auto& boundary_ptr : _boundaries) {
                 boundary_ptr->apply(_field, true);
             }
+
+            communicate_right(_field.p_matrix(), MessageTag::P);
+            communicate_top(_field.p_matrix(), MessageTag::P);
+            communicate_left(_field.p_matrix(), MessageTag::P);
+            communicate_bottom(_field.p_matrix(), MessageTag::P);
+            
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
                 
