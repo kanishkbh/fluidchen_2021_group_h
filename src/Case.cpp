@@ -35,12 +35,14 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     // find closest integer factors of no_of_processors
     int jproc, iproc;
     int sr = std::sqrt(no_of_processors);
-    while( no_of_processors % sr != 0 && sr > 0) {
-        sr--;
+    while( no_of_processors % sr != 0 && sr > 0) { sr--; }
+    if (!sr) 
+        std::runtime_error("no of processors couldn't be divided into sub-domains.");  
+    else {
+        jproc = sr;
+        iproc = sr/jproc;
+        std::cerr << "Domain is divided into " << iproc << " by " << jproc << " sub-domains." << std::endl;
     }
-    if (!sr) std::runtime_error("no of processors couldn't be divided into sub-domains.");
-    jproc = sr;
-    iproc = sr/jproc;
 
     // Creat an object to represent this processor
     Processor this_processor(iproc, jproc, my_rank);
