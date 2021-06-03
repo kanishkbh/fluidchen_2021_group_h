@@ -674,7 +674,7 @@ void Case::communicate_right(Matrix<double>& x, int tag) {
 
     //Update x (from the left)
     for (int j = 0; j < x.jmax(); ++j)
-        x(1, j) = in[j];
+        x(0, j) = in[j];
 }
 
 void Case::communicate_left(Matrix<double>& x, int tag) {
@@ -700,7 +700,7 @@ void Case::communicate_left(Matrix<double>& x, int tag) {
     }
 
     //Update x (from the right)
-    auto i = x.imax()-2;
+    auto i = x.imax()-1;
     for (int j = 0; j < x.jmax(); ++j)
         x(i, j) = in[j];
 }
@@ -729,7 +729,7 @@ void Case::communicate_top(Matrix<double>& x, int tag) {
 
     //Update x (from the bottom)
     for (int i = 0; i < x.imax(); ++i)
-        x(i, 1) = in[i];
+        x(i, 0) = in[i];
 }
 
 void Case::communicate_bottom(Matrix<double>& x, int tag) {
@@ -756,7 +756,7 @@ void Case::communicate_bottom(Matrix<double>& x, int tag) {
     }
 
     //Update x (from the top)
-    auto j = x.jmax() - 2;
+    auto j = x.jmax() - 1;
     for (int i = 0; i < x.imax(); ++i)
         x(i, j) = in[i];
 }
