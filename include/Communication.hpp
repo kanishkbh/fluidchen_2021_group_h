@@ -1,6 +1,36 @@
 #pragma once
 #include <array>
 #include "Enums.hpp"
+#include "Fields.hpp"
+#include "Datastructures.hpp"
+
+/**
+ * @brief A set of C-style arrays to serve as buffer for communicating field values
+ * Example: Field_buffer p_buffer(grid, field.p); p_buffer.top_send...
+ */
+struct Field_buffer {
+    double* top_send;
+    double* top_recv;
+    double* bottom_send;
+    double* bottom_recv;
+    double* left_send;
+    double* left_recv;
+    double* right_send;
+    double* right_recv;
+    
+    /**
+    * @brief Constructor to generate the C-style arrays from fields
+    *
+    * @param[in] iproc number of processors in x direction
+    * @param[in] jproc number of processors in y direction
+    * @param[in] rank of this processor
+    */
+
+    Field_buffer(Grid& grid, Matrix<double>& m);
+
+    ~Field_buffer();
+
+};
 
 
 /**
@@ -58,6 +88,16 @@ class Processor {
         */
         bool has_neighbour(border_position position) const;
 
+        /**
+        * @brief Communicate all fields (or only pressure) to adjacent processors
+        *
+        * @param[in] grid
+        * @param[in] field
+        * @param[in] pressure_only whether we want to communicate only pressure or all fields
+        */
+        void communicate(Grid& grid, Fields& field, bool pressure_only);
+
+
         /// Getter of x index
         int ip() const;
         /// Getter of y index
@@ -67,3 +107,5 @@ class Processor {
         //  Getters for proecssor neighbours 
         std::array<bool,4> get_neighbours() {return _neighbours_bool;}
 };
+
+
