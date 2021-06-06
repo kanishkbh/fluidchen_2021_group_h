@@ -418,26 +418,38 @@ void Case::output_vtk(int timestep, int my_rank) {
     double dx = _grid.dx();
     double dy = _grid.dy();
 
-    double x = _grid.domain().local_igeom_min * dx;
-    double y = _grid.domain().local_jgeom_min * dy;
-    /// TODO: Check these two for serial case correctness
+    double x_start  = _grid.domain().local_igeom_min * dx;
+    double y_start  = _grid.domain().local_jgeom_min * dy;
+    double x_end    = _grid.domain().local_igeom_max * dx;
+    double y_end    = _grid.domain().local_jgeom_max * dy;
+    int no_of_points_x = _grid.domain().size_x;
+    int no_of_points_y = _grid.domain().size_y;
+    int j_start = 1;
+    int i_start = 1;
+    /// TODO: Check these for correctness in serial case
 
-    if(y==0) { y += dy; }
-    if(x==0) { x += dx; }
+    // skip the x=0 and y=0 cells (because velocity is not available for them)
+    if (y_start == 0) { 
+        y_start += dy;
+        no_of_points_x--;
+        j_start++; 
+    }
+    if (x_start == 0) { 
+        x_start += dx; 
+        no_of_points_y--;
+        i_start++;
+    }
 
     double z = 0;
-    for (int col = 0; col < _grid.domain().size_y-1; col++) {
-        x = _grid.domain().local_igeom_min * dx;
-        { x += dx; }
-        for (int row = 0; row < _grid.domain().size_x-1; row++) {
+
+    for (double y = y_start; y < y_end; y += dy) {
+        for (double x = x_start; x < x_end; x += dx) {
             points->InsertNextPoint(x, y, z);
-            x += dx;
         }
-        y += dy;
     }
 
     // Specify the dimensions of the grid
-    structuredGrid->SetDimensions(_grid.domain().size_x-1, _grid.domain().size_y-1, 1);
+    structuredGrid->SetDimensions(no_of_points_x, no_of_points_y, 1);
     structuredGrid->SetPoints(points);
 
     // Pressure Array
@@ -464,8 +476,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     Geometry->SetNumberOfComponents(1);
 
     // Print pressure and geometry from bottom to top
-    for (int j = 2; j < _grid.domain().size_y + 1; j++) {
-        for (int i = 2; i < _grid.domain().size_x + 1; i++) {
+    for (int j = j_start; j < (j_start + no_of_points_y); j++) {
+        for (int i = i_start; i < (i_start + no_of_points_x); i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);
 
@@ -478,8 +490,8 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Print temperature
     if (_use_energy) {
-        for (int j = 2; j < _grid.domain().size_y + 1; j++) {
-            for (int i = 2; i < _grid.domain().size_x + 1; i++) {
+        for (int j = j_start; j < (j_start + no_of_points_y); j++) {
+            for (int i = i_start; i < (i_start + no_of_points_x); i++) {
 
                 double temperature = _field.t(i, j);        // worksheet 2
                 Temperature->InsertNextTuple(&temperature); // worksheet 2
@@ -491,23 +503,11 @@ void Case::output_vtk(int timestep, int my_rank) {
     float vel[3];
     vel[2] = 0; // Set z component to 0
 
-    // Print Velocity from bottom to top
-    int i_end, j_end;
-    if (this_processor.has_neigbour(border_position::RIGHT) == false)
-        j_end = _grid.domain().size_y;
-    else
-        j_end = _grid.domain().size_y + 1;
-
-    if (this_processor.has_neigbour(border_position::TOP) == false)
-        j_end = _grid.domain().size_y;
-    else
-        j_end = _grid.domain().size_y + 1; 
-
-
-    for (int j = 1; j < j_end; j++) {
-        for (int i = 1; i < i_end; i++) {
-            vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
-            vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
+    // velocity is written as average of (i,j) value and previous value
+    for (int j = j_start; j < (j_start + no_of_points_y); j++) {
+        for (int i = i_start; i < (i_start + no_of_points_x); i++) {
+            vel[0] = (_field.u(i, j) + _field.u(i, j - 1)) * 0.5;
+            vel[1] = (_field.v(i, j) + _field.v(i - 1, j)) * 0.5;
             Velocity->InsertNextTuple(vel);
         }
     }
