@@ -61,10 +61,12 @@ void Processor::communicate(Grid& grid, Fields& field, bool pressure_only = fals
     size_t buf_size_x = grid.domain().local_size_x - 2; // TODO: inside domain there is a domain_size_x and a size_x. none of them seem to be local size.
     size_t buf_size_y = grid.domain().local_size_y - 2;
 
+    // copying data from fields matrices to send buffers
     Field_buffer p_buffer(grid, field.p_matrix());
     Field_buffer u_buffer(grid, field.u_matrix());
     Field_buffer v_buffer(grid, field.v_matrix());
     Field_buffer t_buffer(grid, field.t_matrix());
+
 
     /* ALGORITHM (S=send, R=recv)
         1.  VERTICAL COMMUNICATION
@@ -76,9 +78,6 @@ void Processor::communicate(Grid& grid, Fields& field, bool pressure_only = fals
             else if ( Bottom & ! Top)
                 S-R from Bottom
         2. Same for Left Right - HORIZONTAL COMMUNICATION
-        3. TODO: Assign the received buffer to respective halo-cell field values.
-        4. TODO: Check whether dynamic memory allocation-deallocation logic is correct.
-        5. TODO: Clarify domain.local_size_x/y with Rahul
     */
 
    /// Set 1: VERTICAL Communication 
@@ -257,10 +256,22 @@ void Processor::communicate(Grid& grid, Fields& field, bool pressure_only = fals
                     );
       
     }
+
+
+    // Copying data from recv buffers to fields natrices
+    p_buffer.buffer_to_halo(grid, field.p_matrix());
+    u_buffer.buffer_to_halo(grid, field.u_matrix());
+    v_buffer.buffer_to_halo(grid, field.v_matrix());
+    t_buffer.buffer_to_halo(grid, field.t_matrix());
+    
+    /// TODO: Check whether dynamic memory allocation-deallocation logic is correct.
+    /// TODO: Clarify domain.local_size_x/y with Rahul
+    
 }
 
 
 Field_buffer::Field_buffer(Grid& grid, Matrix<double>& m) {
+/// TODO: Deal with border cases
     
     // no of elements to send/recv
     auto n_x = grid.domain().local_size_x; // TODO: inside domain there is a domain_size_x and a size_x. none of them seem to be local size.
@@ -283,7 +294,7 @@ Field_buffer::Field_buffer(Grid& grid, Matrix<double>& m) {
         bottom_send[i-1] = m(i,j);
 
     // copy top elements from m to array
-    j = n_y - 2;
+    j = n_y - 1;
     for ( i = 1; i < n_x - 1; i++)
         top_send[i-1] = m(i,j);
         
@@ -293,7 +304,7 @@ Field_buffer::Field_buffer(Grid& grid, Matrix<double>& m) {
         left_send[j-1] = m(i,j);
     
     // copy right elements from m to array
-    i = n_x - 2;
+    i = n_x - 1;
     for ( j = 1; j < n_y - 1; j++)
         right_send[j-1] = m(i,j);
 }
@@ -308,4 +319,34 @@ Field_buffer::~Field_buffer() {
     delete[] left_recv;
     delete[] right_send;
     delete[] right_recv;
+}
+
+
+void Field_buffer::buffer_to_halo(Grid& grid, Matrix<double>& m) {
+/// TODO: Deal with border cases
+
+    auto n_x = grid.domain().local_size_x; /// TODO: inside domain there is a domain_size_x and a size_x. Semantically none of them seem to be local size.
+    auto n_y = grid.domain().local_size_y;
+
+    int i=0, j=0;
+
+    // copy bottom elements from array to m
+    j = 1;
+    for ( i = 1; i < n_x - 1; i++)
+        m(i,j) = bottom_recv[i-1];
+
+    // copy top elements from array to m
+    j = n_y - 1;
+    for ( i = 1; i < n_x - 1; i++)
+        m(i,j) = top_recv[i-1];
+        
+    // copy left elements from array to m
+    i = 1;
+    for ( j = 1; i < n_y - 1; j++)
+        m(i,j) = left_send[j-1];
+    
+    // copy right elements from array to m
+    i = n_x - 1;
+    for ( j = 1; j < n_y - 1; j++)
+        m(i,j) = right_send[j-1];
 }

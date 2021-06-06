@@ -21,14 +21,23 @@ struct Field_buffer {
     /**
     * @brief Constructor to generate the C-style arrays from fields
     *
-    * @param[in] iproc number of processors in x direction
-    * @param[in] jproc number of processors in y direction
-    * @param[in] rank of this processor
+    * @param[in] grid Grid object
+    * @param[in] m field variable of type Matrix<double>
     */
-
     Field_buffer(Grid& grid, Matrix<double>& m);
 
+    /**
+    * @brief Destructor to deallocate the pointer data members
+    */
     ~Field_buffer();
+
+    /**
+    * @brief Copy data from receive buffers to respective halo cells in the given Matrix
+    *
+    * @param[in] grid Grid object
+    * @param[in] m field variable of type Matrix<double>
+    */
+    void buffer_to_halo(Grid& grid, Matrix<double>& m);
 
 };
 
