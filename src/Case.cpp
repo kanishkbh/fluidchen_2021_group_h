@@ -1,6 +1,7 @@
 #include "Case.hpp"
 #include "Enums.hpp"
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
 #include <mpi.h>
 #include <algorithm>
@@ -282,10 +283,10 @@ void Case::simulate() {
         // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
         if (_use_energy) {
             _field.calculate_T(_grid);
-            communicate_right(_field.t_matrix(), MessageTag::T);
-            communicate_top(_field.t_matrix(), MessageTag::T);
-            communicate_left(_field.t_matrix(), MessageTag::T);
-            communicate_bottom(_field.t_matrix(), MessageTag::T);
+            Communication::communicate_right(_field.t_matrix(), MessageTag::T, _right_neighbor_rank, _left_neighbor_rank);
+            Communication::communicate_top(_field.t_matrix(), MessageTag::T, _top_neighbor_rank, _bottom_neighbor_rank);
+            Communication::communicate_left(_field.t_matrix(), MessageTag::T, _left_neighbor_rank, _right_neighbor_rank);
+            Communication::communicate_bottom(_field.t_matrix(), MessageTag::T, _bottom_neighbor_rank, _top_neighbor_rank);
         }
 
         // Fluxes (with *new* temperatures)
@@ -293,15 +294,15 @@ void Case::simulate() {
 
         // Communicate F and G
         
-        communicate_right(_field.f_matrix(), MessageTag::F);
-        communicate_top(_field.f_matrix(), MessageTag::F);
-        communicate_left(_field.f_matrix(), MessageTag::F);
-        communicate_bottom(_field.f_matrix(), MessageTag::F);
+        Communication::communicate_right(_field.f_matrix(), MessageTag::F, _right_neighbor_rank, _left_neighbor_rank);
+        Communication::communicate_top(_field.f_matrix(), MessageTag::F, _top_neighbor_rank, _bottom_neighbor_rank);
+        Communication::communicate_left(_field.f_matrix(), MessageTag::F, _left_neighbor_rank, _right_neighbor_rank);
+        Communication::communicate_bottom(_field.f_matrix(), MessageTag::F, _bottom_neighbor_rank, _top_neighbor_rank);
 
-        communicate_right(_field.g_matrix(), MessageTag::G);
-        communicate_top(_field.g_matrix(), MessageTag::G);
-        communicate_left(_field.g_matrix(), MessageTag::G);
-        communicate_bottom(_field.g_matrix(), MessageTag::G);
+        Communication::communicate_right(_field.g_matrix(), MessageTag::G, _right_neighbor_rank, _left_neighbor_rank);
+        Communication::communicate_top(_field.g_matrix(), MessageTag::G, _top_neighbor_rank, _bottom_neighbor_rank);
+        Communication::communicate_left(_field.g_matrix(), MessageTag::G, _left_neighbor_rank, _right_neighbor_rank);
+        Communication::communicate_bottom(_field.g_matrix(), MessageTag::G, _bottom_neighbor_rank, _top_neighbor_rank);
 
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
@@ -322,10 +323,10 @@ void Case::simulate() {
                 boundary_ptr->apply(_field, true);
             }
 
-            communicate_right(_field.p_matrix(), MessageTag::P);
-            communicate_top(_field.p_matrix(), MessageTag::P);
-            communicate_left(_field.p_matrix(), MessageTag::P);
-            communicate_bottom(_field.p_matrix(), MessageTag::P);
+            Communication::communicate_right(_field.p_matrix(), MessageTag::P, _right_neighbor_rank, _left_neighbor_rank);
+            Communication::communicate_top(_field.p_matrix(), MessageTag::P, _top_neighbor_rank, _bottom_neighbor_rank);
+            Communication::communicate_left(_field.p_matrix(), MessageTag::P, _left_neighbor_rank, _right_neighbor_rank);
+            Communication::communicate_bottom(_field.p_matrix(), MessageTag::P, _bottom_neighbor_rank, _top_neighbor_rank);
             
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
@@ -334,15 +335,15 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
-        communicate_right(_field.v_matrix(), MessageTag::V);
-        communicate_top(_field.v_matrix(), MessageTag::V);
-        communicate_left(_field.v_matrix(), MessageTag::V);
-        communicate_bottom(_field.v_matrix(), MessageTag::V);
+        Communication::communicate_right(_field.v_matrix(), MessageTag::V, _right_neighbor_rank, _left_neighbor_rank);
+        Communication::communicate_top(_field.v_matrix(), MessageTag::V, _top_neighbor_rank, _bottom_neighbor_rank);
+        Communication::communicate_left(_field.v_matrix(), MessageTag::V, _left_neighbor_rank, _right_neighbor_rank);
+        Communication::communicate_bottom(_field.v_matrix(), MessageTag::V, _bottom_neighbor_rank, _top_neighbor_rank);
 
-        communicate_right(_field.u_matrix(), MessageTag::U);
-        communicate_top(_field.u_matrix(), MessageTag::U);
-        communicate_left(_field.u_matrix(), MessageTag::U);
-        communicate_bottom(_field.u_matrix(), MessageTag::U);
+        Communication::communicate_right(_field.u_matrix(), MessageTag::U, _right_neighbor_rank, _left_neighbor_rank);
+        Communication::communicate_top(_field.u_matrix(), MessageTag::U, _top_neighbor_rank, _bottom_neighbor_rank);
+        Communication::communicate_left(_field.u_matrix(), MessageTag::U, _left_neighbor_rank, _right_neighbor_rank);
+        Communication::communicate_bottom(_field.u_matrix(), MessageTag::U, _bottom_neighbor_rank, _top_neighbor_rank);
 
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
@@ -654,116 +655,4 @@ void Case::setupBoundaryConditions() {
 
 
     }
-}
-
-
-void Case::communicate_right(Matrix<double>& x, int tag) {
-    if (_left_neighbor_rank == -1 && _right_neighbor_rank == -1)
-        return; //No horizontal communication
-
-    std::vector<double> out = x.get_col(x.imax()-2);
-    std::vector<double> in(x.jmax());
-
-    if (_left_neighbor_rank == -1) {
-        //Nothing to read, just send then return
-        MPI_Send(out.data(), x.jmax(), MPI_DOUBLE, _right_neighbor_rank, tag, MPI_COMM_WORLD);
-        return;
-    }
-
-    // Read and, if necessary, send
-    if (_right_neighbor_rank == -1)
-        MPI_Recv(in.data(), x.jmax(), MPI_DOUBLE, _left_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    else {
-        MPI_Sendrecv(out.data(), x.jmax(), MPI_DOUBLE, _right_neighbor_rank, tag,
-                     in.data(), x.jmax(), MPI_DOUBLE,
-                     _left_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    //Update x (from the left)
-    for (int j = 0; j < x.jmax(); ++j)
-        x(0, j) = in[j];
-}
-
-void Case::communicate_left(Matrix<double>& x, int tag) {
-    if (_left_neighbor_rank == -1 && _right_neighbor_rank == -1)
-        return; //No horizontal communication
-
-    std::vector<double> out = x.get_col(1);
-    std::vector<double> in(x.jmax());
-
-    if (_right_neighbor_rank == -1) {
-        //Nothing to read, just send then return
-        MPI_Send(out.data(), x.jmax(), MPI_DOUBLE, _left_neighbor_rank, tag, MPI_COMM_WORLD);
-        return;
-    }
-
-    // Read and, if necessary, send
-    if (_left_neighbor_rank == -1)
-        MPI_Recv(in.data(), x.jmax(), MPI_DOUBLE, _right_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    else {
-        MPI_Sendrecv(out.data(), x.jmax(), MPI_DOUBLE, _left_neighbor_rank, tag,
-                     in.data(), x.jmax(), MPI_DOUBLE,
-                     _right_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    //Update x (from the right)
-    auto i = x.imax()-1;
-    for (int j = 0; j < x.jmax(); ++j)
-        x(i, j) = in[j];
-}
-
-void Case::communicate_top(Matrix<double>& x, int tag) {
-    if (_top_neighbor_rank == -1 && _bottom_neighbor_rank == -1)
-        return; //No vertical communication
-
-    std::vector<double> out = x.get_row(x.jmax()-2);
-    std::vector<double> in(x.imax());
-
-    if (_bottom_neighbor_rank == -1) {
-        //Nothing to read, just send then return
-        MPI_Send(out.data(), x.imax(), MPI_DOUBLE, _top_neighbor_rank, tag, MPI_COMM_WORLD);
-        return;
-    }
-
-    // Read and, if necessary, send
-    if (_top_neighbor_rank == -1)
-        MPI_Recv(in.data(), x.imax(), MPI_DOUBLE, _bottom_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    else {
-        MPI_Sendrecv(out.data(), x.imax(), MPI_DOUBLE, _top_neighbor_rank, tag,
-                     in.data(), x.imax(), MPI_DOUBLE,
-                     _bottom_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    //Update x (from the bottom)
-    for (int i = 0; i < x.imax(); ++i)
-        x(i, 0) = in[i];
-}
-
-void Case::communicate_bottom(Matrix<double>& x, int tag) {
-
-    if (_top_neighbor_rank == -1 && _bottom_neighbor_rank == -1)
-        return; //No vertical communication
-
-    std::vector<double> out = x.get_row(1);
-    std::vector<double> in(x.imax());
-
-    if (_top_neighbor_rank == -1) {
-        //Nothing to read, just send then return
-        MPI_Send(out.data(), x.imax(), MPI_DOUBLE, _bottom_neighbor_rank, tag, MPI_COMM_WORLD);
-        return;
-    }
-
-    // Read and, if necessary, send
-    if (_bottom_neighbor_rank == -1)
-        MPI_Recv(in.data(), x.imax(), MPI_DOUBLE, _top_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    else {
-        MPI_Sendrecv(out.data(), x.imax(), MPI_DOUBLE, _bottom_neighbor_rank, tag,
-                     in.data(), x.imax(), MPI_DOUBLE,
-                     _top_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    //Update x (from the top)
-    auto j = x.jmax() - 1;
-    for (int i = 0; i < x.imax(); ++i)
-        x(i, j) = in[i];
 }

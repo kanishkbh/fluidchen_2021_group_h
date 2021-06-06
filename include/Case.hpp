@@ -78,33 +78,9 @@ class Case {
     int _rank{0};
     int _iproc{1}, _jproc{1};
     int _local_imin, _local_imax, _local_jmin, _local_jmax;
-    
+
     // Threads of the neighboring
     int _left_neighbor_rank{-1}, _right_neighbor_rank{-1}, _top_neighbor_rank{-1}, _bottom_neighbor_rank{-1};
-
-    /**
-     * @brief Sends the right-part of x to the appropriate neighbor (if any) and read from the left the new value.
-     * Tag should identify what field is transmitted (U, V, P, ...)
-     * */
-
-    void communicate_right(Matrix<double>& x, int tag);
-    /**
-     * @brief Sends the left-part of x to the appropriate neighbor (if any) and read from the right the new value.
-     * Tag should identify what field is transmitted (U, V, P, ...)
-     * */
-    void communicate_left(Matrix<double>& x, int tag);
-
-    /**
-     * @brief Sends the top-part of x to the appropriate neighbor (if any) and read from the bottom the new value.
-     * Tag should identify what field is transmitted (U, V, P, ...)
-     * */
-    void communicate_top(Matrix<double>& x, int tag);
-
-    /**
-     * @brief Sends the bottom-part of x to the appropriate neighbor (if any) and read from the top the new value.
-     * Tag should identify what field is transmitted (U, V, P, ...)
-     * */
-    void communicate_bottom(Matrix<double>& x, int tag);
 
     /// Maximum number of iterations for the solver
     int _max_iter;
