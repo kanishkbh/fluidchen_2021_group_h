@@ -54,6 +54,7 @@ class Case {
     /// Solution file outputting frequency
     double _output_freq;
 
+    Processor _this_processor; 
     Fields _field;
     Grid _grid;
     Discretization _discretization;

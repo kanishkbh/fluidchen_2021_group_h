@@ -3,12 +3,16 @@
 #include "Enums.hpp"
 #include "Fields.hpp"
 #include "Datastructures.hpp"
+#include "Grid.hpp"
 
 /**
  * @brief A set of C-style arrays to serve as buffer for communicating field values
  * Example: Field_buffer p_buffer(grid, field.p); p_buffer.top_send...
  */
-struct Field_buffer {
+class Field_buffer {
+    
+public: 
+
     double* top_send;
     double* top_recv;
     double* bottom_send;
@@ -24,7 +28,7 @@ struct Field_buffer {
     * @param[in] grid Grid object
     * @param[in] m field variable of type Matrix<double>
     */
-    Field_buffer(Grid& grid, Matrix<double>& m);
+    Field_buffer(const Grid &grid, Matrix<double>& m);
 
     /**
     * @brief Destructor to deallocate the pointer data members
@@ -37,7 +41,7 @@ struct Field_buffer {
     * @param[in] grid Grid object
     * @param[in] m field variable of type Matrix<double>
     */
-    void buffer_to_halo(Grid& grid, Matrix<double>& m);
+    void buffer_to_halo(const Grid &grid, Matrix<double>& m);
 
 };
 
@@ -104,23 +108,22 @@ class Processor {
         * @param[in] field
         * @param[in] pressure_only whether we want to communicate only pressure or all fields
         */
-        void communicate(Grid& grid, Fields& field, bool pressure_only);
+        void communicate(Grid& grid, Matrix<double>& p);
 
          /** 
          * @brief Reduce min 
          * 
          * @param[in] param;
-         * @param[in] my_rank
          */
-        double reduce_min(double param,int rank); 
+        double reduce_min(double param); 
+
 
           /** 
          * @brief Reduce min 
          * 
          * @param[in] param;
-         * @param[in] my_rank
          */
-        double reduce_sum(double param,int rank); 
+        double reduce_sum(double param); 
 
         /// Getter of x index
         int ip() const;

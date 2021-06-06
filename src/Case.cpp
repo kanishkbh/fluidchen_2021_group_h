@@ -149,14 +149,14 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     }
     //-----------------------------------------------------------------------------------------------------------
     // Creat an object to represent this processor
-    Processor this_processor(iproc, jproc, my_rank);
+    _this_processor   = Processor(iproc, jproc, my_rank);
 
     // Status update
-    std::cerr << "Processor (" << this_processor.ip() << "," << this_processor.jp() << ") ready." << std::endl;
+    std::cerr << "Processor (" << _this_processor.ip() << "," << _this_processor .jp() << ") ready." << std::endl;
     //-----------------------------------------------------------------------------------------------------------
     /// ip,jp are processor (or sub-domain) indices in x and y direction respectively
-    int ip = this_processor.ip(); 
-    int jp = this_processor.jp();
+    int ip = _this_processor .ip(); 
+    int jp = _this_processor .jp();
 
     /// Calculate size of each sub-domain (no of cells)
     /// Calculating the indices of cells in geom_data (global) that correspond to this processor (sub-domain)
@@ -212,7 +212,7 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     // TODO: also put local_size_x and local_size_y into domain
     //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain,this_processor); 
+    _grid = Grid(_geom_name, domain,_this_processor ); 
 
     // Are halo cells only fluid cells. - no, they can be anything. Simply depends on what the corresponding "real" cells in the adjacent sub-domain are.
     //-----------------------------------------------------------------------------------------------------------    
@@ -347,6 +347,9 @@ void Case::simulate() {
         // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
 
+        _this_processor.communicate(_grid,_field.f_matrix());
+        _this_processor.communicate(_grid,_field.g_matrix());
+        
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
 
@@ -356,13 +359,15 @@ void Case::simulate() {
         bool flag_next_iteration = true; 
         do {
             rloc = _pressure_solver->solve(_field, _grid, _boundaries);
-            // Communicate to MPI
+            // Communicate the pressure data 
+            _this_processor.communicate(_grid,_field.p_matrix());
+            // Find global res and decide on the next iteration 
             int num_cells = _grid.fluid_cells().size(); 
             MPI_Allreduce(&rloc,&res,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
             MPI_Allreduce(&num_cells,&comm_fluid_cells,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD); 
             if(my_rank==0){ 
                 res = sqrt(res/comm_fluid_cells); 
-                if(res<eps)
+                if(res<_tolerance)
                     flag_next_iteration = false;
                     MPI_Bcast(&flag_next_iteration,1,MPI_C_BOOL,MPI_COMM_WORLD);
             }
@@ -377,10 +382,9 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
-
-        // Communicate data to the next door processor 
-
-
+        // Communicate the velocity for the next iteration 
+        _this_processor.communicate(_grid,_field.u_matrix()); 
+        _this_processor.communicate(_grid,_field.v_matrix());
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
         logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
@@ -398,7 +402,7 @@ void Case::simulate() {
         
         // Reduce time step : min of all the dt from different processes.  
         dt = _field.calculate_dt(_grid);
-        dt = this_processor.reduce_min(dt);
+        dt = _this_processor.reduce_min(dt);
 
 }
 

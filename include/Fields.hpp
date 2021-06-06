@@ -133,7 +133,14 @@ class Fields {
      * @brief Access a matrix const reference to T
      * */
     const Matrix<double> &t_matrix() const {return _T;}
-
+    /**
+     * @brief Access a matrix const reference to F
+     * */
+    const Matrix<double> &p_matrix() const {return _F;}
+    /**
+     * @brief Access a matrix const reference to G
+     * */
+    const Matrix<double> &g_matrix() const {return _G;}
   private:
     /// x-velocity matrix
     Matrix<double> _U;
