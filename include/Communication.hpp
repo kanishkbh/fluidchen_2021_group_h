@@ -117,7 +117,7 @@ class Processor {
         std::array<bool,4> get_neighbours() {return _neighbours_bool;}
 
         /** 
-         * @brief Comm
+         * @brief Co
 };
 
 

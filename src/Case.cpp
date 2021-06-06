@@ -350,17 +350,26 @@ void Case::simulate() {
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
 
-        double res;
+        double rloc,res;
         unsigned iter = 0;
-
+        bool flag_next_iteration = true; 
         do {
-            res = _pressure_solver->solve(_field, _grid, _boundaries);
+            rloc = _pressure_solver->solve(_field, _grid, _boundaries);
+            // Communicate to MPI 
+            MPI_Allreduce(&rloc,&res,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+            if(my_rank==0){
+                int norm_const = _grid.fluid_cells().size(); 
+                res = sqrt(res/norm_const); 
+                if(res<_tolerance)
+                    flag_next_iteration = false;
+                    MPI_Bcast(&flag_next_iteration,1,MPI_C_BOOL,MPI_COMM_WORLD);
+            }
             // Apply the Boundary conditions (only on pressure)
             for (auto& boundary_ptr : _boundaries) {
                 boundary_ptr->apply(_field, true);
             }
             ++iter;
-        } while (res > _tolerance && iter < _max_iter);
+        } while (flag_next_iteration && iter < _max_iter);
                 
         
         // Update velocity
@@ -384,10 +393,15 @@ void Case::simulate() {
         output_counter += dt;
         t += dt;
         timestep += 1;
+        
+        // Reduce time step : min of all the dt from different processes.  
         dt = _field.calculate_dt(_grid);
-        // MPI Instruction : RECV()
-
-
+        double dt_comm = dt;
+        MPI_Allreduce(&dt,&dt_comm,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD); 
+        if(my_rank==0){
+            MPI_Bcast(&dt_comm,1,MPI_DOUBLE,MPI_COMM_WORLD);
+        }
+        dt = dt_comm; 
     }
 
 }
