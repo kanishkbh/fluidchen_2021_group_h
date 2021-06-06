@@ -62,7 +62,7 @@ class Processor {
         std::array<bool, 4> _neighbours_bool{false, false, false, false};
         
         /// ID if neighbour processors. // TOP,BOTTOM,LEFT,RIGHT
-        std::array<int, 4> _neighbours;
+        std::array<int, 4> _neighbours{MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL};
         
         /// Neigbour and neighbour_bool setter (called by constructor)
         void set_neighbours();
