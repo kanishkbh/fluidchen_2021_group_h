@@ -30,28 +30,6 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     // _geom_name = file_name.substr(0, file_name.length()-4) + _geom_name;
-    
-    /// Setup the current processor
-    // find closest integer factors of no_of_processors
-    int jproc, iproc;
-    int sr = std::sqrt(no_of_processors);
-    while( no_of_processors % sr != 0 && sr > 0) { sr--; }
-    if (!sr) 
-        std::runtime_error("no of processors couldn't be divided into sub-domains.");  
-    else {
-        jproc = sr;
-        iproc = sr/jproc;
-        std::cerr << "Domain is divided into " << iproc << " by " << jproc << " sub-domains." << std::endl;
-    }
-
-    // Creat an object to represent this processor
-    Processor this_processor(iproc, jproc, my_rank);
-
-    // Status update
-    std::cerr << "Processor (" << this_processor.ip() << "," << this_processor.jp() << ") ready." << std::endl;
-
-    //-----------------------------------------------------------------------------------------------------------
-
     std::ifstream file(file_name);
     double nu;           /* viscosity   */
     double UI;           /* velocity x-direction */
@@ -154,35 +132,83 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     // Set file names for output directory
     set_file_names(file_name);
 
+//-----------------------------------------------------------------------------------------------------------
+    /// Establish Communication : setup the current processor 
+    // find closest integer factors of no_of_processors
+    
+    //-----------------------------------------------------------------------------------------------------------
+    int jproc, iproc;
+    int sr = std::sqrt(no_of_processors);
+    while( no_of_processors % sr != 0 && sr > 0) { sr--; }
+    if (!sr) 
+        std::runtime_error("no of processors couldn't be divided into sub-domains.");  
+    else {
+        jproc = sr;
+        iproc = sr/jproc;
+        std::cerr << "Domain is divided into " << iproc << " by " << jproc << " sub-domains." << std::endl;
+    }
+    //-----------------------------------------------------------------------------------------------------------
+    // Creat an object to represent this processor
+    Processor this_processor(iproc, jproc, my_rank);
+
+    // Status update
+    std::cerr << "Processor (" << this_processor.ip() << "," << this_processor.jp() << ") ready." << std::endl;
     //-----------------------------------------------------------------------------------------------------------
     /// ip,jp are processor (or sub-domain) indices in x and y direction respectively
     int ip = this_processor.ip(); 
     int jp = this_processor.jp();
+
     /// Calculate size of each sub-domain (no of cells)
-    int local_size_x = (imax+2)/iproc;      // note: imax,jmax is only the interior cells. +2 is required to include the boundary cells.
-    int local_size_y = (jmax + 2)/jproc;
-    /// Give remainder cells to the last sub-domains 
-     // (when total no of is cells not divisible by the no processors in each direction)
-    if(ip == iproc-1){
-        local_size_x += (imax+2)%iproc; 
-    } 
-    if(jp == jproc-1){
-        local_size_y += (jmax + 2)&jproc;
-    }
-    //-------------------------------------------------------------------
     /// Calculating the indices of cells in geom_data (global) that correspond to this processor (sub-domain)
-    int local_igeom_min = local_size_x * ip;   
-    int local_jgeom_min = local_size_y * jp;
-    int local_igeom_max = local_size_x * (ip+1); 
-    int local_jgeom_max = local_size_y * (jp+1);
+    
+    int local_size_x,local_size_y;
+    int local_igeom_min; 
+    int local_jgeom_min; 
+    int local_igeom_max; 
+    int local_jgeom_max; 
+    /// Including cases for single processor run/ 
+    // TODO : Optimize , see above , needless computation. 
+    // If you want a serial version. 
+    if(no_of_processors == 1){
+        local_size_x = imax; 
+        local_size_y = jmax;
+        local_igeom_min = 0;
+        local_jgeom_min = 0;
+        local_igeom_max = imax+2;  
+        local_jgeom_max = jmax+2; 
+    }
+    // Parallel zone 
+    else{
+        local_size_x = (imax + 2)/iproc;      // note: imax,jmax is only the interior cells. +2 is required to include the boundary cells.
+        local_size_y = (jmax + 2)/jproc
+        local_igeom_min = local_size_x * ip;   
+        local_jgeom_min = local_size_y * jp;
+        local_igeom_max = local_size_x * (ip+1); 
+        local_jgeom_max = local_size_y * (jp+1);
+    
+    /// Give remainder cells to the last sub-domains 
+    // (when total no of is cells not divisible by the no processors in each direction)
+   
+        if(ip == iproc-1)
+            local_size_x += (imax+2)%iproc;  
+        if(jp == jproc-1)
+            local_size_y += (jmax + 2)%jproc;
+        }
+    }
+    
+    
     //----------------------------------------------------------------------------------------------------------
     // Build up the domain and include variables for local domain info as well
     Domain domain;
     domain.dx = xlength / (double)imax;
     domain.dy = ylength / (double)jmax;
+    
+    // I don't see the point of these 
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;  
-    build_domain(domain, imax, jmax,local_igeom_min,local_jgeom_min,local_igeom_max,local_jgeom_max);
+    
+
+    build_domain(domain,local_size_x, local_size_y,local_igeom_min,local_jgeom_min,local_igeom_max,local_jgeom_max);
     // TODO: also put local_size_x and local_size_y into domain
     //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
@@ -192,7 +218,6 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     //-----------------------------------------------------------------------------------------------------------    
     
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
-    // TODO: size_x and size_y should become local_size_x and local_size.y
     
     //-----------------------------------------------------------------------------------------------------------
     
@@ -212,7 +237,7 @@ Case::Case(std::string file_name, int no_of_processors, int my_rank) {
     _v_in = VIN;
     _p_i = PI;
     setupBoundaryConditions();
-
+    
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -487,14 +512,25 @@ void Case::output_vtk(int timestep, int my_rank) {
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, const int& local_imin,
                         const int &local_jmin, const int& local_imax, const int& local_jmax ) {
+    
+
+    // How to read this ? 
+    // Incase of a parallel implementation : imax_domain (number of ALLsubdomian cells - including boundaries)) 
+    // Incase of serial implementation :     imax_domain (number of inner cells - exculding boundaries)                                         
+
+    // Meant to be local 
     domain.imin = 0;
     domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
+    domain.imax = imax_domain+2;
+    domain.jmax = jmax_domain+2;
+    
+    /// Global indices used to parse the gom file.  
     domain.local_igeom_min = local_imin;
     domain.local_igeom_max = local_imax; 
     domain.local_jgeom_min = local_jmin;
     domain.local_jgeom_max = local_jmax;  
+    
+    // Local to a specific processor
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
 }

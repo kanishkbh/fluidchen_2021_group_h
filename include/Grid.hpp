@@ -114,6 +114,7 @@ class Grid {
     std::vector<Cell *> _outflow_cells; // Index 2 in PGM
     std::vector<Cell *> _fixed_wall_cells; // Index 3-7 in PGM
     std::vector<Cell *> _moving_wall_cells; // Index 8 in PGM
+    
     std::vector<Cell *> _halo_cells_top; // Communication cells
     std::vector<Cell *> _halo_cells_bottom; 
     std::vector<Cell *> _halo_cells_left; 
