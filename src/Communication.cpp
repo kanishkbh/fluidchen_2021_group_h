@@ -333,22 +333,36 @@ void Field_buffer::buffer_to_halo(Grid& grid, Matrix<double>& m) {
     int i=0, j=0;
 
     // copy bottom elements from array to m
-    j = 1;
+    j = 0;
     for ( i = 1; i < n_x + 1 ; i++)
         m(i,j) = bottom_recv[i-1];
 
     // copy top elements from array to m
-    j = n_y ;
+    j = n_y+1 ;
     for ( i = 1; i < n_x + 1; i++)
         m(i,j) = top_recv[i-1];
         
     // copy left elements from array to m
-    i = 1;
+    i = 0;
     for ( j = 1; i < n_y + 1; j++)
         m(i,j) = left_recv[j-1];
     
     // copy right elements from array to m
-    i = n_x;
+    i = n_x+1;
     for ( j = 1; j < n_y + 1; j++)
         m(i,j) = right_recv[j-1];
 }
+
+// We only require double for our application,hence this function is not templatized. 
+double Processor::reduce_min(double param){
+    double param_comm = param;
+    MPI_Allreduce(&param,&param_comm,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD); 
+    return param_comm;
+}
+
+// Likewise we only need a bool version 
+double Processor::reduce_sum(double rloc){
+    double res=0; 
+    MPI_Allreduce(&rloc,&res,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    return res; 
+} 

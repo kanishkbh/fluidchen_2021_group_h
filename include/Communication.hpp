@@ -106,6 +106,21 @@ class Processor {
         */
         void communicate(Grid& grid, Fields& field, bool pressure_only);
 
+         /** 
+         * @brief Reduce min 
+         * 
+         * @param[in] param;
+         * @param[in] my_rank
+         */
+        double reduce_min(double param,int rank); 
+
+          /** 
+         * @brief Reduce min 
+         * 
+         * @param[in] param;
+         * @param[in] my_rank
+         */
+        double reduce_sum(double param,int rank); 
 
         /// Getter of x index
         int ip() const;
@@ -115,9 +130,6 @@ class Processor {
         int proc_id() const;
         //  Getters for proecssor neighbours 
         std::array<bool,4> get_neighbours() {return _neighbours_bool;}
-
-        /** 
-         * @brief Co
 };
 
 

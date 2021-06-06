@@ -352,15 +352,17 @@ void Case::simulate() {
 
         double rloc,res;
         unsigned iter = 0;
+        int comm_fluid_cells = 0; 
         bool flag_next_iteration = true; 
         do {
             rloc = _pressure_solver->solve(_field, _grid, _boundaries);
-            // Communicate to MPI 
+            // Communicate to MPI
+            int num_cells = _grid.fluid_cells().size(); 
             MPI_Allreduce(&rloc,&res,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-            if(my_rank==0){
-                int norm_const = _grid.fluid_cells().size(); 
-                res = sqrt(res/norm_const); 
-                if(res<_tolerance)
+            MPI_Allreduce(&num_cells,&comm_fluid_cells,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD); 
+            if(my_rank==0){ 
+                res = sqrt(res/comm_fluid_cells); 
+                if(res<eps)
                     flag_next_iteration = false;
                     MPI_Bcast(&flag_next_iteration,1,MPI_C_BOOL,MPI_COMM_WORLD);
             }
@@ -396,13 +398,7 @@ void Case::simulate() {
         
         // Reduce time step : min of all the dt from different processes.  
         dt = _field.calculate_dt(_grid);
-        double dt_comm = dt;
-        MPI_Allreduce(&dt,&dt_comm,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD); 
-        if(my_rank==0){
-            MPI_Bcast(&dt_comm,1,MPI_DOUBLE,MPI_COMM_WORLD);
-        }
-        dt = dt_comm; 
-    }
+        dt = this_processor.reduce_min(dt);
 
 }
 
