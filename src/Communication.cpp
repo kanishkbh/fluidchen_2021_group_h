@@ -58,8 +58,8 @@ void Processor::communicate(Grid& grid, Fields& field, bool pressure_only = fals
 
     MPI_Status status;
     
-    size_t buf_size_x = grid.domain().local_size_x - 2; // TODO: inside domain there is a domain_size_x and a size_x. none of them seem to be local size.
-    size_t buf_size_y = grid.domain().local_size_y - 2;
+    size_t buf_size_x = grid.domain().size_x;  
+    size_t buf_size_y = grid.domain().size_y;
 
     // copying data from fields matrices to send buffers
     Field_buffer p_buffer(grid, field.p_matrix());
@@ -84,86 +84,87 @@ void Processor::communicate(Grid& grid, Fields& field, bool pressure_only = fals
     if (has_neighbour(border_position::TOP) && has_neighbour(border_position::BOTTOM)) {
         /// PRESSURE
         // 1. Send to Top, Receive from Bottom
-        MPI_Sendrecv(   (void *)p_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
-                        (void *)p_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 1, 
+        // TODO : Experiment without void* 
+        MPI_Sendrecv(   &p_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
+                        &p_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 1, 
                         MPI_COMM_WORLD, &status
                     );
         // 2. Send to Bottom , Receive from Top
-        MPI_Sendrecv(   (void *)p_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 2, 
-                        (void *)p_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 2, 
+        MPI_Sendrecv(   &p_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 2, 
+                        &p_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 2, 
                         MPI_COMM_WORLD, &status
                     );
         /// X-VELOCITY
-        MPI_Sendrecv(   (void *)u_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
-                        (void *)u_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 3, 
+        MPI_Sendrecv(   &u_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
+                        &u_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 3, 
                         MPI_COMM_WORLD, &status
                     );
-        MPI_Sendrecv(   (void *)u_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 4, 
-                        (void *)u_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 4, 
+        MPI_Sendrecv(   &u_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 4, 
+                        &u_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 4, 
                         MPI_COMM_WORLD, &status
                     );
         /// Y-VELOCITY
-        MPI_Sendrecv(   (void *)v_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
-                        (void *)v_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 5, 
+        MPI_Sendrecv(   &v_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
+                        &v_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 5, 
                         MPI_COMM_WORLD, &status
                     );
-        MPI_Sendrecv(   (void *)v_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 6, 
-                        (void *)v_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 6, 
+        MPI_Sendrecv(   &v_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 6, 
+                        &v_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 6, 
                         MPI_COMM_WORLD, &status
                     );
         /// TEMPERATURE
-        MPI_Sendrecv(   (void *)t_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
-                        (void *)t_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 7, 
+        MPI_Sendrecv(   &t_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
+                        &t_buffer.bottom_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM), 7, 
                         MPI_COMM_WORLD, &status
                     );
-        MPI_Sendrecv(   (void *)t_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM),8, 
-                        (void *)t_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 8, 
+        MPI_Sendrecv(   &t_buffer.bottom_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::BOTTOM),8, 
+                        &t_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 8, 
                         MPI_COMM_WORLD, &status
                     ); 
     }
     // Send to TOP, Receive from TOP (Bottom row of processors)
     else if (has_neighbour(border_position::TOP) && !has_neighbour(border_position::BOTTOM)) {
         /// PRESSURE // Send to Top, Receive from Top
-        MPI_Sendrecv(   (void *)p_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
-                        (void *)p_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
+        MPI_Sendrecv(   &p_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
+                        &p_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
                         MPI_COMM_WORLD, &status
                     );
         /// X-VELOCITY
-        MPI_Sendrecv(   (void *)u_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
-                        (void *)u_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
+        MPI_Sendrecv(   &u_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
+                        &u_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
                         MPI_COMM_WORLD, &status
                     );
         /// Y-VELOCITY
-        MPI_Sendrecv(   (void *)v_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
-                        (void *)v_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
+        MPI_Sendrecv(   &v_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
+                        &v_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
                         MPI_COMM_WORLD, &status
                     );
         /// TEMPERATURE
-        MPI_Sendrecv(   (void *)t_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
-                        (void *)t_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
+        MPI_Sendrecv(   &t_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
+                        &t_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
                         MPI_COMM_WORLD, &status
                     );
     }
     // Send to BOTTOM, Receive from BOTTOM (Top row of processors)
     else if (has_neighbour(border_position::TOP) && !has_neighbour(border_position::BOTTOM)) {
         /// PRESSURE // Send to Top, Receive from Top
-        MPI_Sendrecv(   (void *)p_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
-                        (void *)p_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
+        MPI_Sendrecv(   &p_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
+                        &p_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 1, 
                         MPI_COMM_WORLD, &status
                     );
         /// X-VELOCITY
-        MPI_Sendrecv(   (void *)u_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
-                        (void *)u_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
+        MPI_Sendrecv(   &u_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
+                        &u_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 3, 
                         MPI_COMM_WORLD, &status
                     );
         /// Y-VELOCITY
-        MPI_Sendrecv(   (void *)v_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
-                        (void *)v_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
+        MPI_Sendrecv(   &v_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
+                        &v_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 5, 
                         MPI_COMM_WORLD, &status
                     );
         /// TEMPERATURE
-        MPI_Sendrecv(   (void *)t_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
-                        (void *)t_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
+        MPI_Sendrecv(   &t_buffer.top_send, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
+                        &t_buffer.top_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::TOP), 7, 
                         MPI_COMM_WORLD, &status
                     );
     }
@@ -172,86 +173,86 @@ void Processor::communicate(Grid& grid, Fields& field, bool pressure_only = fals
     if (has_neighbour(border_position::LEFT) && has_neighbour(border_position::RIGHT)) {
         /// PRESSURE
         // 1. Send to LEFT, Receive from RIGHT
-        MPI_Sendrecv(   (void *)p_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 9, 
-                        (void *)p_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 9, 
+        MPI_Sendrecv(   &p_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 9, 
+                        &p_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 9, 
                         MPI_COMM_WORLD, &status
                     );
         // 2. Send to RIGHT , Receive from LEFT
-        MPI_Sendrecv(   (void *)p_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 10, 
-                        (void *)p_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 10, 
+        MPI_Sendrecv(   &p_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 10, 
+                        &p_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 10, 
                         MPI_COMM_WORLD, &status
                     );
         /// X-VELOCITY
-        MPI_Sendrecv(   (void *)u_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 11, 
-                        (void *)u_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 11, 
+        MPI_Sendrecv(   &u_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 11, 
+                        &u_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 11, 
                         MPI_COMM_WORLD, &status
                     );
-        MPI_Sendrecv(   (void *)u_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 12, 
-                        (void *)u_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 12, 
+        MPI_Sendrecv(   &u_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 12, 
+                        &u_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 12, 
                         MPI_COMM_WORLD, &status
                     );
         /// Y-VELOCITY
-        MPI_Sendrecv(   (void *)v_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
-                        (void *)v_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
+        MPI_Sendrecv(   &v_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
+                        &v_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
                         MPI_COMM_WORLD, &status
                     );
-        MPI_Sendrecv(   (void *)v_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 14, 
-                        (void *)v_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 14, 
+        MPI_Sendrecv(   &v_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 14, 
+                        &v_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 14, 
                         MPI_COMM_WORLD, &status
                     );
         /// TEMPERATURE
-        MPI_Sendrecv(   (void *)t_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
-                        (void *)t_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
+        MPI_Sendrecv(   &t_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
+                        &t_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
                         MPI_COMM_WORLD, &status
                     );
-        MPI_Sendrecv(   (void *)t_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 14, 
-                        (void *)t_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 14, 
+        MPI_Sendrecv(   &t_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 14, 
+                        &t_buffer.left_recv, buf_size_x, MPI_DOUBLE, neighbour(border_position::LEFT), 14, 
                         MPI_COMM_WORLD, &status
                     );
     }
     // Send to LEFT, Receive from LEFT (for Right-most row of processors)
     else if (has_neighbour(border_position::LEFT) && !has_neighbour(border_position::RIGHT)) {
         /// PRESSURE // Send to Left, Receive from Left
-        MPI_Sendrecv(   (void *)p_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 9, 
-                        (void *)p_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 9, 
+        MPI_Sendrecv(   &p_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 9, 
+                        &p_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 9, 
                         MPI_COMM_WORLD, &status
                     );
         /// X-VELOCITY
-        MPI_Sendrecv(   (void *)u_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 11, 
-                        (void *)u_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 11, 
+        MPI_Sendrecv(   &u_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 11, 
+                        &u_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 11, 
                         MPI_COMM_WORLD, &status
                     );
         /// Y-VELOCITY
-        MPI_Sendrecv(   (void *)v_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
-                        (void *)v_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
+        MPI_Sendrecv(   &v_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
+                        &v_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
                         MPI_COMM_WORLD, &status
                     );
         /// TEMPERATURE
-        MPI_Sendrecv(   (void *)t_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
-                        (void *)t_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
+        MPI_Sendrecv(   &t_buffer.left_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
+                        &t_buffer.left_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::LEFT), 13, 
                         MPI_COMM_WORLD, &status
                     );
     }
     // Send to RIGHT, Receive from RIGHT (for Left-most row of processors)
     else if (has_neighbour(border_position::RIGHT) && !has_neighbour(border_position::LEFT)) {
         /// PRESSURE // Send to Right, Receive from Right
-        MPI_Sendrecv(   (void *)p_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 9, 
-                        (void *)p_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 9, 
+        MPI_Sendrecv(   &p_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 9, 
+                        &p_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 9, 
                         MPI_COMM_WORLD, &status
                     );
         /// X-VELOCITY
-        MPI_Sendrecv(   (void *)u_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 11, 
-                        (void *)u_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 11, 
+        MPI_Sendrecv(   &u_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 11, 
+                        &u_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 11, 
                         MPI_COMM_WORLD, &status
                     );
         /// Y-VELOCITY
-        MPI_Sendrecv(   (void *)v_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
-                        (void *)v_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
+        MPI_Sendrecv(   &v_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
+                        &v_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
                         MPI_COMM_WORLD, &status
                     );
         /// TEMPERATURE
-        MPI_Sendrecv(   (void *)t_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
-                        (void *)t_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
+        MPI_Sendrecv(   &t_buffer.right_send, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
+                        &t_buffer.right_recv, buf_size_y, MPI_DOUBLE, neighbour(border_position::RIGHT), 13, 
                         MPI_COMM_WORLD, &status
                     );
       
@@ -274,38 +275,39 @@ Field_buffer::Field_buffer(Grid& grid, Matrix<double>& m) {
 /// TODO: Deal with border cases
     
     // no of elements to send/recv
-    auto n_x = grid.domain().local_size_x; // TODO: inside domain there is a domain_size_x and a size_x. none of them seem to be local size.
-    auto n_y = grid.domain().local_size_y;
+    auto n_x = grid.domain().size_x; // TODO: inside domain there is a domain_size_x and a size_x. none of them seem to be local size.
+    auto n_y = grid.domain().size_y;
 
     // Allocate C-style arrays
-    top_send    = new double[n_x - 2];
-    top_recv    = new double[n_x - 2];
-    bottom_recv = new double[n_x - 2];
-    left_send   = new double[n_x - 2];
-    left_recv   = new double[n_y - 2];
-    right_send  = new double[n_y - 2];
-    right_recv  = new double[n_y - 2];
+    top_send    = new double[n_x];
+    top_recv    = new double[n_x];
+    bottom_recv = new double[n_x];
+    bottom_send = new double[n_x]; 
+    left_send   = new double[n_y];
+    left_recv   = new double[n_y];
+    right_send  = new double[n_y];
+    right_recv  = new double[n_y];
 
     int i=0, j=0;
 
     // copy bottom elements from m to array
     j = 1;
-    for ( i = 1; i < n_x - 1; i++)
+    for ( i = 1; i < n_x + 1; i++)
         bottom_send[i-1] = m(i,j);
 
     // copy top elements from m to array
-    j = n_y - 1;
-    for ( i = 1; i < n_x - 1; i++)
+    j = n_y;
+    for ( i = 1; i < n_x + 1; i++)
         top_send[i-1] = m(i,j);
         
     // copy left elements from m to array
     i = 1;
-    for ( j = 1; i < n_y - 1; j++)
+    for ( j = 1; i < n_y + 1; j++)
         left_send[j-1] = m(i,j);
     
     // copy right elements from m to array
-    i = n_x - 1;
-    for ( j = 1; j < n_y - 1; j++)
+    i = n_x;
+    for ( j = 1; j < n_y + 1; j++)
         right_send[j-1] = m(i,j);
 }
 
@@ -325,28 +327,28 @@ Field_buffer::~Field_buffer() {
 void Field_buffer::buffer_to_halo(Grid& grid, Matrix<double>& m) {
 /// TODO: Deal with border cases
 
-    auto n_x = grid.domain().local_size_x; /// TODO: inside domain there is a domain_size_x and a size_x. Semantically none of them seem to be local size.
-    auto n_y = grid.domain().local_size_y;
+    auto n_x = grid.domain().size_x; /// TODO: inside domain there is a domain_size_x and a size_x. Semantically none of them seem to be local size.
+    auto n_y = grid.domain().size_y;
 
     int i=0, j=0;
 
     // copy bottom elements from array to m
     j = 1;
-    for ( i = 1; i < n_x - 1; i++)
+    for ( i = 1; i < n_x + 1 ; i++)
         m(i,j) = bottom_recv[i-1];
 
     // copy top elements from array to m
-    j = n_y - 1;
-    for ( i = 1; i < n_x - 1; i++)
+    j = n_y ;
+    for ( i = 1; i < n_x + 1; i++)
         m(i,j) = top_recv[i-1];
         
     // copy left elements from array to m
     i = 1;
-    for ( j = 1; i < n_y - 1; j++)
-        m(i,j) = left_send[j-1];
+    for ( j = 1; i < n_y + 1; j++)
+        m(i,j) = left_recv[j-1];
     
     // copy right elements from array to m
-    i = n_x - 1;
-    for ( j = 1; j < n_y - 1; j++)
-        m(i,j) = right_send[j-1];
+    i = n_x;
+    for ( j = 1; j < n_y + 1; j++)
+        m(i,j) = right_recv[j-1];
 }

@@ -385,7 +385,7 @@ void Case::simulate() {
         t += dt;
         timestep += 1;
         dt = _field.calculate_dt(_grid);
-
+        // MPI Instruction : RECV()
 
 
     }

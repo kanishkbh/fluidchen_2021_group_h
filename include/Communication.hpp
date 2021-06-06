@@ -115,6 +115,9 @@ class Processor {
         int proc_id() const;
         //  Getters for proecssor neighbours 
         std::array<bool,4> get_neighbours() {return _neighbours_bool;}
+
+        /** 
+         * @brief Comm
 };
 
 
