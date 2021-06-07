@@ -256,7 +256,9 @@ void Case::simulate() {
 
     /* Get the total number of fluid cells to normalize the residuals */
     int TOTAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
-    MPI_Allreduce(&TOTAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    double TOTAL_NUMBER_OF_CELLS_reduced;
+    MPI_Allreduce(&TOTAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_reduced, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    TOTAL_NUMBER_OF_CELLS = TOTAL_NUMBER_OF_CELLS_reduced;
 
     /* Initialize the logger */
     if (_rank == 0) {
@@ -303,7 +305,9 @@ void Case::simulate() {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
             
             /* Compute TOTAL residual */
-            MPI_Allreduce(&res, &res, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            double res_reduction;
+            MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            res = res_reduction;
             res /= TOTAL_NUMBER_OF_CELLS;
             res = std::sqrt(res);
 
@@ -343,8 +347,9 @@ void Case::simulate() {
         dt = _field.calculate_dt(_grid);
 
         // Broadcast the smallest computed dt to all processes.
-        MPI_Allreduce(&dt, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD); 
-
+        double dt_reduction;
+        MPI_Allreduce(&dt, &dt_reduction, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD); 
+        dt = dt_reduction;
 
 
     }
