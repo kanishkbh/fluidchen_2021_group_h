@@ -58,9 +58,9 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         { i = 0; }
         for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
             
-            bool is_ghost = ((_has_right_neighbor && i_geom == _domain.imax - 1) || (_has_left_neighbor && i_geom == 0) ||
+            bool is_ghost = ((_has_right_neighbor && i_geom == _domain.imax - 1) || (_has_left_neighbor && i_geom == _domain.imin) ||
                 (_has_top_neighbor && j_geom == _domain.jmax - 1) ||
-                (_has_bottom_neighbor && j_geom == 0)) ;
+                (_has_bottom_neighbor && j_geom == _domain.jmin)) ;
 
             if (is_ghost) 
                 {

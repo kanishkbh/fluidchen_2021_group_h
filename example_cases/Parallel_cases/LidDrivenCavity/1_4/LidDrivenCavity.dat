@@ -40,7 +40,7 @@ dt_value     0.5
 # omg: relaxation factor for SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
-itermax      250
+itermax      500
 eps          0.01
 omg          1.7
 gamma        0.5
