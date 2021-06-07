@@ -283,26 +283,15 @@ void Case::simulate() {
         // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
         if (_use_energy) {
             _field.calculate_T(_grid);
-            Communication::communicate_right(_field.t_matrix(), MessageTag::T, _right_neighbor_rank, _left_neighbor_rank);
-            Communication::communicate_top(_field.t_matrix(), MessageTag::T, _top_neighbor_rank, _bottom_neighbor_rank);
-            Communication::communicate_left(_field.t_matrix(), MessageTag::T, _left_neighbor_rank, _right_neighbor_rank);
-            Communication::communicate_bottom(_field.t_matrix(), MessageTag::T, _bottom_neighbor_rank, _top_neighbor_rank);
+            communicate_all(_field.t_matrix(), MessageTag::T);
         }
 
         // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
 
         // Communicate F and G
-        
-        Communication::communicate_right(_field.f_matrix(), MessageTag::F, _right_neighbor_rank, _left_neighbor_rank);
-        Communication::communicate_top(_field.f_matrix(), MessageTag::F, _top_neighbor_rank, _bottom_neighbor_rank);
-        Communication::communicate_left(_field.f_matrix(), MessageTag::F, _left_neighbor_rank, _right_neighbor_rank);
-        Communication::communicate_bottom(_field.f_matrix(), MessageTag::F, _bottom_neighbor_rank, _top_neighbor_rank);
-
-        Communication::communicate_right(_field.g_matrix(), MessageTag::G, _right_neighbor_rank, _left_neighbor_rank);
-        Communication::communicate_top(_field.g_matrix(), MessageTag::G, _top_neighbor_rank, _bottom_neighbor_rank);
-        Communication::communicate_left(_field.g_matrix(), MessageTag::G, _left_neighbor_rank, _right_neighbor_rank);
-        Communication::communicate_bottom(_field.g_matrix(), MessageTag::G, _bottom_neighbor_rank, _top_neighbor_rank);
+        communicate_all(_field.f_matrix(), MessageTag::F);
+        communicate_all(_field.g_matrix(), MessageTag::G);
 
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
@@ -323,10 +312,7 @@ void Case::simulate() {
                 boundary_ptr->apply(_field, true);
             }
 
-            Communication::communicate_right(_field.p_matrix(), MessageTag::P, _right_neighbor_rank, _left_neighbor_rank);
-            Communication::communicate_top(_field.p_matrix(), MessageTag::P, _top_neighbor_rank, _bottom_neighbor_rank);
-            Communication::communicate_left(_field.p_matrix(), MessageTag::P, _left_neighbor_rank, _right_neighbor_rank);
-            Communication::communicate_bottom(_field.p_matrix(), MessageTag::P, _bottom_neighbor_rank, _top_neighbor_rank);
+            communicate_all(_field.p_matrix(), MessageTag::P);
             
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
@@ -335,15 +321,8 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
-        Communication::communicate_right(_field.v_matrix(), MessageTag::V, _right_neighbor_rank, _left_neighbor_rank);
-        Communication::communicate_top(_field.v_matrix(), MessageTag::V, _top_neighbor_rank, _bottom_neighbor_rank);
-        Communication::communicate_left(_field.v_matrix(), MessageTag::V, _left_neighbor_rank, _right_neighbor_rank);
-        Communication::communicate_bottom(_field.v_matrix(), MessageTag::V, _bottom_neighbor_rank, _top_neighbor_rank);
-
-        Communication::communicate_right(_field.u_matrix(), MessageTag::U, _right_neighbor_rank, _left_neighbor_rank);
-        Communication::communicate_top(_field.u_matrix(), MessageTag::U, _top_neighbor_rank, _bottom_neighbor_rank);
-        Communication::communicate_left(_field.u_matrix(), MessageTag::U, _left_neighbor_rank, _right_neighbor_rank);
-        Communication::communicate_bottom(_field.u_matrix(), MessageTag::U, _bottom_neighbor_rank, _top_neighbor_rank);
+        communicate_all(_field.v_matrix(), MessageTag::V);
+        communicate_all(_field.u_matrix(), MessageTag::U);
 
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
@@ -370,6 +349,13 @@ void Case::simulate() {
 
     }
 
+}
+
+void Case::communicate_all(Matrix<double>& x, int tag) {
+    Communication::communicate_right(x, tag, _right_neighbor_rank, _left_neighbor_rank);
+    Communication::communicate_top(x, tag, _top_neighbor_rank, _bottom_neighbor_rank);
+    Communication::communicate_left(x, tag, _left_neighbor_rank, _right_neighbor_rank);
+    Communication::communicate_bottom(x, tag, _bottom_neighbor_rank, _top_neighbor_rank);
 }
 
 
