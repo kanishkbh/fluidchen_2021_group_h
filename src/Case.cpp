@@ -255,10 +255,10 @@ void Case::simulate() {
     std::ofstream logger;
 
     /* Get the total number of fluid cells to normalize the residuals */
-    int TOTAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
-    double TOTAL_NUMBER_OF_CELLS_reduced;
-    MPI_Allreduce(&TOTAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_reduced, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    TOTAL_NUMBER_OF_CELLS = TOTAL_NUMBER_OF_CELLS_reduced;
+    int LOCAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
+    int TOTAL_NUMBER_OF_CELLS_REDUCED;
+    MPI_Allreduce(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    
 
     /* Initialize the logger */
     if (_rank == 0) {
@@ -307,8 +307,7 @@ void Case::simulate() {
             /* Compute TOTAL residual */
             double res_reduction;
             MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-            res = res_reduction;
-            res /= TOTAL_NUMBER_OF_CELLS;
+            res = res_reduction / TOTAL_NUMBER_OF_CELLS_REDUCED;
             res = std::sqrt(res);
 
             // Apply the Boundary conditions (only on pressure)
