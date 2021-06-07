@@ -8,9 +8,11 @@
 #include <vector>
 #include <cassert>
 
-
 //-----------------------------------------------------------------------------------------------------------
-Grid::Grid(std::string geom_name, Domain &domain) {
+Grid::Grid(std::string geom_name, Domain &domain, bool has_left_neighbor, bool has_right_neighbor,
+           bool has_top_neighbor, bool has_bottom_neighbor)
+    : _has_left_neighbor(has_left_neighbor), _has_right_neighbor(has_right_neighbor),
+      _has_top_neighbor(has_top_neighbor), _has_bottom_neighbor(has_bottom_neighbor) {
 
     _domain = domain;
 
@@ -53,56 +55,61 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int j = 0;
 
     for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
-        {
-            i = 0;
-        }
+        { i = 0; }
         for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
-            
-            switch (geometry_data.at(i_geom).at(j_geom))
-            {
-            case 0:
-                _cells(i, j) = Cell(i, j, cell_type::FLUID);
-                if (i != 0 && i != imaxb()-1 && j != 0 && j != jmaxb()-1)
-                    _fluid_cells.push_back(&_cells(i, j));
-                break;
-            case 1:
-                _cells(i, j) = Cell(i, j, cell_type::INFLOW);
-                _inflow_cells.push_back(&_cells(i, j));
-                break;
-            case 2:
-                _cells(i, j) = Cell(i, j, cell_type::OUTFLOW);
-                _outflow_cells.push_back(&_cells(i, j));
-                break;
-            case 3:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_3);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 4:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_4);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 5:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_5);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 6:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_6);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 7:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_7);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 8:
-                _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL);
-                _moving_wall_cells.push_back(&_cells(i, j));
-                break;
-            
-            default:
-            throw std::runtime_error("Invalid cell type !");
-                break;
-            }
+            /*
+            if ((_has_right_neighbor && i_geom == _domain.imax - 1) || (_has_left_neighbor && i_geom == 0) ||
+                (_has_top_neighbor && j_geom == _domain.jmax - 1) ||
+                (_has_bottom_neighbor && j_geom == 0)) 
+                {
+                    _cells(i, j) = Cell(i, j, cell_type::MPI_GHOST);
+                }*/
+                if(false) {}
+            else {
 
+                switch (geometry_data.at(i_geom).at(j_geom)) {
+                case 0:
+                    _cells(i, j) = Cell(i, j, cell_type::FLUID);
+                    _fluid_cells.push_back(&_cells(i, j));
+                    break;
+                case 1:
+                    _cells(i, j) = Cell(i, j, cell_type::INFLOW);
+                    _inflow_cells.push_back(&_cells(i, j));
+                    break;
+                case 2:
+                    _cells(i, j) = Cell(i, j, cell_type::OUTFLOW);
+                    _outflow_cells.push_back(&_cells(i, j));
+                    break;
+                case 3:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_3);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 4:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_4);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 5:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_5);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 6:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_6);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 7:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_7);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 8:
+                    _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL);
+                    _moving_wall_cells.push_back(&_cells(i, j));
+                    break;
+
+                default:
+                    throw std::runtime_error("Invalid cell type !");
+                    break;
+                }
+            }
 
             ++i;
         }

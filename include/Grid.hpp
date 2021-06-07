@@ -27,9 +27,13 @@ class Grid {
      * @param[in] number of cells in y direction
      * @param[in] cell size in x direction
      * @param[in] cell size in y direction
-     *
+     * @param[in] true if left cells are ghost cells
+     * @param[in] true if right cells are ghost cells
+     * @param[in] true if top cells are ghost cells
+     * @param[in] true if bottom cells are ghost cells
      */
-    Grid(std::string geom_name, Domain &domain);
+    Grid(std::string geom_name, Domain &domain, bool has_left_neighbor, bool has_right_neighbor, bool has_top_neighbor,
+         bool has_bottom_neighbor);
 
     /// index based cell access
     Cell cell(int i, int j) const;
@@ -110,4 +114,6 @@ class Grid {
 
     double _dx;
     double _dy;
+
+    bool _has_left_neighbor, _has_right_neighbor, _has_top_neighbor, _has_bottom_neighbor;
 };

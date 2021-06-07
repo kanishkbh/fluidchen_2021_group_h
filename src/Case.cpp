@@ -154,11 +154,12 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
     build_domain(domain, imax, jmax);
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain);
+    _grid = Grid(_geom_name, domain, _left_neighbor_rank != -1, _right_neighbor_rank != -1,
+                 _top_neighbor_rank != -1, _bottom_neighbor_rank != -1);
 
-//-----------------------------------------------------------------------------------------------------------    
+    //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
