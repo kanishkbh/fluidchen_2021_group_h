@@ -59,6 +59,7 @@ enum class cell_type {
     FIXED_WALL_6,
     FIXED_WALL_7,
     MOVING_WALL,
-    MPI_GHOST,
+    MPI_GHOST_WALL,
+    MPI_GHOST_FLUID,
     DEFAULT,
 };
