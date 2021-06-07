@@ -57,20 +57,20 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
         { i = 0; }
         for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
-            /*
+            
             if ((_has_right_neighbor && i_geom == _domain.imax - 1) || (_has_left_neighbor && i_geom == 0) ||
                 (_has_top_neighbor && j_geom == _domain.jmax - 1) ||
                 (_has_bottom_neighbor && j_geom == 0)) 
                 {
                     _cells(i, j) = Cell(i, j, cell_type::MPI_GHOST);
-                }*/
-                if(false) {}
+                }
             else {
 
                 switch (geometry_data.at(i_geom).at(j_geom)) {
                 case 0:
                     _cells(i, j) = Cell(i, j, cell_type::FLUID);
-                    _fluid_cells.push_back(&_cells(i, j));
+                    if (i != 0 && i != imaxb()-1 && j != 0 && j != jmaxb()-1)
+                        _fluid_cells.push_back(&_cells(i, j));
                     break;
                 case 1:
                     _cells(i, j) = Cell(i, j, cell_type::INFLOW);
