@@ -65,7 +65,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             if (is_ghost) 
                 {
                     if (geometry_data.at(i_geom).at(j_geom) == 0)
-                        _cells(i, j) = Cell(i, j, cell_type::MPI_GHOST_FLUID);
+                        _cells(i, j) = Cell(i, j, cell_type::FLUID);
                     else
                         _cells(i, j) = Cell(i, j, cell_type::MPI_GHOST_WALL);
                 }
