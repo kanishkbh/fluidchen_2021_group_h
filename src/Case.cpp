@@ -165,6 +165,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
     _pressure_solver = std::make_unique<SOR>(omg);
+    _pressure_solver = std::make_unique<CG>();
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -298,6 +299,7 @@ void Case::simulate() {
 
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
+        _pressure_solver->init(_field, _grid, _boundaries);
 
         double res;
         unsigned iter = 0;

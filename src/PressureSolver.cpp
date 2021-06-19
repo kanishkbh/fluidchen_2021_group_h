@@ -104,7 +104,6 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
     }
 
     alpha /= dAd;
-    std::cout << "Alpha : " << alpha << std::endl;
 
     /* Update x and r. Also compute new square residual */
     double new_square_res = 0;
