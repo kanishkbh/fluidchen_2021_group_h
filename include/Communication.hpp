@@ -33,9 +33,20 @@ class Communication {
     static void communicate_bottom(Matrix<double>& x, int tag);
 
     /** 
-     * @Brief communicate a Matrix borders to all neighboring threads, as a wrapper to Communication::communicate_XXX
+     * @brief communicate a Matrix borders to all neighboring threads, as a wrapper to Communication::communicate_XXX
      * */
     static void communicate_all(Matrix<double>& x, int tag);
+
+    /**
+     * @brief Does a AllReduce call to compute a sum through all processes
+     * */
+    static void communicate_sum_double(double* src, double* target);
+
+    /**
+     * @brief Does a AllReduce call to compute a sum through all processes
+     * */
+    static void communicate_sum_int(int* src, int* target);
+
 
     // Threads of the neighboring
     static int _left_neighbor_rank, _right_neighbor_rank, _top_neighbor_rank, _bottom_neighbor_rank;

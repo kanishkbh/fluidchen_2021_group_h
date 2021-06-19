@@ -269,7 +269,8 @@ void Case::simulate() {
     /* Get the total number of fluid cells to normalize the residuals */
     int LOCAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
     int TOTAL_NUMBER_OF_CELLS_REDUCED;
-    MPI_Allreduce(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    //MPI_Allreduce(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    Communication::communicate_sum_int(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED);
     
 
     /* Initialize the logger */
@@ -319,7 +320,8 @@ void Case::simulate() {
             
             /* Compute TOTAL residual */
             double res_reduction;
-            MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            //MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            Communication::communicate_sum_double(&res, &res_reduction);
             res = res_reduction / TOTAL_NUMBER_OF_CELLS_REDUCED;
             res = std::sqrt(res);
 

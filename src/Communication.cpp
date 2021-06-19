@@ -124,3 +124,12 @@ void Communication::communicate_all(Matrix<double>& x, int tag) {
     communicate_left(x, tag);
     communicate_bottom(x, tag);
 }
+
+void Communication::communicate_sum_double(double* src, double* target) {
+    MPI_Allreduce(src, target, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+}
+
+
+void Communication::communicate_sum_int(int* src, int* target) {
+    MPI_Allreduce(src, target, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+}

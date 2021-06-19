@@ -44,6 +44,8 @@ PressureTestCase::PressureTestCase(std::string file_name, int argn, char **args)
     double in_temp;      /* Inlet (Dirichlet) Temperature */
     int use_pressure{0}; /* If non-zero, use pressure BC instead of inflow velocity*/
     std::string energy_eq; /* If "on", enable heat transfer */
+    std::string solver_type = "SOR"; /* Can be SOR, CG, ... */
+
 
     if (file.is_open()) {
 
@@ -189,7 +191,7 @@ std::vector<double> PressureTestCase::pressure_solve(unsigned N) {
     /* Get the total number of fluid cells to normalize the residuals */
     int LOCAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
     int TOTAL_NUMBER_OF_CELLS_REDUCED;
-    MPI_Allreduce(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    Communication::communicate_sum_int(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED);
     // Initialization
     std::vector<double> out;
 
@@ -223,7 +225,7 @@ std::vector<double> PressureTestCase::pressure_solve(unsigned N) {
         res = _pressure_solver->solve(_field, _grid, _boundaries);
             /* Compute TOTAL residual */
             double res_reduction;
-            MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            Communication::communicate_sum_double(&res, &res_reduction);
             res = res_reduction / TOTAL_NUMBER_OF_CELLS_REDUCED;
             res = std::sqrt(res);
 
