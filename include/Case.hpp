@@ -39,7 +39,8 @@ class Case {
      */
     void simulate();
 
-  private:
+  protected:
+    Case() = default;
     /// Plain case name without paths
     std::string _case_name;
     /// Output directiory name
