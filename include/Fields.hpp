@@ -120,6 +120,11 @@ class Fields {
     Matrix<double> &p_matrix();
 
     /**
+     * @brief Access a const matrix reference to the rhs of the PPE
+     * */
+    const Matrix<double> &rs_matrix() const {return _RS;}
+
+    /**
      * @brief Access a matrix reference to the temperature
      * */
     Matrix<double> &t_matrix() {return _T;}

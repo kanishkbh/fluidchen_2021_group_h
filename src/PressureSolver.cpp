@@ -45,3 +45,53 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     
     return rloc;
 }
+
+double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+    // 1) Initialization : Compute residual matrix. Direction is residual at first
+    double imax = grid.imax();
+    double jmax = grid.jmax();
+    double dx = grid.dx();
+    double dy = grid.dy();
+
+
+    residual = Matrix<double>(field.p_matrix().imax(), field.p_matrix().jmax());
+    // Reset pressure (Neumann is trivially true then) then apply Dirichlet BC if any
+    for (int i =0; i < residual.imax(); ++i) {
+        for (int j = 0; j < residual.jmax(); ++j) {
+            field.p(i, j) = 0;
+        }
+    }
+
+    for (auto& boundary_ptr : boundaries) {
+            boundary_ptr->apply(field, true);
+        }
+
+    /* Compute residual = "b - Ax" but x is 0 in fluid cells => b 
+       Search direction is initialized to residual too
+    */
+    residual = field.rs_matrix();
+    direction = residual;
+
+    /* Square residual of the previous step is reused. Let's compute it for frist iteration */
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        double val = field.rs(i, j);
+        square_residual += (val * val);
+    }
+
+
+}
+
+double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+    // 1) Initialization : Compute residual matrix. Direction is residual at first
+    // Loop :
+    /**
+     * Update with alpha = r²/(dAd) (x = x + alpha*d)
+     * r = r - alpha*A*d
+     * beta = new_r²/old_r²
+     * new direction : new_r + beta*d_i
+     * */
+
+}
