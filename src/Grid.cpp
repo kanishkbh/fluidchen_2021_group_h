@@ -8,9 +8,11 @@
 #include <vector>
 #include <cassert>
 
-
 //-----------------------------------------------------------------------------------------------------------
-Grid::Grid(std::string geom_name, Domain &domain) {
+Grid::Grid(std::string geom_name, Domain &domain, bool has_left_neighbor, bool has_right_neighbor,
+           bool has_top_neighbor, bool has_bottom_neighbor)
+    : _has_left_neighbor(has_left_neighbor), _has_right_neighbor(has_right_neighbor),
+      _has_top_neighbor(has_top_neighbor), _has_bottom_neighbor(has_bottom_neighbor) {
 
     _domain = domain;
 
@@ -53,55 +55,66 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int j = 0;
 
     for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
-        {
-            i = 0;
-        }
+        { i = 0; }
         for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
             
-            switch (geometry_data.at(i_geom).at(j_geom))
-            {
-            case 0:
-                _cells(i, j) = Cell(i, j, cell_type::FLUID);
-                _fluid_cells.push_back(&_cells(i, j));
-                break;
-            case 1:
-                _cells(i, j) = Cell(i, j, cell_type::INFLOW);
-                _inflow_cells.push_back(&_cells(i, j));
-                break;
-            case 2:
-                _cells(i, j) = Cell(i, j, cell_type::OUTFLOW);
-                _outflow_cells.push_back(&_cells(i, j));
-                break;
-            case 3:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_3);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 4:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_4);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 5:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_5);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 6:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_6);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 7:
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_7);
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                break;
-            case 8:
-                _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL);
-                _moving_wall_cells.push_back(&_cells(i, j));
-                break;
-            
-            default:
-            throw std::runtime_error("Invalid cell type !");
-                break;
-            }
+            bool is_ghost = ((_has_right_neighbor && i_geom == _domain.imax - 1) || (_has_left_neighbor && i_geom == _domain.imin) ||
+                (_has_top_neighbor && j_geom == _domain.jmax - 1) ||
+                (_has_bottom_neighbor && j_geom == _domain.jmin)) ;
 
+            if (is_ghost) 
+                {
+                    if (geometry_data.at(i_geom).at(j_geom) == 0)
+                        _cells(i, j) = Cell(i, j, cell_type::FLUID);
+                    else
+                        _cells(i, j) = Cell(i, j, cell_type::MPI_GHOST_WALL);
+                }
+            else {
+
+                switch (geometry_data.at(i_geom).at(j_geom)) {
+                case 0:
+                    _cells(i, j) = Cell(i, j, cell_type::FLUID);
+                    if (i != 0 && i != imaxb()-1 && j != 0 && j != jmaxb()-1)
+                        _fluid_cells.push_back(&_cells(i, j));
+                    break;
+                case 1:
+                    _cells(i, j) = Cell(i, j, cell_type::INFLOW);
+                    _inflow_cells.push_back(&_cells(i, j));
+                    break;
+                case 2:
+                    _cells(i, j) = Cell(i, j, cell_type::OUTFLOW);
+                    _outflow_cells.push_back(&_cells(i, j));
+                    break;
+                case 3:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_3);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 4:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_4);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 5:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_5);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 6:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_6);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 7:
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL_7);
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                    break;
+                case 8:
+                    _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL);
+                    _moving_wall_cells.push_back(&_cells(i, j));
+                    break;
+
+                default:
+                    throw std::runtime_error("Invalid cell type !");
+                    break;
+                }
+            }
 
             ++i;
         }
@@ -250,7 +263,6 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 }
 //-----------------------------------------------------------------------------------------------------------
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
-
     int numcols, numrows, depth;
 
     std::ifstream infile(filedoc);
@@ -272,9 +284,11 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     ss >> numrows >> numcols;
     // Fourth line : depth
     ss >> depth;
-    assert(numrows == _domain.size_x + 2);
-    assert(numcols == _domain.size_y + 2);
+    
+    assert(numrows == _domain.domain_size_x + 2);
+    assert(numcols == _domain.domain_size_y + 2);
 
+    // We read the global array (which is a bit redundant) then assign geometry_data to the specific part of the subdomain
     int array[numrows][numcols];
 
     // Following lines : data
@@ -283,6 +297,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             ss >> geometry_data[row][col];
         }
     }
+
 
     infile.close();
 }

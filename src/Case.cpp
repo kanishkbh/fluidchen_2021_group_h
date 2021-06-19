@@ -1,7 +1,9 @@
 #include "Case.hpp"
 #include "Enums.hpp"
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
+#include <mpi.h>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -101,24 +103,38 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "use_pressure_input") file >> use_pressure;
                 if (var == "PIN") file >> _P_IN;
                 if (var == "energy_eq") file >> energy_eq;
+                if (var == "iproc") file >> _iproc;
+                if (var == "jproc") file >> _jproc;
             }
         }
     }
-
     else {
         std::cerr << "Couldn't open file " << file_name << ". Aborting." << std::endl;
         exit(EXIT_FAILURE);
     }
 
+    // Check number of processes matches. If only one process, no partition.
+    int num_processes;
+    MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+    MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
+    assert (_iproc * _jproc == num_processes || num_processes == 1);
+    if (num_processes == 1) {
+        _iproc = 1;
+        _jproc = 1;
+    }
+
+    
     file.close();
 
     // Update the boolean for pressure input and heat equation
-    if (energy_eq == "on") {
-        std::cout << "Enabling heat transfer." << std::endl;
-        _use_energy = true;
-    } else {
-        std::cout << "Heat transfer disabled." << std::endl;
+    if (_rank == 0) {
+        if (energy_eq == "on") {
+            std::cout << "Enabling heat transfer." << std::endl;
+        } else {
+            std::cout << "Heat transfer disabled." << std::endl;
+        }
     }
+    _use_energy = energy_eq == "on";
     _use_pressure_input = (use_pressure != 0);
 
     //-----------------------------------------------------------------------------------------------------------
@@ -138,11 +154,12 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
     build_domain(domain, imax, jmax);
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain);
+    _grid = Grid(_geom_name, domain, _left_neighbor_rank != -1, _right_neighbor_rank != -1,
+                 _top_neighbor_rank != -1, _bottom_neighbor_rank != -1);
 
-//-----------------------------------------------------------------------------------------------------------    
+    //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
@@ -231,25 +248,31 @@ void Case::set_file_names(std::string file_name) {
 //-----------------------------------------------------------------------------------------------------------
 
 void Case::simulate() {
-
     double t = 0.0;
     double dt = _field.calculate_dt(_grid);
     int timestep = 0;
     int output_id = 0;
     double output_counter = 0.0;
+    std::ofstream logger;
+
+    /* Get the total number of fluid cells to normalize the residuals */
+    int LOCAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
+    int TOTAL_NUMBER_OF_CELLS_REDUCED;
+    MPI_Allreduce(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    
 
     /* Initialize the logger */
-    std::string outputname =
-        _dict_name + '/' + _case_name + "_log.txt";
+    if (_rank == 0) {
+        std::string outputname = _dict_name + '/' + _case_name + "_log.txt";
 
-    std::ofstream logger(outputname);
-    if (!logger.is_open())
-        std::cerr << "Couldn't open the file " << outputname << ". Simulation will run without logs" << std::endl;
-    else
-        std::cerr << "Starting to log in file " << outputname << std::endl;
+        logger = std::ofstream(outputname);
+        if (!logger.is_open())
+            std::cerr << "Couldn't open the file " << outputname << ". Simulation will run without logs" << std::endl;
+        else
+            std::cerr << "Starting to log in file " << outputname << std::endl;
 
-    logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
-
+        logger << "# iter_number; time ; dt; pressure_iterations; pressure_residual" << std::endl;
+    }
 
     /* Main loop */
     while (t < _t_end) {
@@ -258,15 +281,20 @@ void Case::simulate() {
         for (auto& boundary_ptr : _boundaries) {
             boundary_ptr->apply(_field);
         }
-        
-        //Update temperatures
+
+        // Update temperatures
         // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
-        if (_use_energy)
+        if (_use_energy) {
             _field.calculate_T(_grid);
-        
+            communicate_all(_field.t_matrix(), MessageTag::T);
+        }
 
         // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
+
+        // Communicate F and G
+        communicate_all(_field.f_matrix(), MessageTag::F);
+        communicate_all(_field.g_matrix(), MessageTag::G);
 
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
@@ -276,10 +304,20 @@ void Case::simulate() {
 
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
+            
+            /* Compute TOTAL residual */
+            double res_reduction;
+            MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            res = res_reduction / TOTAL_NUMBER_OF_CELLS_REDUCED;
+            res = std::sqrt(res);
+
             // Apply the Boundary conditions (only on pressure)
             for (auto& boundary_ptr : _boundaries) {
                 boundary_ptr->apply(_field, true);
             }
+
+            communicate_all(_field.p_matrix(), MessageTag::P);
+            
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
                 
@@ -287,12 +325,17 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
+        communicate_all(_field.v_matrix(), MessageTag::V);
+        communicate_all(_field.u_matrix(), MessageTag::U);
+
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
-        logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
+        if (_rank == 0)
+            logger << timestep << "; " << t << "; " << dt << "; " << iter << "; " << res << std::endl;
+            
         if (output_counter >= _output_freq)
             {
-                output_vtk(output_id++);
+                output_vtk(output_id++, _rank);
                 output_counter -= _output_freq;
             }
 
@@ -303,10 +346,21 @@ void Case::simulate() {
         timestep += 1;
         dt = _field.calculate_dt(_grid);
 
+        // Broadcast the smallest computed dt to all processes.
+        double dt_reduction;
+        MPI_Allreduce(&dt, &dt_reduction, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD); 
+        dt = dt_reduction;
 
 
     }
 
+}
+
+void Case::communicate_all(Matrix<double>& x, int tag) {
+    Communication::communicate_right(x, tag, _right_neighbor_rank, _left_neighbor_rank);
+    Communication::communicate_top(x, tag, _top_neighbor_rank, _bottom_neighbor_rank);
+    Communication::communicate_left(x, tag, _left_neighbor_rank, _right_neighbor_rank);
+    Communication::communicate_bottom(x, tag, _bottom_neighbor_rank, _top_neighbor_rank);
 }
 
 
@@ -428,12 +482,91 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
+
+    /* Partition the domain in the main process */
+    if (_rank == 0) {
+        int Lx = imax_domain / _iproc;
+        int Ly = jmax_domain / _jproc;
+        int rx = imax_domain % _iproc;
+        int ry = jmax_domain % _jproc;
+
+        for (int ip = 0; ip < _iproc; ++ip) {
+            for (int jp = 0; jp < _jproc; ++jp)
+                {
+                    // Assign to process ip + iproc * jp the bounds of the reigion (ip, jp)
+                    // The will be used to build the geometry and become each case's imin/max and jmin/max on the matrices
+                    int target_rank = ip + _iproc * jp;
+
+                   
+                        
+
+                    /**
+                     * Handling rounding :
+                     * Let N be the number of internal cells on a row (i.e. not counting the outer boundaries)
+                     * Let P = iproc. Then N = L*P + r with L = floor(N/P) and r = N % P
+                     * The r first subdomains will have L+1 true cells (+ ghosts) and the (P-r) lasts will have L cells.
+                     * Similar reasoning for vertical boundaries
+                     */
+
+                    //0-5 : imin, imax, jmin, jmax, size_x, size_y of the current rank, in terms of the global grid
+                    int boundary_data[10]; 
+                    
+                    boundary_data[0] = ip * Lx + std::min(rx, ip);
+                    boundary_data[1] = boundary_data[0] + Lx + 2 + (ip < rx ? 1 : 0); //Add domain_size + 1 to the left boundary
+                    boundary_data[2] = jp * Ly + std::min(ry, jp);
+                    boundary_data[3] = boundary_data[2] + Ly + 2 + (jp < ry ? 1 : 0);
+                    boundary_data[4] = Lx + (ip < rx ? 1 : 0);
+                    boundary_data[5] = Ly + (jp < ry ? 1 : 0);
+
+                     // Assign neighbor ranks. Default value of -1 no neighbor (i.e. true border)
+                     // 6-9 : left, right, top, bottom
+                    if (ip == 0)
+                        boundary_data[6] = -1;
+                    else
+                        boundary_data[6] = target_rank - 1;
+
+                    if (ip == _iproc - 1)
+                        boundary_data[7] = -1;
+                    else
+                        boundary_data[7] = target_rank + 1;
+
+                    if (jp == _jproc - 1)
+                        boundary_data[8] = -1;
+                    else
+                        boundary_data[8] = target_rank + _iproc;
+
+                    if (jp == 0)
+                        boundary_data[9] = -1;
+                    else
+                        boundary_data[9] = target_rank - _iproc;
+
+                    MPI_Send(boundary_data, 10, MPI_INT, target_rank, MessageTag::DOMAIN, MPI_COMM_WORLD);
+                }
+        }
+
+    }
+
+
+    // Read local values from the master rank
+    int boundary_data[10];
+    MPI_Recv(boundary_data, 10, MPI_INT, 0, MessageTag::DOMAIN, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    domain.imin = boundary_data[0];
+    domain.imax = boundary_data[1];
+    domain.jmin = boundary_data[2];  
+    domain.jmax = boundary_data[3];
+    domain.size_x = boundary_data[4];
+    domain.size_y = boundary_data[5];
+
+    _left_neighbor_rank = boundary_data[6];
+    _right_neighbor_rank = boundary_data[7];
+    _top_neighbor_rank = boundary_data[8];
+    _bottom_neighbor_rank = boundary_data[9];
+
+    // Print the partition
+    std::cout << "(" << _rank << ") works on x-domain " << domain.imin << '-' << domain.imax 
+    << " and on y-domain " << domain.jmin << '-' << domain.jmax 
+    << ". Domain size is " << domain.size_x << 'x' << domain.size_y << std::endl;
 }
 
 void Case::setupBoundaryConditions() {

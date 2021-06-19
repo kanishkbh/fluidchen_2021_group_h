@@ -33,12 +33,15 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         rloc += (val * val);
     }
     {
-        res = rloc / (grid.fluid_cells().size());
-        res = std::sqrt(res);
+        // Compute the sum of errors, and normalize in the main loop.
+        // This is because each process needs to know the total number of cells to divide the total residual
+
+        // res = rloc / (grid.fluid_cells().size());
+        // res = std::sqrt(res);
     }
 
     
 
     
-    return res;
+    return rloc;
 }

@@ -53,6 +53,16 @@ A log file in the output folder is also created and updated in real time, with f
 
 If input file does not contain a geometry file, fluidchen will run lid-driven cavity case with given parameters.
 
+### Parallel running
+
+If you want to use parallel version with MPI, run :
+
+```shell
+mpirun -np X ./build/fluidchen ./example_cases/LidDrivenCavity/LidDrivenCavity.dat
+```
+
+where `X` is the number of processes. It has match `iproc * jproc` from the .dat file or be 1. 
+
 ### Predefined batches of input
 The second worksheet deals with several cases that include energy and non-energy simulations. To run all the files together use **./run_all.sh **
 **Disclaimer:** This may take several minutes, hence use with caution. 

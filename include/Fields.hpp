@@ -120,6 +120,21 @@ class Fields {
     Matrix<double> &p_matrix();
 
     /**
+     * @brief Access a matrix reference to the temperature
+     * */
+    Matrix<double> &t_matrix() {return _T;}
+
+     /**
+     * @brief Access a matrix reference to F
+     * */
+    Matrix<double> &f_matrix() {return _F;}
+
+     /**
+     * @brief Access a matrix const reference to G
+     * */
+    Matrix<double> &g_matrix() {return _G;}
+
+    /**
      * @brief Access a matrix const reference to U
      * */
     const Matrix<double> &u_matrix() const {return _U;}
@@ -128,6 +143,16 @@ class Fields {
      * @brief Access a matrix const reference to V
      * */
     const Matrix<double> &v_matrix() const {return _V;}
+
+    /**
+     * @brief Access a matrix non-const reference to U
+     * */
+    Matrix<double> &u_matrix() {return _U;}
+
+    /**
+     * @brief Access a matrix non-const reference to V
+     * */
+    Matrix<double> &v_matrix() {return _V;}
 
     /**
      * @brief Access a matrix const reference to T

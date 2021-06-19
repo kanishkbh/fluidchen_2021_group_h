@@ -74,9 +74,21 @@ class Case {
     /// Solver convergence tolerance
     double _tolerance;
     
+    // MPI Rank, geometry data
+    int _rank{0};
+    int _iproc{1}, _jproc{1};
+    int _local_imin, _local_imax, _local_jmin, _local_jmax;
+
+    // Threads of the neighboring
+    int _left_neighbor_rank{-1}, _right_neighbor_rank{-1}, _top_neighbor_rank{-1}, _bottom_neighbor_rank{-1};
 
     /// Maximum number of iterations for the solver
     int _max_iter;
+
+    /** 
+     * @Brief communicate a Matrix borders to all neighboring threads, as a wrapper to Communication::communicate_XXX
+     * */
+    void communicate_all(Matrix<double>& x, int tag);
 
     /**
      * @brief Creating file names from given input data file

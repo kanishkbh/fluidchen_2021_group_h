@@ -17,6 +17,20 @@ enum class border_position {
     RIGHT,
 };
 
+namespace MessageTag {
+    enum {
+        DOMAIN,
+        F,
+        G,
+        T,
+        P,
+        U,
+        V,
+        TIMESTEP
+    };
+
+}
+
 enum GeometryType {
     obstacle_id,
     fluid_outlet,
@@ -45,5 +59,7 @@ enum class cell_type {
     FIXED_WALL_6,
     FIXED_WALL_7,
     MOVING_WALL,
-    DEFAULT
+    MPI_GHOST_WALL,
+    MPI_GHOST_FLUID,
+    DEFAULT,
 };
