@@ -1,4 +1,5 @@
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -55,16 +56,6 @@ double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bou
 
 
     residual = Matrix<double>(field.p_matrix().imax(), field.p_matrix().jmax());
-    // Reset pressure (Neumann is trivially true then) then apply Dirichlet BC if any
-    /*for (int i =0; i < residual.imax(); ++i) {
-        for (int j = 0; j < residual.jmax(); ++j) {
-            field.p(i, j) = 0;
-        }
-    }*/
-
-    for (auto& boundary_ptr : boundaries) {
-            boundary_ptr->apply(field, true);
-        }
 
     /* Compute residual = "b - Ax" but x is 0 in fluid cells => b 
        Search direction is initialized to residual too
@@ -94,13 +85,18 @@ double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bou
 
     }
 
+    double total_residual;
+    //Dot product over all of the grid
+    
+    Communication::communicate_sum_double(&square_residual, &total_residual);
+    square_residual = total_residual;
+
 
 }
 
 double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
     
     /*Compute alpha =  square_residual / (d*A*d) */
-    // TODO : ADD COMMUNICATION
 
     double alpha = square_residual;
     double dAd = 0;
@@ -113,7 +109,11 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         dAd += val;
     }
 
-    alpha /= dAd;
+    /* Dot product over all the grid */
+    double sum_dAd = dAd;
+    Communication::communicate_sum_double(&dAd, &sum_dAd);
+ 
+    alpha /= sum_dAd;
 
     /* Update x and r. Also compute new square residual */
     double new_square_res = 0;
@@ -123,11 +123,27 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         int j = currentCell->j();
 
         field.p(i, j) += alpha * direction(i, j);
-        residual(i, j) -= alpha * a_direction(i, j);
+        
+    }
 
+    /* Critical : communicate pressure ! */
+    Communication::communicate_all(field.p_matrix(), MessageTag::P);
+    Communication::communicate_all(direction, MessageTag::P);
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        residual(i, j) -= alpha * a_direction(i, j);
         new_square_res += (residual(i, j) * residual(i, j));
         
     }
+
+    double total_residual;
+    double local_res_to_return = new_square_res;
+    //Dot product over all of the grid
+    Communication::communicate_sum_double(&new_square_res, &total_residual);
+    new_square_res = total_residual;
 
     double beta = new_square_res / square_residual;
     square_residual = new_square_res;
@@ -149,5 +165,5 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         a_direction(i, j) = Discretization::laplacian(direction, i, j);
     }
 
-    return square_residual;
+    return local_res_to_return;
 }

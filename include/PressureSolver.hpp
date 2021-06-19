@@ -27,6 +27,23 @@ class PressureSolver {
    * 
    * */
     virtual double init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {}
+
+    /**
+     * @brief Computes the residual in the current state.
+     **/
+    double res(Fields &field, Grid &grid) {
+        double rloc = 0.0;
+
+        for (auto currentCell : grid.fluid_cells()) {
+            int i = currentCell->i();
+            int j = currentCell->j();
+
+            double val = Discretization::laplacian(field.p_matrix(), i, j) - field.rs(i, j);
+            rloc += (val * val);
+        }
+
+        return rloc;
+    }
 };
 
 /**
