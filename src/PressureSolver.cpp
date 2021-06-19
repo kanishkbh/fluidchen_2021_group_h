@@ -56,11 +56,11 @@ double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bou
 
     residual = Matrix<double>(field.p_matrix().imax(), field.p_matrix().jmax());
     // Reset pressure (Neumann is trivially true then) then apply Dirichlet BC if any
-    for (int i =0; i < residual.imax(); ++i) {
+    /*for (int i =0; i < residual.imax(); ++i) {
         for (int j = 0; j < residual.jmax(); ++j) {
             field.p(i, j) = 0;
         }
-    }
+    }*/
 
     for (auto& boundary_ptr : boundaries) {
             boundary_ptr->apply(field, true);
@@ -70,6 +70,15 @@ double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bou
        Search direction is initialized to residual too
     */
     residual = field.rs_matrix();
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        // Residual = b-Ax
+        residual(i, j) -= Discretization::laplacian(field.p_matrix(), i, j);
+    }
+
     direction = residual;
     a_direction = direction;
 
@@ -79,9 +88,10 @@ double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bou
         int i = currentCell->i();
         int j = currentCell->j();
 
-        double val = field.rs(i, j);
+        double val = residual(i, j);
         square_residual += (val * val);
         a_direction(i, j) = Discretization::laplacian(direction, i, j);
+
     }
 
 
