@@ -85,6 +85,6 @@ class CG : public PressureSolver {
     virtual double init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) override;
 
   private:
-    Matrix<double> residual, direction;
+    Matrix<double> residual, direction, a_direction;
     double square_residual{0};
 };

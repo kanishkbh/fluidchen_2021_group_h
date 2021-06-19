@@ -152,7 +152,9 @@ PressureTestCase::PressureTestCase(std::string file_name, int argn, char **args)
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
-    _pressure_solver = std::make_unique<SOR>(omg);
+
+/* TODO : PICK SOLVER  */
+    _pressure_solver = std::make_unique<CG>();
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -183,6 +185,8 @@ std::vector<double> PressureTestCase::pressure_solve(unsigned N) {
     // Initialization
     std::vector<double> out;
 
+
+
     // Apply the Boundary conditions
     for (auto &boundary_ptr : _boundaries) {
         boundary_ptr->apply(_field);
@@ -204,6 +208,8 @@ std::vector<double> PressureTestCase::pressure_solve(unsigned N) {
 
     // Poisson Pressure Equation
     _field.calculate_rs(_grid);
+    /* First step of the solver */
+    _pressure_solver->init(_field, _grid, _boundaries);
 
     for (int i = 0; i < N; ++i) {
         res = _pressure_solver->solve(_field, _grid, _boundaries);

@@ -71,27 +71,74 @@ double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bou
     */
     residual = field.rs_matrix();
     direction = residual;
+    a_direction = direction;
 
     /* Square residual of the previous step is reused. Let's compute it for frist iteration */
+    /* Also needeed is the product A*d */
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
 
         double val = field.rs(i, j);
         square_residual += (val * val);
+        a_direction(i, j) = Discretization::laplacian(direction, i, j);
     }
 
 
 }
 
 double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
-    // 1) Initialization : Compute residual matrix. Direction is residual at first
-    // Loop :
-    /**
-     * Update with alpha = r²/(dAd) (x = x + alpha*d)
-     * r = r - alpha*A*d
-     * beta = new_r²/old_r²
-     * new direction : new_r + beta*d_i
-     * */
+    
+    /*Compute alpha =  square_residual / (d*A*d) */
+    // TODO : ADD COMMUNICATION
 
+    double alpha = square_residual;
+    double dAd = 0;
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        double val = direction(i, j) * a_direction(i, j);
+        dAd += val;
+    }
+
+    alpha /= dAd;
+    std::cout << "Alpha : " << alpha << std::endl;
+
+    /* Update x and r. Also compute new square residual */
+    double new_square_res = 0;
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        field.p(i, j) += alpha * direction(i, j);
+        residual(i, j) -= alpha * a_direction(i, j);
+
+        new_square_res += (residual(i, j) * residual(i, j));
+        
+    }
+
+    double beta = new_square_res / square_residual;
+    square_residual = new_square_res;
+
+    /* Compute new direction, then A*direction */
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        double val = residual(i, j) + beta*direction(i, j);
+        direction(i, j) = val;
+    }
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        a_direction(i, j) = Discretization::laplacian(direction, i, j);
+    }
+
+    return square_residual;
 }

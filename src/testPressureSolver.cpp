@@ -20,7 +20,7 @@ int main(int argn, char **args) {
         
         
         auto t_start = std::chrono::steady_clock::now();
-        auto&& res = problem.pressure_solve(500);
+        auto&& res = problem.pressure_solve(50);
         auto t_end  = std::chrono::steady_clock::now();
         if (rank == 0)
         {
