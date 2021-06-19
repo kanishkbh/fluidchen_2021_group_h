@@ -156,8 +156,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
     //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain, _left_neighbor_rank != -1, _right_neighbor_rank != -1,
-                 _top_neighbor_rank != -1, _bottom_neighbor_rank != -1);
+    _grid = Grid(_geom_name, domain, Communication::_left_neighbor_rank != -1, Communication::_right_neighbor_rank != -1,
+                 Communication::_top_neighbor_rank != -1, Communication::_bottom_neighbor_rank != -1);
 
     //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
@@ -165,7 +165,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
     _pressure_solver = std::make_unique<SOR>(omg);
-    _pressure_solver = std::make_unique<CG>();
+    //_pressure_solver = std::make_unique<CG>();
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -359,10 +359,10 @@ void Case::simulate() {
 }
 
 void Case::communicate_all(Matrix<double>& x, int tag) {
-    Communication::communicate_right(x, tag, _right_neighbor_rank, _left_neighbor_rank);
-    Communication::communicate_top(x, tag, _top_neighbor_rank, _bottom_neighbor_rank);
-    Communication::communicate_left(x, tag, _left_neighbor_rank, _right_neighbor_rank);
-    Communication::communicate_bottom(x, tag, _bottom_neighbor_rank, _top_neighbor_rank);
+    Communication::communicate_right(x, tag);
+    Communication::communicate_top(x, tag);
+    Communication::communicate_left(x, tag);
+    Communication::communicate_bottom(x, tag);
 }
 
 
@@ -560,10 +560,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.size_x = boundary_data[4];
     domain.size_y = boundary_data[5];
 
-    _left_neighbor_rank = boundary_data[6];
-    _right_neighbor_rank = boundary_data[7];
-    _top_neighbor_rank = boundary_data[8];
-    _bottom_neighbor_rank = boundary_data[9];
+    Communication::_left_neighbor_rank = boundary_data[6];
+    Communication::_right_neighbor_rank = boundary_data[7];
+    Communication::_top_neighbor_rank = boundary_data[8];
+    Communication::_bottom_neighbor_rank = boundary_data[9];
 
     // Print the partition
     std::cout << "(" << _rank << ") works on x-domain " << domain.imin << '-' << domain.imax 

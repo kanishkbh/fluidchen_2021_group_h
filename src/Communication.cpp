@@ -1,6 +1,13 @@
 #include "Communication.hpp"
 
-void Communication::communicate_right(Matrix<double>& x, int tag, int _right_neighbor_rank, int _left_neighbor_rank) {
+/* SHould change to MPI NO PROC */
+int Communication::_bottom_neighbor_rank = -1;
+int Communication::_top_neighbor_rank = -1;
+int Communication::_left_neighbor_rank = -1;
+int Communication::_right_neighbor_rank = -1;
+
+
+void Communication::communicate_right(Matrix<double>& x, int tag) {
     if (_left_neighbor_rank == -1 && _right_neighbor_rank == -1)
         return; //No horizontal communication
 
@@ -27,7 +34,7 @@ void Communication::communicate_right(Matrix<double>& x, int tag, int _right_nei
         x(0, j) = in[j];
 }
 
-void Communication::communicate_left(Matrix<double>& x, int tag, int _left_neighbor_rank, int _right_neighbor_rank) {
+void Communication::communicate_left(Matrix<double>& x, int tag) {
     if (_left_neighbor_rank == -1 && _right_neighbor_rank == -1)
         return; //No horizontal communication
 
@@ -55,7 +62,7 @@ void Communication::communicate_left(Matrix<double>& x, int tag, int _left_neigh
         x(i, j) = in[j];
 }
 
-void Communication::communicate_top(Matrix<double>& x, int tag, int _top_neighbor_rank, int _bottom_neighbor_rank) {
+void Communication::communicate_top(Matrix<double>& x, int tag) {
     if (_top_neighbor_rank == -1 && _bottom_neighbor_rank == -1)
         return; //No vertical communication
 
@@ -82,7 +89,7 @@ void Communication::communicate_top(Matrix<double>& x, int tag, int _top_neighbo
         x(i, 0) = in[i];
 }
 
-void Communication::communicate_bottom(Matrix<double>& x, int tag, int _bottom_neighbor_rank, int _top_neighbor_rank) {
+void Communication::communicate_bottom(Matrix<double>& x, int tag) {
 
     if (_top_neighbor_rank == -1 && _bottom_neighbor_rank == -1)
         return; //No vertical communication
