@@ -56,6 +56,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double in_temp;      /* Inlet (Dirichlet) Temperature */
     int use_pressure{0}; /* If non-zero, use pressure BC instead of inflow velocity*/
     std::string energy_eq; /* If "on", enable heat transfer */
+    std::string solver_type = "SOR"; /* Can be SOR, CG, ... */
 
     if (file.is_open()) {
 
@@ -105,6 +106,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "iproc") file >> _iproc;
                 if (var == "jproc") file >> _jproc;
+                if (var == "pressure_solver") file >> solver_type;
             }
         }
     }
@@ -164,8 +166,16 @@ Case::Case(std::string file_name, int argn, char **args) {
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
-    _pressure_solver = std::make_unique<SOR>(omg);
-    //_pressure_solver = std::make_unique<CG>();
+    if (solver_type == "CG")
+        {
+            _pressure_solver = std::make_unique<CG>();
+        }
+    else if (solver_type == "SOR")
+        {
+            _pressure_solver = std::make_unique<SOR>(omg);
+        }
+    else
+        throw std::runtime_error("Unrecognized solver");
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -287,15 +297,15 @@ void Case::simulate() {
         // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
         if (_use_energy) {
             _field.calculate_T(_grid);
-            communicate_all(_field.t_matrix(), MessageTag::T);
+            Communication::communicate_all(_field.t_matrix(), MessageTag::T);
         }
 
         // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
 
         // Communicate F and G
-        communicate_all(_field.f_matrix(), MessageTag::F);
-        communicate_all(_field.g_matrix(), MessageTag::G);
+        Communication::communicate_all(_field.f_matrix(), MessageTag::F);
+        Communication::communicate_all(_field.g_matrix(), MessageTag::G);
 
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
@@ -318,7 +328,7 @@ void Case::simulate() {
                 boundary_ptr->apply(_field, true);
             }
 
-            communicate_all(_field.p_matrix(), MessageTag::P);
+            Communication::communicate_all(_field.p_matrix(), MessageTag::P);
             
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
@@ -327,8 +337,8 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
-        communicate_all(_field.v_matrix(), MessageTag::V);
-        communicate_all(_field.u_matrix(), MessageTag::U);
+        Communication::communicate_all(_field.v_matrix(), MessageTag::V);
+        Communication::communicate_all(_field.u_matrix(), MessageTag::U);
 
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
@@ -358,12 +368,6 @@ void Case::simulate() {
 
 }
 
-void Case::communicate_all(Matrix<double>& x, int tag) {
-    Communication::communicate_right(x, tag);
-    Communication::communicate_top(x, tag);
-    Communication::communicate_left(x, tag);
-    Communication::communicate_bottom(x, tag);
-}
 
 
 

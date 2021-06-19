@@ -86,10 +86,7 @@ class Case {
     /// Maximum number of iterations for the solver
     int _max_iter;
 
-    /** 
-     * @Brief communicate a Matrix borders to all neighboring threads, as a wrapper to Communication::communicate_XXX
-     * */
-    void communicate_all(Matrix<double>& x, int tag);
+    
 
     /**
      * @brief Creating file names from given input data file

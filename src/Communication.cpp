@@ -117,3 +117,10 @@ void Communication::communicate_bottom(Matrix<double>& x, int tag) {
     for (int i = 0; i < x.imax(); ++i)
         x(i, j) = in[i];
 }
+
+void Communication::communicate_all(Matrix<double>& x, int tag) {
+    communicate_right(x, tag);
+    communicate_top(x, tag);
+    communicate_left(x, tag);
+    communicate_bottom(x, tag);
+}

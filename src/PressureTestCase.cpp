@@ -153,8 +153,16 @@ PressureTestCase::PressureTestCase(std::string file_name, int argn, char **args)
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
 
-/* TODO : PICK SOLVER  */
-    _pressure_solver = std::make_unique<CG>();
+    if (solver_type == "CG")
+        {
+            _pressure_solver = std::make_unique<CG>();
+        }
+    else if (solver_type == "SOR")
+        {
+            _pressure_solver = std::make_unique<SOR>(omg);
+        }
+    else
+        throw std::runtime_error("Unrecognized solver");
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -196,15 +204,15 @@ std::vector<double> PressureTestCase::pressure_solve(unsigned N) {
     // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
     if (_use_energy) {
         _field.calculate_T(_grid);
-        communicate_all(_field.t_matrix(), MessageTag::T);
+        Communication::communicate_all(_field.t_matrix(), MessageTag::T);
     }
 
     // Fluxes (with *new* temperatures)
     _field.calculate_fluxes(_grid);
 
     // Communicate F and G
-    communicate_all(_field.f_matrix(), MessageTag::F);
-    communicate_all(_field.g_matrix(), MessageTag::G);
+    Communication::communicate_all(_field.f_matrix(), MessageTag::F);
+    Communication::communicate_all(_field.g_matrix(), MessageTag::G);
 
     // Poisson Pressure Equation
     _field.calculate_rs(_grid);
@@ -224,7 +232,7 @@ std::vector<double> PressureTestCase::pressure_solve(unsigned N) {
                 boundary_ptr->apply(_field, true);
             }
 
-            communicate_all(_field.p_matrix(), MessageTag::P);
+            Communication::communicate_all(_field.p_matrix(), MessageTag::P);
             out.push_back(res);
     }
 
