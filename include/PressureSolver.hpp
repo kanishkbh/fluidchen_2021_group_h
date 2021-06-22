@@ -26,7 +26,7 @@ class PressureSolver {
    * @brief For solvers that require an initialization step. Defaults to nothing.
    * 
    * */
-    virtual double init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {}
+    virtual void init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {}
 
     /**
      * @brief Computes the residual in the current state.
@@ -99,7 +99,7 @@ class CG : public PressureSolver {
     /**
      * @brief Initializes the CG algorithm
      * */
-    virtual double init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) override;
+    virtual void init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) override;
 
   private:
     Matrix<double> residual, direction, a_direction;

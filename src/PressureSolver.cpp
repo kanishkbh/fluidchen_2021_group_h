@@ -47,7 +47,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     return rloc;
 }
 
-double CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+void CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
     // 1) Initialization : Compute residual matrix. Direction is residual at first
     double imax = grid.imax();
     double jmax = grid.jmax();
