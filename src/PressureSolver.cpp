@@ -198,8 +198,10 @@ double SD::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
     }
 
     //TODO : sum
-
-    double alpha = square_res/rAr;
+    double total_rr, total_rar;
+    Communication::communicate_sum_double(&square_res, &total_rr);
+    Communication::communicate_sum_double(&rAr, &total_rar);
+    double alpha = total_rr/total_rar;
 
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
