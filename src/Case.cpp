@@ -169,11 +169,20 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (solver_type == "CG")
         {
             _pressure_solver = std::make_unique<CG>();
+            if (_rank == 0)
+                std::cout << "Using CG." << std::endl;
         }
     else if (solver_type == "SOR")
         {
             _pressure_solver = std::make_unique<SOR>(omg);
+            if (_rank == 0)
+                std::cout << "Using SOR." << std::endl;
         }
+    else if (solver_type == "SD") {
+        _pressure_solver = std::make_unique<SD>();
+            if (_rank == 0)
+                std::cout << "Using Steepest Descent." << std::endl;
+    }
     else
         throw std::runtime_error("Unrecognized solver");
 //-----------------------------------------------------------------------------------------------------------

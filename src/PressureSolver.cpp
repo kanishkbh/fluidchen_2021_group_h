@@ -167,3 +167,47 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
 
     return local_res_to_return;
 }
+
+void SD::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+    a_residual = Matrix<double>(field.p_matrix().imax(), field.p_matrix().jmax());
+}
+
+double SD::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+    
+    //Compute residual, A*residuall. Descent : x = x + alpha*res
+    //where alpha = r.r/rAr
+
+    residual = field.rs_matrix();
+    double square_res{0}, rAr{0};
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        residual(i, j) -= Discretization::laplacian(field.p_matrix(), i, j);
+        square_res += (residual(i, j) * residual(i, j));
+        
+    }
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        a_residual(i, j) = Discretization::laplacian(residual, i, j);
+        rAr += (residual(i, j) * a_residual(i, j));
+    }
+
+    //TODO : sum
+
+    double alpha = square_res/rAr;
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        field.p(i, j) += alpha * residual(i,j);
+    }
+
+
+    return square_res;
+}

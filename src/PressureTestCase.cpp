@@ -95,6 +95,7 @@ PressureTestCase::PressureTestCase(std::string file_name, int argn, char **args)
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "iproc") file >> _iproc;
                 if (var == "jproc") file >> _jproc;
+                if (var == "pressure_solver") file >> solver_type;
             }
         }
     }
@@ -155,17 +156,18 @@ PressureTestCase::PressureTestCase(std::string file_name, int argn, char **args)
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
 
-    if (solver_type == "CG")
-        {
-            _pressure_solver = std::make_unique<CG>();
-        }
-    else if (solver_type == "SOR")
-        {
-            _pressure_solver = std::make_unique<SOR>(omg);
-        }
-    else
+    if (solver_type == "CG") {
+        _pressure_solver = std::make_unique<CG>();
+        if (_rank == 0) std::cout << "Using CG." << std::endl;
+    } else if (solver_type == "SOR") {
+        _pressure_solver = std::make_unique<SOR>(omg);
+        if (_rank == 0) std::cout << "Using SOR." << std::endl;
+    } else if (solver_type == "SD") {
+        _pressure_solver = std::make_unique<SD>();
+        if (_rank == 0) std::cout << "Using Steepest Descent." << std::endl;
+    } else
         throw std::runtime_error("Unrecognized solver");
-//-----------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
     _tolerance = eps;

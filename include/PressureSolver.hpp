@@ -105,3 +105,31 @@ class CG : public PressureSolver {
     Matrix<double> residual, direction, a_direction;
     double square_residual{0};
 };
+
+/**
+ * @brief Steepest Descent
+ *
+ */
+class SD : public PressureSolver {
+  public:
+    SD() = default;
+
+    virtual ~SD() = default;
+
+    /**
+     * @brief Solve the pressure equation on given field, grid and boundary
+     *
+     * @param[in] field to be used
+     * @param[in] grid to be used
+     * @param[in] boundary to be used
+     */
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+
+    /**
+     * @brief Initializes the CG algorithm
+     * */
+    virtual void init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) override;
+
+  private:
+    Matrix<double> residual, a_residual;
+};
