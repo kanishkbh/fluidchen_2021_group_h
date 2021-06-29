@@ -126,3 +126,16 @@ double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) + P(i - 1, j)) / (_dx * _dx) + (P(i, j + 1) + P(i, j - 1)) / (_dy * _dy);
     return result;
 }
+
+double Discretization::jacobi(const Matrix<double>& P,int i,int j)
+{
+
+    double elem = -2*((1./(_dx*_dx)) + (1./(_dy*_dy)));
+    double result  = P(i,j) / elem;
+    return result;  
+}
+
+double Discretization::gauss_seidel(const Matrix<double>& P,int i,int j)
+{
+    
+}

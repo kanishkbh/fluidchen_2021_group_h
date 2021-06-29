@@ -165,8 +165,20 @@ PressureTestCase::PressureTestCase(std::string file_name, int argn, char **args)
     } else if (solver_type == "SD") {
         _pressure_solver = std::make_unique<SD>();
         if (_rank == 0) std::cout << "Using Steepest Descent." << std::endl;
-    } else
+    } else if (solver_type == "CG_Richardson"){
+        _pressure_solver = std::make_unique<CG_Richardson>();
+        if(_rank==0) std::cout << "Using CG with Richardson" << std::endl; 
+    } else if(solver_type == "CG_Jacobi"){
+        _pressure_solver = std::make_unique<CG_Jacobi>();
+        if(_rank==0) std::cout << "Using CG with Jacobi \n"; 
+    } 
+    // else if(solver_type == "CG_GS") {
+    //     _pressure_solver = std::make_unique<CG_GS>();
+    //     if(_rank==0) std::cout << "Using CG with GS \n"; 
+    // }
+    else{
         throw std::runtime_error("Unrecognized solver");
+    }
     //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------

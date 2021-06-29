@@ -94,7 +94,17 @@ class Discretization {
      */
     static double sor_helper(const Matrix<double> &P, int i, int j);
 
-
+  /** 
+   * Returns the inverse of the Jacobi Matrix for Precoditioning 
+   * Applies only to the PPE - Poisson Pressure Equation 
+   */ 
+    static double jacobi(const Matrix<double>& P,int i,int j); 
+  /** 
+   * Returns the inverse of the GS Matrix for Precoditioning 
+   * Applies only to the PPE - Poisson Pressure Equation 
+   */ 
+    static double gauss_seidel(const Matrix<double>& P,int i,int j);
+    
   private:
     static double _dx;
     static double _dy;
