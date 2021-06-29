@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
-#include "include/Discretization.hpp"
-#include "include/Fields.hpp"
+#include <fstream>
+#include <cassert>
+#include "Discretization.hpp"
+#include "Fields.hpp"
 
 // Function declaration (definition after main)
 void set_A_matrix(Matrix<double>*, int, int, int, double, double);
@@ -46,25 +48,80 @@ int main(int argn, char **args) {
         double VIN;          /* Inlet vertical velocity */
         double in_temp;      /* Inlet (Dirichlet) Temperature */
         
+        std::cout<<"\ndeclared variables\n";
+
+
+        std::string pressure_file_path = "./build/pressure_matrix.txt";
+        std::ifstream pressure_file;
+        pressure_file.open(pressure_file_path);
+        std::ifstream x_velocity_file(pressure_file_path);
+        std::ifstream y_velocity_file(pressure_file_path);
+
+        // READ PRESSURE MATRIX
+        // assert(pressure_file.is_open());
+        std::cout << "file opened\n";
+        std::stringstream ss;
+        // std::string inputLine = "";
+        // Continue with a stringstream
+        ss << pressure_file.rdbuf();
+        // First line : size
+        ss >> imax >> jmax;
         Fields field(nu, dt, tau, imax, jmax, UI, VI, PI, TI, alpha, beta, GX, GY);
         // TODO:    complete and check fields initialization
         //          esp. check that field.p size is imax+1, jmax+1
-
-        double dx = 0.5, dy = 1; // TODO: set realistic values for dx,dy
-        int rmax = imax*jmax;
-        int cmax = imax*jmax;
-        Matrix<double> A(rmax, cmax, 0);
-        set_A_matrix(&A, rmax, cmax, imax, dx, dy);
-
-        // RHS vector
-        std::vector<double> rhs_vec;
-        int k=0; // iterator for rhs_vec
-        for (int j=1; j<jmax-1; j++) {
-            for(int i=1; i<imax-1; i++) {
-                rhs_vec[k] = field.rs(i, j); // TODO: declare and define field object
-                k++;
+        
+        // Read the matrix
+        std::vector<std::vector<double>> pressure_matrix(imax, std::vector<double>(jmax, 0));
+        std::cout << "now reading file into pressure_matrix\n";
+        for (int col = 0; col < imax; ++col) {
+            for (int row = 0; row < jmax; ++row) {
+                // ss >> field.p(col,row);
+                ss >> pressure_matrix[col][row];
             }
         }
+        // print matrix
+        std::cout << "pressure_matrix" << std::endl;
+        std::cout << "-------------------------------" << std::endl;
+        std::cout << std::setiosflags(std::ios::fixed);
+        std::cout << std::setprecision(3);
+        for(int r=0;r<jmax;r++) {
+            for(int c=0;c<imax;c++) {
+                std::cout << pressure_matrix[r][c] << ' ';
+            }
+            std::cout << std::endl;
+        }
+        std::cout<<"----------------------"<<std::endl;
+
+        // // print matrix
+        // std::cout << "field.p" << std::endl;
+        // std::cout << "-------------------------------" << std::endl;
+        // std::cout << std::setiosflags(std::ios::fixed);
+        // std::cout << std::setprecision(3);
+        // for(int r=0;r<jmax;r++) {
+        //     for(int c=0;c<imax;c++) {
+        //         std::cout << field.p(c,r) << ' ';
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout<<"----------------------"<<std::endl;
+
+
+        // double dx = 0.5, dy = 1; // TODO: set realistic values for dx,dy
+        // int rmax = imax*jmax;
+        // int cmax = imax*jmax;
+        // Matrix<double> A(rmax, cmax, 0);
+        // set_A_matrix(&A, rmax, cmax, imax, dx, dy);
+
+        // RHS vector
+        // std::vector<double> rhs_vec;
+        // int k=0; // iterator for rhs_vec
+        // for (int j=1; j<jmax-1; j++) {
+        //     for(int i=1; i<imax-1; i++) {
+        //         rhs_vec[k] = field.rs(i, j); // TODO: declare and define field object
+        //         k++;
+        //     }
+        // }
+        
         // add known (boundary) p values in rhs_vec
         // [TODO]
 
