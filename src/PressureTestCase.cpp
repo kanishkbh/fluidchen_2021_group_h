@@ -241,8 +241,8 @@ std::vector<double> PressureTestCase::pressure_solve(unsigned N) {
             double res_reduction;
             Communication::communicate_sum_double(&res, &res_reduction);
             res = res_reduction / TOTAL_NUMBER_OF_CELLS_REDUCED;
+            std::cerr << res << std::endl;
             res = std::sqrt(res);
-
             // Apply the Boundary conditions (only on pressure)
             for (auto& boundary_ptr : _boundaries) {
                 boundary_ptr->apply(_field, true);

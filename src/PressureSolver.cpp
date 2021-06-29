@@ -1,6 +1,6 @@
 #include "PressureSolver.hpp"
 #include "Communication.hpp"
-#define DEBUG 
+// #define DEBUG 
 #include <cmath>
 #include <iostream>
 static int iter = 1; 
@@ -459,9 +459,9 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         std::cerr << "alpha = " << alpha << std::endl;
         std::cerr << "sigma = " << sigma << std::endl; 
         std::cerr << "beta = " << beta << std::endl;
-        // std::cerr << "sigma new " << sigma_new << std::endl;
+        std::cerr << "sigma new " << sigma_new << std::endl;
         iter++;
     }
 #endif 
-    return sigma_new; 
+    return fabs(sigma_new); 
 }
