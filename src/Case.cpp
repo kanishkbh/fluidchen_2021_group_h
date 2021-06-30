@@ -5,13 +5,16 @@
 
 #include <mpi.h>
 #include <algorithm>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
+#include <cassert>
 
+#ifdef FILESYSTEM
+#include <filesystem>
 namespace filesystem = std::filesystem;
+#endif
 
 #ifdef VTK_FOUND
 #include <vtkCellData.h>
@@ -236,6 +239,8 @@ void Case::set_file_names(std::string file_name) {
 
 
     // Create output directory
+
+#ifdef FILESYSTEM
     filesystem::path folder(_dict_name);
     try {
         filesystem::create_directory(folder);
@@ -245,6 +250,7 @@ void Case::set_file_names(std::string file_name) {
                      "corresponding location"
                   << std::endl;
     }
+#endif
 }
 //-----------------------------------------------------------------------------------------------------------
 /**
@@ -562,7 +568,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     else
                         boundary_data[9] = target_rank - _iproc;
 
-                    MPI_Send(boundary_data, 10, MPI_INT, target_rank, MessageTag::DOMAIN, MPI_COMM_WORLD);
+                    MPI_Send(boundary_data, 10, MPI_INT, target_rank, MessageTag::DOM, MPI_COMM_WORLD);
                 }
         }
 
@@ -571,7 +577,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     // Read local values from the master rank
     int boundary_data[10];
-    MPI_Recv(boundary_data, 10, MPI_INT, 0, MessageTag::DOMAIN, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(boundary_data, 10, MPI_INT, 0, MessageTag::DOM, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     domain.imin = boundary_data[0];
     domain.imax = boundary_data[1];

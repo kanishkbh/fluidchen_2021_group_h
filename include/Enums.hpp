@@ -19,7 +19,7 @@ enum class border_position {
 
 namespace MessageTag {
     enum {
-        DOMAIN,
+        DOM,
         F,
         G,
         T,
