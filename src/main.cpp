@@ -12,7 +12,12 @@ int main(int argn, char **args) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-
+#ifdef VTK_FOUND
+    std::cout << "VTK FOund! " << std::endl;
+#endif
+#ifdef VTK_NOT_FOUND
+    std::cout << "VTK not FOund! " << std::endl;
+#endif
     
 
     if (argn > 1) {
