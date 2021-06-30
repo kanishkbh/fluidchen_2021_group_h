@@ -15,7 +15,7 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 
 void Fields::calculate_fluxes(Grid &grid) {
     
-    std::cout << "inside calculate_fluxes..." << std::endl;
+    // std::cout << "inside calculate_fluxes..." << std::endl;
 
     for (auto cell : grid.fluid_cells()) {
         // std::cout << "inside fluid_cells loop..." << std::endl;
@@ -27,9 +27,9 @@ void Fields::calculate_fluxes(Grid &grid) {
             _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
                                  - Discretization::convection_u(_U,_V,i,j) + _gx 
                                  - _gx * _beta * 0.5*(_T(i,j) + _T(i+1, j)));
-            std::cout   << "dt, nu, L-u, convec-u: " 
-                        << _dt << ", " << _nu << ", " << Discretization::laplacian(_U,i,j) << ", " 
-                        << Discretization::convection_u(_U,_V,i,j) << std::endl ;
+            // std::cout   << "dt, nu, L-u, convec-u: " 
+            //             << _dt << ", " << _nu << ", " << Discretization::laplacian(_U,i,j) << ", " 
+            //             << Discretization::convection_u(_U,_V,i,j) << std::endl ;
         }
         if (cell->neighbour(border_position::TOP)->type() == cell_type::FLUID)
         {
