@@ -12,13 +12,10 @@ int main(int argn, char **args) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-#ifdef VTK_FOUND
-    std::cout << "VTK FOund! " << std::endl;
-#endif
-#ifdef VTK_NOT_FOUND
-    std::cout << "VTK not FOund! " << std::endl;
-#endif
-    
+    #ifndef VTK_FOUND
+    if (rank == 0)
+        std::cout << "Fluidchen was built without VTK. Output is disabled" << std::endl;
+    #endif
 
     if (argn > 1) {
         std::string file_name{args[1]};

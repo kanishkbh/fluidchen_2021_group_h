@@ -13,6 +13,7 @@
 
 namespace filesystem = std::filesystem;
 
+#ifdef VTK_FOUND
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
@@ -21,7 +22,7 @@ namespace filesystem = std::filesystem;
 #include <vtkStructuredGrid.h>
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
-
+#endif
 
 //  std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
 //-----------------------------------------------------------------------------------------------------------
@@ -384,6 +385,7 @@ void Case::simulate() {
 
 
 void Case::output_vtk(int timestep, int my_rank) {
+    #ifdef VTK_FOUND
     // Create a new structured grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 
@@ -497,6 +499,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
     writer->Write();
+
+    #endif
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
