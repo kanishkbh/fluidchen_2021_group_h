@@ -465,3 +465,201 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
 #endif 
     return fabs(sigma_new); 
 }
+
+//-------------------------------------------------------------------------------
+
+void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries)
+{
+    /*
+    1. r_0 = b - Ap
+    2. r_cap_0 = M.inv * r_0
+    3. sigma = r_0 dot (M.inv * r_0) = r_0 dot r_cap_0
+    4. d_0 = r_cap_0
+    */
+    int imax = grid.imax();
+    int jmax = grid.jmax();
+    double dx = grid.dx();
+    double dy = grid.dy(); 
+
+    residual = Matrix<double>(imax+2, jmax+2); 
+    cond_residual = Matrix<double>(imax+2, jmax+2, 0.0); 
+
+    // As we know the pressure is non homogenous 
+    
+    // 1. r0 = b - A p 
+    residual = field.rs_matrix();
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        residual(i,j) -= Discretization::laplacian(field.p_matrix(),i,j);  
+    }
+    
+    // 2. Solve P*q1 = r 
+    //    (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U))
+    double diag = 2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
+    double diag_inv = 1.0 / diag;   // = h^2 / 4.0, if dx == dy == h
+    // 2.1 Forward Substitution : (L+D)*r' = r
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        // if (i != 1) assert(cond_residual(i-1,j) != 0);
+        // if (j != 1) assert(cond_residual(i,j-1) != 0);
+        cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) ); 
+    }
+    // 2.2 Diagonal : D.inv * r'' = r' => r'' = D*r'
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        cond_residual(i,j) = diag * cond_residual(i,j); 
+    }
+    // 2.3 Backward Substitution: (D+U)r_cap = r''
+    for (int i = imax-1; i >= 0; --i) {
+        for (int j = jmax-1; j >= 0; --j) {
+            if(grid.cell(i,j).type() == cell_type::FLUID ) {
+                cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
+            }
+        }
+    }
+    
+    // sigma_0 = <r0,q1> 
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j();
+        sigma += residual(i,j) * cond_residual(i,j);  
+    }
+    direction = cond_residual; 
+    adirection = direction; 
+    double total_sigma = 0; 
+    Communication::communicate_sum_double(&sigma, &total_sigma); 
+    sigma = total_sigma; 
+}
+
+double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries) 
+{
+    /* Note: Terminology - direction = M.inv*r = "q" = "cond_residual"
+    1. Compute alpha = r.q / q.Aq = sigma / q.Aq
+    2. Update p(ij) = p_old(ij) + alpha*q(ij)
+    3. Update r(ij) = r_old(ij) - alpha*A.q(ij)
+    4. Condition the residual (compute P * r_cap = r )
+    5. Compute new directions ( d(ij) = r_cap(ij) + beta * d_old(ij) )
+    */
+    int imax = grid.imax();
+    int jmax = grid.jmax();
+    double dx = grid.dx();
+    double dy = grid.dy(); 
+    
+    // 1)  Compute Alpha 
+    double alpha; 
+    double qAq;
+    
+    // 1.1) Aq 
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j();
+        adirection(i,j) = Discretization::laplacian(direction,i,j);    
+    }
+    // 1.2) q_T * Aq 
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j();
+        qAq += direction(i,j) * adirection(i,j); 
+    }
+
+    // 1.3) Communicate to all processes before computing alpha 
+    double total_denom = qAq; // TODO : Change to qAq if this explodes; 
+    Communication::communicate_sum_double(&qAq,&total_denom); 
+    alpha = sigma / total_denom;
+
+    // 2) Update p 
+    //    p = p + alpha*q 
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        field.p(i,j) += alpha*direction(i,j); 
+    }
+    // Communicate pressure to all iterations 
+    Communication::communicate_all(field.p_matrix(),MessageTag::P); 
+    Communication::communicate_all(direction,MessageTag::P); 
+
+    // 3) Update residual 
+    //    r = r - alpha*q 
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        residual(i,j) -= alpha * adirection(i,j); 
+    }
+
+    // 4) Compute beta
+    // 4.1) Condition  the residual 
+    //      Solve P*q1 = r 
+    //      (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U))
+    double diag = 2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
+    double diag_inv = 1.0 / diag;   // = h^2 / 4.0, if dx == dy == h
+    // 4.1.1 Forward Substitution : (L+D)*r' = r
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        // if (i != 1) assert(cond_residual(i-1,j) != 0);
+        // if (j != 1) assert(cond_residual(i,j-1) != 0);
+        cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) ); 
+    }
+    // 4.1.2 Diagonal : D.inv * r'' = r' => r'' = D*r'
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        cond_residual(i,j) = diag * cond_residual(i,j); 
+    }
+    // 4.1.3 Backward Substitution: (D+U)r_cap = r''
+    for (int i = imax-1; i >= 0; --i) {
+        for (int j = jmax-1; j >= 0; --j) {
+            if(grid.cell(i,j).type() == cell_type::FLUID ) {
+                cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
+            }
+        }
+    }
+
+    // 4.2) Compute denominator = r dot r_cap 
+    double sigma_new = 0; 
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        sigma_new += residual(i,j) * cond_residual(i,j); 
+    }
+    double return_val = sigma_new; 
+    double total_sigma = 0;
+    Communication::communicate_sum_double(&sigma_new,&total_sigma); 
+    // 4.3) Compute beta
+    double beta = total_sigma / sigma; 
+    sigma = sigma_new; 
+
+    // 5) Compute new directions 
+    for(auto cell:grid.fluid_cells())
+    {
+        int i = cell->i();
+        int j = cell->j(); 
+        direction(i,j) = cond_residual(i,j) + beta*(direction(i,j)); 
+    }
+
+#ifdef DEBUG 
+    if(iter % 100)
+    {
+        std::cerr << "alpha = " << alpha << std::endl;
+        std::cerr << "sigma = " << sigma << std::endl; 
+        std::cerr << "beta = " << beta << std::endl;
+        std::cerr << "sigma new " << sigma_new << std::endl;
+        iter++;
+    }
+#endif 
+    return fabs(sigma_new); 
+}

@@ -135,7 +135,16 @@ double Discretization::jacobi(const Matrix<double>& P,int i,int j)
     return result;  
 }
 
-double Discretization::gauss_seidel(const Matrix<double>& P,int i,int j)
+double Discretization::GS_Forward_Sub(const Matrix<double>& P,int i,int j)
 {
-    
+    // this is basically SOR_helper without the forward terms
+    double result = P(i - 1, j) / (_dx * _dx) + P(i, j - 1) / (_dy * _dy);
+    return result;
+}
+
+double Discretization::GS_Backward_Sub(const Matrix<double>& P,int i,int j)
+{
+    // this is basically SOR_helper without the backward terms
+    double result = P(i + 1, j) / (_dx * _dx) + P(i, j + 1) / (_dy * _dy);
+    return result;
 }
