@@ -139,6 +139,8 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         
     }
 
+    Communication::communicate_all(residual, MessageTag::P);
+
     double total_residual;
     double local_res_to_return = new_square_res;
     //Dot product over all of the grid
@@ -157,6 +159,8 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         double val = residual(i, j) + beta*direction(i, j);
         direction(i, j) = val;
     }
+
+    Communication::communicate_all(direction, MessageTag::P);
 
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
