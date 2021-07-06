@@ -353,6 +353,8 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
         int i = cell->i();
         int j = cell->j(); 
         residual(i,j) -= Discretization::laplacian(field.p_matrix(),i,j);  
+        // std::cout << "cell (" << i << ',' << j << ") residual(ij): " << residual(i,j) << std::endl;
+
     }
     // q1 = P^-1 r 
     for(auto cell:grid.fluid_cells())
@@ -360,6 +362,8 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
         int i = cell->i();
         int j = cell->j(); 
         cond_residual(i,j) = Discretization::jacobi(residual,i,j); 
+        // std::cout << "cell (" << i << ',' << j << ") residual(ij), Disc::jacobi: " << (double)residual(i,j) << ',' << (double)Discretization::jacobi(residual,i,j) <<std::endl;
+
     }
     // \sigma_0 = <r0,q1> 
     for(auto cell:grid.fluid_cells())
@@ -394,7 +398,14 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int i = cell->i();
         int j = cell->j();
         qAq += direction(i,j) * adirection(i,j); 
+        #ifdef DEBUG
+        // std::cout << "cell ( "<< i << ", " << j << "): qAq term = " << direction(i,j) * adirection(i,j) << std::endl;
+        #endif
     }
+    #ifdef DEBUG
+        std::cout << "total qAq  = " << qAq << std::endl;
+    #endif
+
 
     // Communicate to all processes before computing alpha 
     double total_denom = qAq; // TODO : Change to qAq if this explodes; 
@@ -430,7 +441,9 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int j = cell->j(); 
         cond_residual(i,j) = Discretization::jacobi(residual,i,j);
     }
-
+    #ifdef DEBUG
+        std::cout << "After Disc::jacobi.: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
+    #endif
     // Compute beta 
     double sigma_new = 0; 
     for(auto cell:grid.fluid_cells())
@@ -454,12 +467,13 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
     }
 
 #ifdef DEBUG 
-    if(iter % 100)
+    // if(iter % 100)
     {
         std::cerr << "alpha = " << alpha << std::endl;
         std::cerr << "sigma = " << sigma << std::endl; 
         std::cerr << "beta = " << beta << std::endl;
         std::cerr << "sigma new " << sigma_new << std::endl;
+        std::cout << std::endl;
         iter++;
     }
 #endif 
@@ -470,7 +484,10 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
 
 void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries)
 {
-    /*
+    #ifdef DEBUG
+        std::cout << "\nI AM CG_GS::INIT !!!" << std::endl;
+    #endif
+    /* CG_GS initialization steps:
     1. r_0 = b - Ap
     2. r_cap_0 = M.inv * r_0
     3. sigma = r_0 dot (M.inv * r_0) = r_0 dot r_cap_0
@@ -493,21 +510,39 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
         int i = cell->i();
         int j = cell->j(); 
         residual(i,j) -= Discretization::laplacian(field.p_matrix(),i,j);  
+        // std::cout << "cell (" << i << ',' << j << ") residual(ij): " << residual(i,j) << std::endl;
     }
     
-    // 2. Solve P*q1 = r 
-    //    (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U))
-    double diag = 2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
-    double diag_inv = 1.0 / diag;   // = h^2 / 4.0, if dx == dy == h
+    // 2. Solve P*rc = r 
+    /*    (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U))
+            1. solving the system (D+L)*r' = r for r′using forward-substitution
+            2. solving D.inv*r'' = r' for r'' by multiplying r' with D
+            3. solving(D+U)*rc = r'' for  rc using backward-substitution.
+        ref: https://www5.in.tum.de/pub/klimenko_idp.pdf [page 12]
+    */
+    double diag = -2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
+    double diag_inv = 1.0 / diag;
+    #ifdef DEBUG
+        std::cout << " diag, diag_inv: \t" << diag << ", " << diag_inv << std::endl;   // = h^2 / 4.0, if dx == dy == h
+    #endif
     // 2.1 Forward Substitution : (L+D)*r' = r
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j(); 
-        // if (i != 1) assert(cond_residual(i-1,j) != 0);
-        // if (j != 1) assert(cond_residual(i,j-1) != 0);
-        cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) ); 
+    for(int j = 0; j < jmax; j++) {
+        for(int i = 0; i < imax; i++) {
+            if(grid.cell(i,j).type() == cell_type::FLUID ) {
+                cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) );
+                // std::cout << "cell (" << i << ',' << j << ") residual(ij), Disc: " << residual(i,j) << ',' << Discretization::GS_Forward_Sub(cond_residual,i,j) <<std::endl;
+
+            }
+        }    
     }
+    #ifdef DEBUG
+        std::cout << "After Forward_sub: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
+    #endif
+    #ifdef DEBUG_2
+        std::cout << "cond_residual after Forward_sub: " << std::endl;
+        std::cout.precision(2);
+        cond_residual.pretty_print(std::cout);
+    #endif
     // 2.2 Diagonal : D.inv * r'' = r' => r'' = D*r'
     for(auto cell:grid.fluid_cells())
     {
@@ -520,10 +555,22 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
         for (int j = jmax-1; j >= 0; --j) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
                 cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
+                #ifdef DEBUG
+                // if(i = imax-1) std::cout << "\tcond_residual(imax,j) should be zero: "<< cond_residual(i+1,j) << std::endl;
+                // if(i = jmax-1) std::cout << "\tcond_residual(i,jmax) should be zero: "<< cond_residual(i,j+1) << std::endl;
+                #endif
             }
         }
     }
-    
+    #ifdef DEBUG
+        std::cout << "After Backward_sub: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
+    #endif
+    #ifdef DEBUG_2
+        std::cout << "cond_residual after Backward_sub: " << std::endl;
+        std::cout.precision(2);
+        cond_residual.pretty_print(std::cout);
+    #endif
+
     // sigma_0 = <r0,q1> 
     for(auto cell:grid.fluid_cells())
     {
@@ -540,11 +587,14 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
 
 double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries) 
 {
-    /* Note: Terminology - direction = M.inv*r = "q" = "cond_residual"
+    #ifdef DEBUG
+        std::cout << "\nI AM CG_GS::SOLVE !!!" << std::endl;
+    #endif
+    /* Note: Terminology --> direction <=> M.inv*r <=> "q" <=> "cond_residual"
     1. Compute alpha = r.q / q.Aq = sigma / q.Aq
     2. Update p(ij) = p_old(ij) + alpha*q(ij)
     3. Update r(ij) = r_old(ij) - alpha*A.q(ij)
-    4. Condition the residual (compute P * r_cap = r )
+    4. Condition the residual ( Solve P*q = r )
     5. Compute new directions ( d(ij) = r_cap(ij) + beta * d_old(ij) )
     */
     int imax = grid.imax();
@@ -569,15 +619,23 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
         int i = cell->i();
         int j = cell->j();
         qAq += direction(i,j) * adirection(i,j); 
+        #ifdef DEBUG
+            // std::cout << "cell ( "<< i << ", " << j << "): qAq term = " << direction(i,j) * adirection(i,j) << std::endl;
+        #endif
     }
+    #ifdef DEBUG
+        std::cout << "total qAq  = " << qAq << std::endl;
+    #endif
 
     // 1.3) Communicate to all processes before computing alpha 
-    double total_denom = qAq; // TODO : Change to qAq if this explodes; 
+    double total_denom = qAq; // TODO : Change to qAq if this explodes (?); 
     Communication::communicate_sum_double(&qAq,&total_denom); 
     alpha = sigma / total_denom;
+    #ifdef DEBUG
+        std::cerr << "alpha=sigma/denom = " << sigma << " / " << total_denom << std::endl;
+    #endif
 
-    // 2) Update p 
-    //    p = p + alpha*q 
+    // 2) Update p //   p = p + alpha*q 
     for(auto cell:grid.fluid_cells())
     {
         int i = cell->i();
@@ -588,8 +646,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     Communication::communicate_all(field.p_matrix(),MessageTag::P); 
     Communication::communicate_all(direction,MessageTag::P); 
 
-    // 3) Update residual 
-    //    r = r - alpha*q 
+    // 3) Update residual //    r = r - alpha*q 
     for(auto cell:grid.fluid_cells())
     {
         int i = cell->i();
@@ -598,20 +655,33 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     }
 
     // 4) Compute beta
-    // 4.1) Condition  the residual 
-    //      Solve P*q1 = r 
-    //      (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U))
-    double diag = 2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
+    //    4.1) Condition  the residual: //         (Solve P*q1 = r )
+    //         (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U)) described in CG_GS::init()
+    double diag = -2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
     double diag_inv = 1.0 / diag;   // = h^2 / 4.0, if dx == dy == h
+    #ifdef DEBUG
+        std::cout << " dx,dy,diag, diag_inv: \t" << dx << ", " << dy << ", " << diag << ", " << diag_inv << std::endl;   // = h^2 / 4.0, if dx == dy == h
+    #endif
+    
     // 4.1.1 Forward Substitution : (L+D)*r' = r
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j(); 
-        // if (i != 1) assert(cond_residual(i-1,j) != 0);
-        // if (j != 1) assert(cond_residual(i,j-1) != 0);
-        cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) ); 
+    for(int j = 0; j < jmax; j++) {
+        for(int i = 0; i < imax; i++) {
+            if(grid.cell(i,j).type() == cell_type::FLUID ) {
+            // if (i != 1) assert(cond_residual(i-1,j) != 0);
+            // if (j != 1) assert(cond_residual(i,j-1) != 0);
+            cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) );
+            }
+        }    
     }
+    #ifdef DEBUG
+        std::cout << "After Forward_sub: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
+    #endif
+    #ifdef DEBUG_2
+        std::cout << "cond_residual after Forward_sub: " << std::endl;
+        std::cout.precision(2);
+        cond_residual.pretty_print(std::cout);
+    #endif
+
     // 4.1.2 Diagonal : D.inv * r'' = r' => r'' = D*r'
     for(auto cell:grid.fluid_cells())
     {
@@ -619,14 +689,27 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
         int j = cell->j(); 
         cond_residual(i,j) = diag * cond_residual(i,j); 
     }
+    #ifdef DEBUG
+        std::cout << "After Diagonal mult.: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
+    #endif
     // 4.1.3 Backward Substitution: (D+U)r_cap = r''
     for (int i = imax-1; i >= 0; --i) {
         for (int j = jmax-1; j >= 0; --j) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
                 cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
+                // if(i = imax-1) std::cout << "\tcond_residual(imax,j) should be zero: "<< cond_residual(i+1,j) << std::endl;
+                // if(i = jmax-1) std::cout << "\tcond_residual(i,jmax) should be zero: "<< cond_residual(i,j+1) << std::endl;
             }
         }
     }
+    #ifdef DEBUG
+        std::cout << "After Backward_sub: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
+    #endif
+    #ifdef DEBUG_2
+        std::cout << "cond_residual after Backward_sub: " << std::endl;
+        std::cout.precision(2);
+        cond_residual.pretty_print(std::cout);
+    #endif
 
     // 4.2) Compute denominator = r dot r_cap 
     double sigma_new = 0; 
@@ -639,6 +722,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     double return_val = sigma_new; 
     double total_sigma = 0;
     Communication::communicate_sum_double(&sigma_new,&total_sigma); 
+
     // 4.3) Compute beta
     double beta = total_sigma / sigma; 
     sigma = sigma_new; 
@@ -652,12 +736,14 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     }
 
 #ifdef DEBUG 
-    if(iter % 100)
+    // if(iter % 100)
     {
+        // std::cerr << "iteration = " << iter << std::endl;
         std::cerr << "alpha = " << alpha << std::endl;
-        std::cerr << "sigma = " << sigma << std::endl; 
+        // std::cerr << "sigma = " << sigma << std::endl; 
         std::cerr << "beta = " << beta << std::endl;
-        std::cerr << "sigma new " << sigma_new << std::endl;
+        // std::cerr << "sigma new " << sigma_new << std::endl;
+        std::cerr << std::endl;
         iter++;
     }
 #endif 
