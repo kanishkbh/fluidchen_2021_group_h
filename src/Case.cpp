@@ -187,6 +187,11 @@ Case::Case(std::string file_name, int argn, char **args) {
             if (_rank == 0)
                 std::cout << "Using Steepest Descent." << std::endl;
     }
+    else if (solver_type == "CGJ") {
+        _pressure_solver = std::make_unique<CG_Jacobi>();
+            if (_rank == 0)
+                std::cout << "Using CG, Jacobi preconditioner." << std::endl;
+    }
     else
         throw std::runtime_error("Unrecognized solver");
 //-----------------------------------------------------------------------------------------------------------
