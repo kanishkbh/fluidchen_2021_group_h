@@ -554,7 +554,7 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
     for (int i = imax-1; i >= 0; --i) {
         for (int j = jmax-1; j >= 0; --j) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
-                cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
+                cond_residual(i,j) = diag_inv * ( cond_residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
                 #ifdef DEBUG
                 // if(i = imax-1) std::cout << "\tcond_residual(imax,j) should be zero: "<< cond_residual(i+1,j) << std::endl;
                 // if(i = jmax-1) std::cout << "\tcond_residual(i,jmax) should be zero: "<< cond_residual(i,j+1) << std::endl;
@@ -696,7 +696,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     for (int i = imax-1; i >= 0; --i) {
         for (int j = jmax-1; j >= 0; --j) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
-                cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
+                cond_residual(i,j) = diag_inv * ( cond_residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
                 // if(i = imax-1) std::cout << "\tcond_residual(imax,j) should be zero: "<< cond_residual(i+1,j) << std::endl;
                 // if(i = jmax-1) std::cout << "\tcond_residual(i,jmax) should be zero: "<< cond_residual(i,j+1) << std::endl;
             }
