@@ -171,12 +171,12 @@ PressureTestCase::PressureTestCase(std::string file_name, int argn, char **args)
     } else if(solver_type == "CG_Jacobi"){
         _pressure_solver = std::make_unique<CG_Jacobi>();
         if(_rank==0) std::cout << "Using CG with Jacobi \n"; 
+    } else if(solver_type == "CG_GS") {
+        _pressure_solver = std::make_unique<CG_GS>();
+        if(_rank==0) std::cout << "Using CG with Gauss Seidel Preconditioner \n"; 
     } 
-    // else if(solver_type == "CG_GS") {
-    //     _pressure_solver = std::make_unique<CG_GS>();
-    //     if(_rank==0) std::cout << "Using CG with GS \n"; 
-    // }
     else{
+        std::cout << "solver_type = " << solver_type << std::endl;
         throw std::runtime_error("Unrecognized solver");
     }
     //-----------------------------------------------------------------------------------------------------------

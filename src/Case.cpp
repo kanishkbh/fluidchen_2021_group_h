@@ -15,7 +15,6 @@
 #include <filesystem>
 namespace filesystem = std::filesystem;
 #endif
-
 #ifdef VTK_FOUND
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
@@ -173,20 +172,29 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (solver_type == "CG")
         {
             _pressure_solver = std::make_unique<CG>();
-            if (_rank == 0)
-                std::cout << "Using CG." << std::endl;
+            if (_rank == 0) std::cout << "Using CG." << std::endl;
         }
     else if (solver_type == "SOR")
         {
             _pressure_solver = std::make_unique<SOR>(omg);
-            if (_rank == 0)
-                std::cout << "Using SOR." << std::endl;
+            if (_rank == 0) std::cout << "Using SOR." << std::endl;
         }
     else if (solver_type == "SD") {
         _pressure_solver = std::make_unique<SD>();
-            if (_rank == 0)
-                std::cout << "Using Steepest Descent." << std::endl;
-    }
+            if (_rank == 0) std::cout << "Using Steepest Descent." << std::endl;
+        } 
+    else if (solver_type == "CG_Richardson"){
+            _pressure_solver = std::make_unique<CG_Richardson>();
+            if(_rank==0) std::cout << "Using CG with Richardson" << std::endl; 
+        } 
+    else if(solver_type == "CG_Jacobi"){
+            _pressure_solver = std::make_unique<CG_Jacobi>();
+            if(_rank==0) std::cout << "Using CG with Jacobi \n"; 
+        } 
+    else if(solver_type == "CG_GS") {
+            _pressure_solver = std::make_unique<CG_GS>();
+            if(_rank==0) std::cout << "Using CG with Gauss Seidel Preconditioner \n"; 
+        } 
     else
         throw std::runtime_error("Unrecognized solver");
 //-----------------------------------------------------------------------------------------------------------
@@ -350,6 +358,7 @@ void Case::simulate() {
             Communication::communicate_all(_field.p_matrix(), MessageTag::P);
             
             ++iter;
+            std::cerr << "iter, residual : " << iter << ',' << res << std::endl;
         } while (res > _tolerance && iter < _max_iter);
                 
         
