@@ -74,6 +74,8 @@ void CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bound
         residual(i, j) -= Discretization::laplacian(field.p_matrix(), i, j);
     }
 
+    Communication::communicate_all(residual, MessageTag::P);
+
     // apply boundary conditions on residual
 
     direction = residual;
@@ -91,6 +93,7 @@ void CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bound
         a_direction(i, j) = Discretization::boundary_aware_laplacian(direction, i, j, grid);
 
     }
+    Communication::communicate_all(a_direction, MessageTag::P);
 
     double total_residual;
     //Dot product over all of the grid
