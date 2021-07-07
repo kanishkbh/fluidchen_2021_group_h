@@ -194,6 +194,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     else
         throw std::runtime_error("Unrecognized solver");
+
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -334,18 +335,34 @@ void Case::simulate() {
         _pressure_solver->init(_field, _grid, _boundaries);
 
         double res;
+        #ifdef DEF_COMPARE_TRUE_RES
+        double other_res;
+        #endif
         unsigned iter = 0;
 
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
+
             
             /* Compute TOTAL residual */
             double res_reduction;
-            //MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
             Communication::communicate_sum_double(&res, &res_reduction);
             res = res_reduction / TOTAL_NUMBER_OF_CELLS_REDUCED;
             res = std::sqrt(res);
 
+            #ifdef DEF_COMPARE_TRUE_RES
+
+            other_res = _pressure_solver->res(_field, _grid);
+            double buff;
+            Communication::communicate_sum_double(&other_res, &buff);
+            other_res = sqrt(buff/TOTAL_NUMBER_OF_CELLS_REDUCED);
+
+            std::cout << "Solver res vs true res " << res << " " << other_res << std::endl;
+
+            #endif
+
+            
 
             // Apply the Boundary conditions (only on pressure)
             for (auto& boundary_ptr : _boundaries) {
