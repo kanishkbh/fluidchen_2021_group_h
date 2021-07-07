@@ -225,3 +225,17 @@ class CG_GS : public PressureSolver {
     Matrix<double> direction,adirection,residual,cond_residual; 
     double sigma{0}; 
 };
+
+class CG_DILU : public PressureSolver {
+  public:
+    CG_DILU() = default; 
+    virtual ~CG_DILU() = default;
+    virtual void init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries) override; 
+    virtual double solve(Fields& field,Grid& grid, const std::vector<std::unique_ptr<Boundary>>& boundaries);
+
+  private: 
+    Matrix<double> direction,adirection,residual,cond_residual; 
+    double sigma{0}; 
+    std::vector<double> D_vector;
+
+};

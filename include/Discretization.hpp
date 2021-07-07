@@ -107,16 +107,24 @@ class Discretization {
      */
     static double sor_helper(const Matrix<double> &P, int i, int j);
 
-  /** 
+    /** 
    * Returns the inverse of the Jacobi Matrix for Precoditioning 
    * Applies only to the PPE - Poisson Pressure Equation 
    */ 
     static double jacobi(const Matrix<double>& P,int i,int j); 
-  /** 
-   * Returns the inverse of the GS Matrix for Precoditioning 
-   * Applies only to the PPE - Poisson Pressure Equation 
-   */ 
-    static double gauss_seidel(const Matrix<double>& P,int i,int j);
+    
+    /**
+     * @brief Terms of laplacian needed for GS_Preconditioning, i.e. excluding unknown value at
+     * (i,j) , (i+1,j), (i,j+1) for Forward_Sub, and excluding
+     * (i,j) , (i-1,j), (i,j-1) for Backward_Sub, and excluding
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double GS_Forward_Sub(const Matrix<double>& P,int i,int j);
+    static double GS_Backward_Sub(const Matrix<double>& P,int i,int j);
     
   private:
     static double _dx;
