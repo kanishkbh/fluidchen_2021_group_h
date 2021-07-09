@@ -562,8 +562,8 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
     #endif
 
     // 2.1 Forward Substitution : (L+D)*r' = r
-    for(int j = 0; j < jmax; j++) {
-        for(int i = 0; i < imax; i++) {
+    for(int j = 0; j < jmax+2; j++) {
+        for(int i = 0; i < imax+2; i++) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
                 diag_inv = 1 / Discretization::diagonal_term(i,j,grid);
                 cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) );
@@ -703,8 +703,8 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     #endif
     
     // 4.1.1 Forward Substitution : (L+D)*r' = r
-    for(int j = 0; j < jmax; j++) {
-        for(int i = 0; i < imax; i++) {
+    for(int j = 0; j < jmax+2; j++) {
+        for(int i = 0; i < imax+2; i++) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
             diag_inv = 1 / Discretization::diagonal_term(i,j,grid);
             cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) );
