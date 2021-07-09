@@ -560,13 +560,14 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
     #ifdef DEBUG
         std::cout << " diag, diag_inv: \t" << diag << ", " << diag_inv << std::endl;   // = h^2 / 4.0, if dx == dy == h
     #endif
+
     // 2.1 Forward Substitution : (L+D)*r' = r
     for(int j = 0; j < jmax; j++) {
         for(int i = 0; i < imax; i++) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
+                diag_inv = 1 / Discretization::diagonal_term(i,j,grid);
                 cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) );
                 // std::cout << "cell (" << i << ',' << j << ") residual(ij), Disc: " << residual(i,j) << ',' << Discretization::GS_Forward_Sub(cond_residual,i,j) <<std::endl;
-
             }
         }    
     }
@@ -578,17 +579,20 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
         std::cout.precision(2);
         cond_residual.pretty_print(std::cout);
     #endif
+    
     // 2.2 Diagonal : D.inv * r'' = r' => r'' = D*r'
     for(auto cell:grid.fluid_cells())
     {
         int i = cell->i();
         int j = cell->j(); 
-        cond_residual(i,j) = diag * cond_residual(i,j); 
+        cond_residual(i,j) = Discretization::diagonal_term(i,j,grid) * cond_residual(i,j); 
     }
-    // 2.3 Backward Substitution: (D+U)r_cap = r''
-    for (int i = imax-1; i >= 0; --i) {
-        for (int j = jmax-1; j >= 0; --j) {
+
+    // 2.3 Backward Substitution: (D+U)*r_cap = r''
+    for (int i = imax; i >= 0; --i) {
+        for (int j = jmax; j >= 0; --j) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
+                diag_inv = 1 / Discretization::diagonal_term(i,j,grid);
                 cond_residual(i,j) = diag_inv * ( cond_residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
                 #ifdef DEBUG
                 // if(i = imax-1) std::cout << "\tcond_residual(imax,j) should be zero: "<< cond_residual(i+1,j) << std::endl;
@@ -646,7 +650,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     {
         int i = cell->i();
         int j = cell->j();
-        adirection(i,j) = Discretization::laplacian(direction,i,j);    
+        adirection(i,j) = Discretization::boundary_aware_laplacian(direction,i,j, grid);    
     }
     // 1.2) q_T * Aq 
     for(auto cell:grid.fluid_cells())
@@ -692,8 +696,8 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     // 4) Compute beta
     //    4.1) Condition  the residual: //         (Solve P*q1 = r )
     //         (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U)) described in CG_GS::init()
-    double diag = -2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
-    double diag_inv = 1.0 / diag;   // = h^2 / 4.0, if dx == dy == h
+    double diag = -2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));  /// TODO: remove this
+    double diag_inv = 1.0 / diag;   /// TODO: remove this
     #ifdef DEBUG
         std::cout << " dx,dy,diag, diag_inv: \t" << dx << ", " << dy << ", " << diag << ", " << diag_inv << std::endl;   // = h^2 / 4.0, if dx == dy == h
     #endif
@@ -702,8 +706,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     for(int j = 0; j < jmax; j++) {
         for(int i = 0; i < imax; i++) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
-            // if (i != 1) assert(cond_residual(i-1,j) != 0);
-            // if (j != 1) assert(cond_residual(i,j-1) != 0);
+            diag_inv = 1 / Discretization::diagonal_term(i,j,grid);
             cond_residual(i,j) = diag_inv * ( residual(i,j) - Discretization::GS_Forward_Sub(cond_residual,i,j) );
             }
         }    
@@ -722,15 +725,16 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
     {
         int i = cell->i();
         int j = cell->j(); 
-        cond_residual(i,j) = diag * cond_residual(i,j); 
+        cond_residual(i,j) = Discretization::diagonal_term(i,j,grid) * cond_residual(i,j); 
     }
     #ifdef DEBUG
         std::cout << "After Diagonal mult.: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
     #endif
     // 4.1.3 Backward Substitution: (D+U)r_cap = r''
-    for (int i = imax-1; i >= 0; --i) {
-        for (int j = jmax-1; j >= 0; --j) {
+    for (int i = imax; i >= 0; --i) {
+        for (int j = jmax; j >= 0; --j) {
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
+                diag_inv = 1 / Discretization::diagonal_term(i,j,grid);
                 cond_residual(i,j) = diag_inv * ( cond_residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
                 // if(i = imax-1) std::cout << "\tcond_residual(imax,j) should be zero: "<< cond_residual(i+1,j) << std::endl;
                 // if(i = jmax-1) std::cout << "\tcond_residual(i,jmax) should be zero: "<< cond_residual(i,j+1) << std::endl;

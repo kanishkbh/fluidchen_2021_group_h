@@ -125,6 +125,15 @@ class Discretization {
      */
     static double GS_Forward_Sub(const Matrix<double>& P,int i,int j);
     static double GS_Backward_Sub(const Matrix<double>& P,int i,int j);
+
+    /**
+     * @brief return the diagonal term of A-matrix of PPE assuming Neuman BC
+     * @param[in] x index
+     * @param[in] y index
+     * @param[in] grid 
+     * @param[out] result
+     */
+    static double diagonal_term(int i, int j, const Grid& g);
     
   private:
     static double _dx;

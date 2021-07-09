@@ -170,3 +170,14 @@ double Discretization::GS_Backward_Sub(const Matrix<double>& P,int i,int j)
     double result = P(i + 1, j) / (_dx * _dx) + P(i, j + 1) / (_dy * _dy);
     return result;
 }
+
+double Discretization::diagonal_term(int i, int j, const Grid& g) {
+    int right = (g.cell(i+1, j).type() == cell_type::FLUID);
+    int left = (g.cell(i-1, j).type() == cell_type::FLUID);
+    int top = (g.cell(i, j+1).type() == cell_type::FLUID);
+    int bottom = (g.cell(i, j-1).type() == cell_type::FLUID);
+
+    double result = -1.0 * (right + left) / (_dx * _dx ) +
+                    -1.0 * (top + bottom) / (_dy * _dy);
+    return result;
+}
