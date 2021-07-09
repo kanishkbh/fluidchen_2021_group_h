@@ -1,5 +1,5 @@
 #include "Discretization.hpp"
-
+#include <cassert>
 #include <cmath>
 
 double Discretization::_dx = 0.0;
@@ -176,7 +176,7 @@ double Discretization::diagonal_term(int i, int j, const Grid& g) {
     int left = (g.cell(i-1, j).type() == cell_type::FLUID);
     int top = (g.cell(i, j+1).type() == cell_type::FLUID);
     int bottom = (g.cell(i, j-1).type() == cell_type::FLUID);
-
+    assert((left+right+top+bottom) >= 2);
     double result = -1.0 * (right + left) / (_dx * _dx ) +
                     -1.0 * (top + bottom) / (_dy * _dy);
     return result;
