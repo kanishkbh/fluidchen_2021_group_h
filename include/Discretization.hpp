@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Datastructures.hpp"
+#include "Grid.hpp"
 
 /**
  * @brief Static discretization methods to modify the fields
@@ -81,6 +82,18 @@ class Discretization {
      *
      */
     static double laplacian(const Matrix<double> &P, int i, int j);
+
+
+  /**
+     * @brief Laplacian term discretization using central difference. If neighbor is a Neumann BC, the gradient is taken to 0
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double boundary_aware_laplacian(const Matrix<double> &P, int i, int j, const Grid& g);
 
     /**
      * @brief Terms of laplacian needed for SOR, i.e. excluding unknown value at

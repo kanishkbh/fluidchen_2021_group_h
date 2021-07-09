@@ -46,6 +46,56 @@ class PressureSolver {
     }
 };
 
+
+/**
+ * @brief Do N iterations of solver A, then switch to solver B
+ * */
+class MixedSolver : public PressureSolver {
+
+  public:
+    MixedSolver(std::unique_ptr<PressureSolver>&& f, std::unique_ptr<PressureSolver>&& s, int times_first)
+        : first(std::move(f)), second(std::move(s)), max_iter(times_first) {}
+    virtual ~MixedSolver() = default;
+
+    /**
+     * @brief Solve the pressure equation on given field, grid and boundary
+     *
+     * @param[in] field to be used
+     * @param[in] grid to be used
+     * @param[in] boundary to be used
+     */
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+        if (iter_counter < max_iter) {
+            ++iter_counter;
+            auto res = first->solve(field, grid, boundaries);
+            //std::cout << "Using first solver" << std::endl;
+            if (iter_counter == max_iter) {
+              second->init(field, grid, boundaries);
+            //  std::cout << "Initiating second solver" << std::endl;
+            }
+            return res;
+        } else {
+          //std::cout << "Using second solver" << std::endl;
+            return second->solve(field, grid, boundaries);
+        }
+    }
+
+    /**
+     * @brief For solvers that require an initialization step. Defaults to nothing.
+     *
+     * */
+    virtual void init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+        iter_counter = 0;
+        first->init(field, grid, boundaries);
+    }
+
+  std::unique_ptr<PressureSolver> first, second;
+  int iter_counter = 0;
+  int max_iter = 0;
+
+
+};
+
 /**
  * @brief Successive Over-Relaxation algorithm for solution of pressure Poisson
  * equation

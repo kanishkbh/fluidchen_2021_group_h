@@ -50,6 +50,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     return rloc;
 }
 
+
 void CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
     // 1) Initialization : Compute residual matrix. Direction is residual at first
     double imax = grid.imax();
@@ -73,10 +74,13 @@ void CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bound
         residual(i, j) -= Discretization::laplacian(field.p_matrix(), i, j);
     }
 
+    Communication::communicate_all(residual, MessageTag::P);
+
     // apply boundary conditions on residual
 
     direction = residual;
     a_direction = direction;
+
 
     /* Square residual of the previous step is reused. Let's compute it for frist iteration */
     /* Also needeed is the product A*d */
@@ -86,16 +90,16 @@ void CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bound
 
         double val = residual(i, j);
         square_residual += (val * val);
-        a_direction(i, j) = Discretization::laplacian(direction, i, j);
+        a_direction(i, j) = Discretization::boundary_aware_laplacian(direction, i, j, grid);
 
     }
+    Communication::communicate_all(a_direction, MessageTag::P);
 
     double total_residual;
     //Dot product over all of the grid
     
     Communication::communicate_sum_double(&square_residual, &total_residual);
     square_residual = total_residual;
-
 
 }
 
@@ -105,6 +109,8 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
 
     double alpha = square_residual;
     double dAd = 0;
+
+
 
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
@@ -131,18 +137,25 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         
     }
 
+    /* Update border pressure */
+    for (auto& boundary_ptr : boundaries) {
+                boundary_ptr->apply(field, true);
+            }
+
     /* Critical : communicate pressure ! */
     Communication::communicate_all(field.p_matrix(), MessageTag::P);
-    Communication::communicate_all(direction, MessageTag::P);
+
 
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
 
-        residual(i, j) -= alpha * a_direction(i, j);
+        residual(i, j) -= alpha * a_direction(i, j);      
         new_square_res += (residual(i, j) * residual(i, j));
         
     }
+
+    Communication::communicate_all(residual, MessageTag::P);
 
     double total_residual;
     double local_res_to_return = new_square_res;
@@ -163,12 +176,17 @@ double CG::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         direction(i, j) = val;
     }
 
+
+    Communication::communicate_all(direction, MessageTag::P);
+
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
 
-        a_direction(i, j) = Discretization::laplacian(direction, i, j);
+        a_direction(i, j) = Discretization::boundary_aware_laplacian(direction, i, j, grid);
     }
+
+     Communication::communicate_all(a_direction, MessageTag::P);
 
     return local_res_to_return;
 }
@@ -213,6 +231,16 @@ double SD::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         int j = currentCell->j();
 
         field.p(i, j) += alpha * residual(i,j);
+    }
+    square_res = 0;
+    residual = field.rs_matrix();
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+
+        residual(i, j) -= Discretization::laplacian(field.p_matrix(), i, j);
+        square_res += (residual(i, j) * residual(i, j));
+        
     }
 
 
@@ -386,6 +414,8 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
 
 double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries) 
 {
+
+
     // 1)  Compute Alpha 
     double alpha; 
     double qAq;
@@ -415,7 +445,7 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
     // Communicate to all processes before computing alpha 
     double total_denom = qAq; // TODO : Change to qAq if this explodes; 
     Communication::communicate_sum_double(&qAq,&total_denom); 
-    alpha = sigma / total_denom;
+    alpha = sigma / (total_denom ) ;
 
     // 2) Update p and r 
         // p = p + alpha*q 
