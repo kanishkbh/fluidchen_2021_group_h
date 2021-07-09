@@ -8,10 +8,10 @@ nu           0.01
 #--------------------------------------------
 #            number of cells
 #--------------------------------------------
-imax        100
-jmax        100  
-iproc       2
-jproc	    2
+imax        50
+jmax        50
+iproc       1
+jproc	    1
 
 #--------------------------------------------
 #               time steps
@@ -20,14 +20,14 @@ jproc	    2
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.025
-t_end        0.2.2
+t_end        50
 tau         0.45
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     0.5
+dt_value     0.1
 
 #--------------------------------------------
 #               pressure
@@ -37,10 +37,10 @@ dt_value     0.5
 # gamma: upwind differencing factor
 #--------------------------------------------
 itermax      5000
-eps          0.000001
+eps          0.0001
 omg          1.7
 gamma        0.5
-pressure_solver CG
+pressure_solver CG_GS
 
 #--------------------------------------------
 #     Reynolds number (here: 1 / nu)
