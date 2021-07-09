@@ -252,6 +252,7 @@ void Case::set_file_names(std::string file_name) {
     filesystem::path folder(_dict_name);
     try {
         filesystem::create_directory(folder);
+        std::cout << "Created directory for output files: " << _dict_name << std::endl;
     } catch (const std::exception &e) {
         std::cerr << "Output directory could not be created." << std::endl;
         std::cerr << "Make sure that you have write permissions to the "
@@ -358,7 +359,7 @@ void Case::simulate() {
             Communication::communicate_all(_field.p_matrix(), MessageTag::P);
             
             ++iter;
-            std::cerr << "iter, residual : " << iter << ',' << res << std::endl;
+            // std::cerr << "iter, residual : " << iter << ',' << res << std::endl;
         } while (res > _tolerance && iter < _max_iter);
                 
         
@@ -377,6 +378,7 @@ void Case::simulate() {
             {
                 output_vtk(output_id++, _rank);
                 output_counter -= _output_freq;
+                std::cerr << "time, iter, residual : " << t << ", " << iter << ", " << res << std::endl;
             }
 
 
