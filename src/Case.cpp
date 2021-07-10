@@ -161,8 +161,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
     //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain, Communication::_left_neighbor_rank != -1, Communication::_right_neighbor_rank != -1,
-                 Communication::_top_neighbor_rank != -1, Communication::_bottom_neighbor_rank != -1);
+    _grid = Grid(_geom_name, domain, Communication::_left_neighbor_rank != MPI_PROC_NULL, Communication::_right_neighbor_rank != MPI_PROC_NULL,
+                 Communication::_top_neighbor_rank != MPI_PROC_NULL, Communication::_bottom_neighbor_rank != MPI_PROC_NULL);
 
     //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
@@ -394,7 +394,6 @@ void Case::simulate() {
             {
                 output_vtk(output_id++, _rank);
                 output_counter -= _output_freq;
-                std::cerr << "time, iter, residual : " << t << ", " << iter << ", " << res << std::endl;
             }
 
 
@@ -576,22 +575,22 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                      // Assign neighbor ranks. Default value of -1 no neighbor (i.e. true border)
                      // 6-9 : left, right, top, bottom
                     if (ip == 0)
-                        boundary_data[6] = -1;
+                        boundary_data[6] = MPI_PROC_NULL;
                     else
                         boundary_data[6] = target_rank - 1;
 
                     if (ip == _iproc - 1)
-                        boundary_data[7] = -1;
+                        boundary_data[7] = MPI_PROC_NULL;
                     else
                         boundary_data[7] = target_rank + 1;
 
                     if (jp == _jproc - 1)
-                        boundary_data[8] = -1;
+                        boundary_data[8] = MPI_PROC_NULL;
                     else
                         boundary_data[8] = target_rank + _iproc;
 
                     if (jp == 0)
-                        boundary_data[9] = -1;
+                        boundary_data[9] = MPI_PROC_NULL;
                     else
                         boundary_data[9] = target_rank - _iproc;
 

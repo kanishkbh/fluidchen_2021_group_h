@@ -1,27 +1,27 @@
 #include "Communication.hpp"
 
 /* SHould change to MPI NO PROC */
-int Communication::_bottom_neighbor_rank = -1;
-int Communication::_top_neighbor_rank = -1;
-int Communication::_left_neighbor_rank = -1;
-int Communication::_right_neighbor_rank = -1;
+int Communication::_bottom_neighbor_rank = MPI_PROC_NULL;
+int Communication::_top_neighbor_rank = MPI_PROC_NULL;
+int Communication::_left_neighbor_rank = MPI_PROC_NULL;
+int Communication::_right_neighbor_rank = MPI_PROC_NULL;
 
 
 void Communication::communicate_right(Matrix<double>& x, int tag) {
-    if (_left_neighbor_rank == -1 && _right_neighbor_rank == -1)
+    if (_left_neighbor_rank == MPI_PROC_NULL && _right_neighbor_rank == MPI_PROC_NULL)
         return; //No horizontal communication
 
     std::vector<double> out = x.get_col(x.imax()-2);
     std::vector<double> in(x.jmax());
 
-    if (_left_neighbor_rank == -1) {
+    if (_left_neighbor_rank == MPI_PROC_NULL) {
         //Nothing to read, just send then return
         MPI_Send(out.data(), x.jmax(), MPI_DOUBLE, _right_neighbor_rank, tag, MPI_COMM_WORLD);
         return;
     }
 
     // Read and, if necessary, send
-    if (_right_neighbor_rank == -1)
+    if (_right_neighbor_rank == MPI_PROC_NULL)
         MPI_Recv(in.data(), x.jmax(), MPI_DOUBLE, _left_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     else {
         MPI_Sendrecv(out.data(), x.jmax(), MPI_DOUBLE, _right_neighbor_rank, tag,
@@ -35,20 +35,20 @@ void Communication::communicate_right(Matrix<double>& x, int tag) {
 }
 
 void Communication::communicate_left(Matrix<double>& x, int tag) {
-    if (_left_neighbor_rank == -1 && _right_neighbor_rank == -1)
+    if (_left_neighbor_rank == MPI_PROC_NULL && _right_neighbor_rank == MPI_PROC_NULL)
         return; //No horizontal communication
 
     std::vector<double> out = x.get_col(1);
     std::vector<double> in(x.jmax());
 
-    if (_right_neighbor_rank == -1) {
+    if (_right_neighbor_rank == MPI_PROC_NULL) {
         //Nothing to read, just send then return
         MPI_Send(out.data(), x.jmax(), MPI_DOUBLE, _left_neighbor_rank, tag, MPI_COMM_WORLD);
         return;
     }
 
     // Read and, if necessary, send
-    if (_left_neighbor_rank == -1)
+    if (_left_neighbor_rank == MPI_PROC_NULL)
         MPI_Recv(in.data(), x.jmax(), MPI_DOUBLE, _right_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     else {
         MPI_Sendrecv(out.data(), x.jmax(), MPI_DOUBLE, _left_neighbor_rank, tag,
@@ -63,20 +63,20 @@ void Communication::communicate_left(Matrix<double>& x, int tag) {
 }
 
 void Communication::communicate_top(Matrix<double>& x, int tag) {
-    if (_top_neighbor_rank == -1 && _bottom_neighbor_rank == -1)
+    if (_top_neighbor_rank == MPI_PROC_NULL && _bottom_neighbor_rank == MPI_PROC_NULL)
         return; //No vertical communication
 
     std::vector<double> out = x.get_row(x.jmax()-2);
     std::vector<double> in(x.imax());
 
-    if (_bottom_neighbor_rank == -1) {
+    if (_bottom_neighbor_rank == MPI_PROC_NULL) {
         //Nothing to read, just send then return
         MPI_Send(out.data(), x.imax(), MPI_DOUBLE, _top_neighbor_rank, tag, MPI_COMM_WORLD);
         return;
     }
 
     // Read and, if necessary, send
-    if (_top_neighbor_rank == -1)
+    if (_top_neighbor_rank == MPI_PROC_NULL)
         MPI_Recv(in.data(), x.imax(), MPI_DOUBLE, _bottom_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     else {
         MPI_Sendrecv(out.data(), x.imax(), MPI_DOUBLE, _top_neighbor_rank, tag,
@@ -91,20 +91,20 @@ void Communication::communicate_top(Matrix<double>& x, int tag) {
 
 void Communication::communicate_bottom(Matrix<double>& x, int tag) {
 
-    if (_top_neighbor_rank == -1 && _bottom_neighbor_rank == -1)
+    if (_top_neighbor_rank == MPI_PROC_NULL && _bottom_neighbor_rank == MPI_PROC_NULL)
         return; //No vertical communication
 
     std::vector<double> out = x.get_row(1);
     std::vector<double> in(x.imax());
 
-    if (_top_neighbor_rank == -1) {
+    if (_top_neighbor_rank == MPI_PROC_NULL) {
         //Nothing to read, just send then return
         MPI_Send(out.data(), x.imax(), MPI_DOUBLE, _bottom_neighbor_rank, tag, MPI_COMM_WORLD);
         return;
     }
 
     // Read and, if necessary, send
-    if (_bottom_neighbor_rank == -1)
+    if (_bottom_neighbor_rank == MPI_PROC_NULL)
         MPI_Recv(in.data(), x.imax(), MPI_DOUBLE, _top_neighbor_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     else {
         MPI_Sendrecv(out.data(), x.imax(), MPI_DOUBLE, _bottom_neighbor_rank, tag,
