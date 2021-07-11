@@ -1,4 +1,5 @@
 #include "Fields.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -106,6 +107,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k3 = dy/(_V.max() + 1e-8);
         double k4 = (0.5/_alpha) * 1/((1/(dx*dx))+(1/(dy*dy)));
         _dt = _tau * std::min({k1, k2, k3, k4});
+        _dt = Communication::reduce_min(_dt);
         return _dt;
     }
 }

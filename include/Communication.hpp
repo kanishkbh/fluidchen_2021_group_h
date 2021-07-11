@@ -47,8 +47,13 @@ class Communication {
      * */
     static void communicate_sum_int(int* src, int* target);
 
+    /**
+     * @brief Computes a minimum through a AllReduce
+     * */
+    static double reduce_min(double x);
+
 
     // Threads of the neighboring
-    static int _left_neighbor_rank, _right_neighbor_rank, _top_neighbor_rank, _bottom_neighbor_rank;
+    static int _left_neighbor_rank, _right_neighbor_rank, _top_neighbor_rank, _bottom_neighbor_rank, _world_size, _rank;
 
 };

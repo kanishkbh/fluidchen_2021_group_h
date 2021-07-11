@@ -121,7 +121,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Check number of processes matches. If only one process, no partition.
     int num_processes;
     MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+    Communication::_world_size = num_processes;
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
+    Communication::_rank = _rank;
     assert (_iproc * _jproc == num_processes || num_processes == 1);
     if (num_processes == 1) {
         _iproc = 1;
@@ -295,7 +297,6 @@ void Case::simulate() {
     /* Get the total number of fluid cells to normalize the residuals */
     int LOCAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
     int TOTAL_NUMBER_OF_CELLS_REDUCED;
-    //MPI_Allreduce(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     Communication::communicate_sum_int(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED);
     
 
@@ -356,24 +357,13 @@ void Case::simulate() {
             res = std::sqrt(res);
 
             #ifdef DEF_COMPARE_TRUE_RES
-
             other_res = _pressure_solver->res(_field, _grid);
             double buff;
             Communication::communicate_sum_double(&other_res, &buff);
             other_res = sqrt(buff/TOTAL_NUMBER_OF_CELLS_REDUCED);
 
             std::cout << "Solver res vs true res " << res << " " << other_res << std::endl;
-
             #endif
-
-            
-
-            // Apply the Boundary conditions (only on pressure)
-            for (auto& boundary_ptr : _boundaries) {
-                boundary_ptr->apply(_field, true);
-            }
-
-            Communication::communicate_all(_field.p_matrix(), MessageTag::P);
             
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
@@ -402,12 +392,6 @@ void Case::simulate() {
         t += dt;
         timestep += 1;
         dt = _field.calculate_dt(_grid);
-
-        // Broadcast the smallest computed dt to all processes.
-        double dt_reduction;
-        MPI_Allreduce(&dt, &dt_reduction, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD); 
-        dt = dt_reduction;
-
 
     }
 

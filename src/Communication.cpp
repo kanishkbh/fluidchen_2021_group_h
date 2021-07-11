@@ -1,10 +1,11 @@
 #include "Communication.hpp"
 
-/* SHould change to MPI NO PROC */
 int Communication::_bottom_neighbor_rank = MPI_PROC_NULL;
 int Communication::_top_neighbor_rank = MPI_PROC_NULL;
 int Communication::_left_neighbor_rank = MPI_PROC_NULL;
 int Communication::_right_neighbor_rank = MPI_PROC_NULL;
+int Communication::_world_size = 1;
+int Communication::_rank = 0;
 
 
 void Communication::communicate_right(Matrix<double>& x, int tag) {
@@ -132,4 +133,11 @@ void Communication::communicate_sum_double(double* src, double* target) {
 
 void Communication::communicate_sum_int(int* src, int* target) {
     MPI_Allreduce(src, target, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+}
+
+double Communication::reduce_min(double x) {
+    double res;
+    MPI_Allreduce(&x, &res, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    return res;
+
 }

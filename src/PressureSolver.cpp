@@ -26,6 +26,11 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
                         coeff * (Discretization::sor_helper(field.p_matrix(), i, j) - field.rs(i, j));
     }
 
+    /* Enforce BCs afterwards */
+    for (auto &boundary_ptr : _boundaries) {
+        boundary_ptr->apply(_field, true);
+    }
+
     double res = 0.0;
     double rloc = 0.0;
 
@@ -220,7 +225,6 @@ double SD::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
         rAr += (residual(i, j) * a_residual(i, j));
     }
 
-    //TODO : sum
     double total_rr, total_rar;
     Communication::communicate_sum_double(&square_res, &total_rr);
     Communication::communicate_sum_double(&rAr, &total_rar);
@@ -232,8 +236,15 @@ double SD::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
 
         field.p(i, j) += alpha * residual(i,j);
     }
+
+    /* Enforce BCs afterwards */
+    for (auto &boundary_ptr : _boundaries) {
+        boundary_ptr->apply(_field, true);
+    }
+
     square_res = 0;
     residual = field.rs_matrix();
+    
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
