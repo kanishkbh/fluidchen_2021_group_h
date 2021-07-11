@@ -27,8 +27,8 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     }
 
     /* Enforce BCs afterwards */
-    for (auto &boundary_ptr : _boundaries) {
-        boundary_ptr->apply(_field, true);
+    for (auto &boundary_ptr : boundaries) {
+        boundary_ptr->apply(field, true);
     }
 
     double res = 0.0;
@@ -238,8 +238,8 @@ double SD::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
     }
 
     /* Enforce BCs afterwards */
-    for (auto &boundary_ptr : _boundaries) {
-        boundary_ptr->apply(_field, true);
+    for (auto &boundary_ptr : boundaries) {
+        boundary_ptr->apply(field, true);
     }
 
     square_res = 0;
