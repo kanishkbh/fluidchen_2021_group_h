@@ -275,7 +275,8 @@ void Case::set_file_names(std::string file_name) {
     filesystem::path folder(_dict_name);
     try {
         filesystem::create_directory(folder);
-        std::cout << "Created directory for output files: " << _dict_name << std::endl;
+        if (Communication::_rank == 0)
+            std::cout << "Created directory for output files: " << _dict_name << std::endl;
     } catch (const std::exception &e) {
         std::cerr << "Output directory could not be created." << std::endl;
         std::cerr << "Make sure that you have write permissions to the "

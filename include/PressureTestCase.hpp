@@ -18,10 +18,9 @@ class PressureTestCase : public Case {
     PressureTestCase(std::string file_name, int argn, char **args);
 
     /**
-     * @brief Do N iterations of the pressure solver and return a vector containing 
-     * residuals at each solver step
+     * @brief Solve until convergence or max iterations, with optional solver
      * */
-    std::vector<double> pressure_solve(unsigned N);
+    std::vector<double> pressure_solve(double tol, PressureSolver& solver);
     
 };
 

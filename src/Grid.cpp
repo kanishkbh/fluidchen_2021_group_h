@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 #include <cassert>
+#include "Communication.hpp"
 
 //-----------------------------------------------------------------------------------------------------------
 Grid::Grid(std::string geom_name, Domain &domain, bool has_left_neighbor, bool has_right_neighbor,
@@ -25,7 +26,8 @@ Grid::Grid(std::string geom_name, Domain &domain, bool has_left_neighbor, bool h
         parse_geometry_file(geom_name, geometry_data);
         assign_cell_types(geometry_data);
     } else {
-        std::cerr << "No geometry file given in .dat file. Building rectangular domain (Lid Driven Cavity) without obstacles." << std::endl;
+        if (Communication::_rank == 0)
+            std::cerr << "No geometry file given in .dat file. Building rectangular domain (Lid Driven Cavity) without obstacles." << std::endl;
         build_lid_driven_cavity();
     }
 }

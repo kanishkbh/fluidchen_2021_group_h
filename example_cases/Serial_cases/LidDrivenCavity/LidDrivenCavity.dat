@@ -8,10 +8,10 @@ nu           0.01
 #--------------------------------------------
 #            number of cells
 #--------------------------------------------
-imax        50
-jmax        50
-iproc       1
-jproc	    1
+imax        80
+jmax        80
+iproc       2
+jproc	    2
 
 #--------------------------------------------
 #               time steps
@@ -36,11 +36,11 @@ dt_value     0.1
 # omg: relaxation factor for SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
-itermax      5000
+itermax      50000
 eps          0.0001
 omg          1.7
 gamma        0.5
-pressure_solver CG_GS
+pressure_solver CG_Jacobi
 
 #--------------------------------------------
 #     Reynolds number (here: 1 / nu)

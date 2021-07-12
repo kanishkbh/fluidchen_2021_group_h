@@ -57,7 +57,7 @@ endif()
 # Creating the executable of our project and the required dependencies
 # the executable is called fluidchen
 add_executable(fluidchen src/main.cpp src/Boundary.cpp src/Case.cpp src/Cell.cpp src/Discretization.cpp src/Fields.cpp src/Grid.cpp src/PressureSolver.cpp src/Communication.cpp)
-#add_executable(test_pressure_solver src/PressureTestCase.cpp src/testPressureSolver.cpp src/Boundary.cpp src/Case.cpp src/Cell.cpp src/Discretization.cpp src/Fields.cpp src/Grid.cpp src/PressureSolver.cpp src/Communication.cpp)
+add_executable(test_pressure_solver src/PressureTestCase.cpp src/testPressureSolver.cpp src/Boundary.cpp src/Case.cpp src/Cell.cpp src/Discretization.cpp src/Fields.cpp src/Grid.cpp src/PressureSolver.cpp src/Communication.cpp)
 #add_executable(unit_test_solver src/unit_test_solver.cpp src/Boundary.cpp src/Case.cpp src/Cell.cpp src/Discretization.cpp src/Fields.cpp src/Grid.cpp src/PressureSolver.cpp src/Communication.cpp)
 #target_compile_features(fluidchen PRIVATE cxx_std_17)
 #target_compile_features(unit_test_solver PRIVATE cxx_std_17)
@@ -67,8 +67,8 @@ target_link_libraries(fluidchen PRIVATE MPI::MPI_CXX)
 target_link_libraries(fluidchen PRIVATE ${VTK_LIBRARIES})
 
 # if you use external libraries you have to link them like 
-#target_link_libraries(test_pressure_solver PRIVATE MPI::MPI_CXX)
-#target_link_libraries(test_pressure_solver PRIVATE ${VTK_LIBRARIES})
+target_link_libraries(test_pressure_solver PRIVATE MPI::MPI_CXX)
+target_link_libraries(test_pressure_solver PRIVATE ${VTK_LIBRARIES})
 
 # if you use external libraries you have to link them like 
 #target_link_libraries(unit_test_solver PRIVATE MPI::MPI_CXX)
