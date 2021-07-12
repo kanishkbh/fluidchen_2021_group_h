@@ -1,5 +1,4 @@
 
-
 # CFD Lab - Final Project (Group H)
 - Boris Martin 
 - Kanishk Bhatia 
@@ -25,6 +24,12 @@ In addition to exploring the traditional CG, we also implemented the Jacobi iter
 - IDLU preconditioned CG 
 
 All of the implementations except GS preconditioner and IDLU are compatible with the parallelization model introduced in Worksheet 3. 
+
+### CG algorithm
+
+![](cg_algo.png)
+
+Source : Scientific Computing II, slides from Univ.-Prof. Dr. Michael Bader.
 
 ### Implementation Details 
 
@@ -92,7 +97,7 @@ The miracle in CG is that, this offers a best approximation among all solutions 
 
 Long story short, CG overcomes the convergence rate of the traditional SOR and in turn allows us to explore physics in a finer resolution on your personal computer. 
 
-It is important to mention that the convergence rate of CG is a direct function of the \kappa - condition number of the Poisson Matrix. Hence if a given config of the PM, has a high condition number, CG suffers from a similar bottleneck as compared to the SOR, so the natural extension to our project also involved preconditioners, which in essence should rectify this problem. 
+It is important to mention that the convergence rate of CG is a direct function of the condition number of the Poisson Matrix. Hence if a given config of the PM, has a high condition number, CG suffers from a similar bottleneck as compared to the SOR, so the natural extension to our project also involved preconditioners, which in essence should attenuate this problem. 
 
 This is not to say that our solver can deal with any problem. Obviouly there are several preconditioners around that are fine-tuned for many applications. These implementations here are the most basic ones that are suited for a Symmetric Positive Definite Matrix such as the Poisson Matrix. 
 
