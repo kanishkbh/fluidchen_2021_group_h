@@ -1,6 +1,6 @@
 ![](FluidchenLogo.png)
 
-## CFD Project
+### CFD Project
 
 See Documentation.md for project description.
 
