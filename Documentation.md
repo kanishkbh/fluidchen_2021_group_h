@@ -18,7 +18,6 @@ In addition to exploring the traditional CG, we also implemented the Jacobi iter
 - CG solver - Conjugate Gradient 
 - SD solver - Steepest Descent 
 - Jacobi Preconditioned CG 
-- Richardson CG 
 - Symmetric Gauss Seidel preconditioned CG 
 - IDLU preconditioned CG 
 
@@ -61,7 +60,6 @@ The solver can be chosen by simply specifying the solver on the config file usin
 - SD
 - Jacobi
 - CG_Jacobi 
-- CG_Richardson
 - CG_GS (Serial only)
 - CG_IDLU (Serial only)
 
