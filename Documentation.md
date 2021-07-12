@@ -72,3 +72,11 @@ Serial (Withing build)
 Parallel (Within build)
 
     mpirun -np 4 ./fluidchen ../example_cases/Parallel_Cases/1_4/LidDrivenCavity.dat
+
+### Why is CG better ? (Disclaimar : Involves theory) 
+
+As mentioned, the SOR solver is a stationary iterative method and the rate of convergence is quite long. This is particularly true for fine refinements as we had seen in the instances in WS-3. 
+
+CG is based on a different philosophy, wherein in order to solve the LSE, we minimize a certain cost function 
+
+$ f(x) = frac{x^{T}Ax}{2} $
