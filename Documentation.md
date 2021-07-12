@@ -55,7 +55,9 @@ The solver can be chosen by simply specifying the solver on the config file usin
 - CG_IDLU (Serial)
 
 
-    pressure_solver {solver_param}
+
+
+        pressure_solver {solver_param}
 
 ### Execution 
 
