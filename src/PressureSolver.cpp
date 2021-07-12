@@ -400,6 +400,8 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
         // std::cout << "cell (" << i << ',' << j << ") residual(ij): " << residual(i,j) << std::endl;
 
     }
+
+    Communication::communicate_all(residual, MessageTag::P);
     // q1 = P^-1 r 
     for(auto cell:grid.fluid_cells())
     {
@@ -409,6 +411,8 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
         // std::cout << "cell (" << i << ',' << j << ") residual(ij), Disc::jacobi: " << (double)residual(i,j) << ',' << (double)Discretization::jacobi(residual,i,j) <<std::endl;
 
     }
+
+    Communication::communicate_all(cond_residual, MessageTag::P);
     // \sigma_0 = <r0,q1> 
     for(auto cell:grid.fluid_cells())
     {
@@ -436,7 +440,7 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
     {
         int i = cell->i();
         int j = cell->j();
-        adirection(i,j) = Discretization::laplacian(direction,i,j);    
+        adirection(i,j) = Discretization::boundary_aware_laplacian(direction,i,j, grid);    
     }
     // aTAq 
     for(auto cell:grid.fluid_cells())
@@ -466,6 +470,12 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int j = cell->j(); 
         field.p(i,j) += alpha*direction(i,j); 
     }
+
+    /* Enforce BCs afterwards */
+    for (auto &boundary_ptr : boundaries) {
+        boundary_ptr->apply(field, true);
+    }
+
     // Communicate pressure to all iterations 
     Communication::communicate_all(field.p_matrix(),MessageTag::P); 
     Communication::communicate_all(direction,MessageTag::P); 
@@ -492,11 +502,14 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
     #endif
     // Compute beta 
     double sigma_new = 0; 
+    double true_res = 0;
+
     for(auto cell:grid.fluid_cells())
     {
         int i = cell->i();
         int j = cell->j(); 
         sigma_new += residual(i,j) * cond_residual(i,j); 
+        true_res += residual(i,j) * residual(i,j); 
     }
     double return_val = sigma_new; 
     double total_sigma = 0;
@@ -523,7 +536,7 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         iter++;
     }
 #endif 
-    return fabs(sigma_new); 
+    return true_res; 
 }
 
 //-------------------------------------------------------------------------------
@@ -694,6 +707,11 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
         int j = cell->j(); 
         field.p(i,j) += alpha*direction(i,j); 
     }
+    /* Enforce BCs afterwards */
+    for (auto &boundary_ptr : boundaries) {
+        boundary_ptr->apply(field, true);
+    }
+
     // Communicate pressure to all iterations 
     Communication::communicate_all(field.p_matrix(),MessageTag::P); 
     Communication::communicate_all(direction,MessageTag::P); 
