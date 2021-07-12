@@ -69,4 +69,4 @@ VI          0
 #pressure_solver CG 
 pressure_solver CG_Jacobi
 #pressure_solver CG_Richardson
-
+#pressure_solver CG_GS
