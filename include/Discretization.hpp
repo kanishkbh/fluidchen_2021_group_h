@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Datastructures.hpp"
+#include "Grid.hpp"
 
 /**
  * @brief Static discretization methods to modify the fields
@@ -82,6 +83,18 @@ class Discretization {
      */
     static double laplacian(const Matrix<double> &P, int i, int j);
 
+
+  /**
+     * @brief Laplacian term discretization using central difference. If neighbor is a Neumann BC, the gradient is taken to 0
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double boundary_aware_laplacian(const Matrix<double> &P, int i, int j, const Grid& g);
+
     /**
      * @brief Terms of laplacian needed for SOR, i.e. excluding unknown value at
      * (i,j)
@@ -94,7 +107,34 @@ class Discretization {
      */
     static double sor_helper(const Matrix<double> &P, int i, int j);
 
+    /** 
+   * Returns the inverse of the Jacobi Matrix for Precoditioning 
+   * Applies only to the PPE - Poisson Pressure Equation 
+   */ 
+    static double jacobi(const Matrix<double>& P,int i,int j); 
+    
+    /**
+     * @brief Terms of laplacian needed for GS_Preconditioning, i.e. excluding unknown value at
+     * (i,j) , (i+1,j), (i,j+1) for Forward_Sub, and excluding
+     * (i,j) , (i-1,j), (i,j-1) for Backward_Sub, and excluding
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double GS_Forward_Sub(const Matrix<double>& P,int i,int j);
+    static double GS_Backward_Sub(const Matrix<double>& P,int i,int j);
 
+    /**
+     * @brief return the diagonal term of A-matrix of PPE assuming Neuman BC
+     * @param[in] x index
+     * @param[in] y index
+     * @param[in] grid 
+     * @param[out] result
+     */
+    static double diagonal_term(int i, int j, const Grid& g);
+    
   private:
     static double _dx;
     static double _dy;

@@ -5,14 +5,17 @@
 
 #include <mpi.h>
 #include <algorithm>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
+#include <cassert>
 
+#ifndef NO_FILESYSTEM
+#include <filesystem>
 namespace filesystem = std::filesystem;
-
+#endif
+#ifdef VTK_FOUND
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
@@ -21,7 +24,7 @@ namespace filesystem = std::filesystem;
 #include <vtkStructuredGrid.h>
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
-
+#endif
 
 //  std::string lid_path = "../example_cases/LidDrivenCavity/LidDrivenCavity.pgm";
 //-----------------------------------------------------------------------------------------------------------
@@ -56,6 +59,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double in_temp;      /* Inlet (Dirichlet) Temperature */
     int use_pressure{0}; /* If non-zero, use pressure BC instead of inflow velocity*/
     std::string energy_eq; /* If "on", enable heat transfer */
+    std::string solver_type = "SOR"; /* Can be SOR, CG, ... */
 
     if (file.is_open()) {
 
@@ -105,6 +109,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "iproc") file >> _iproc;
                 if (var == "jproc") file >> _jproc;
+                if (var == "pressure_solver") file >> solver_type;
             }
         }
     }
@@ -116,7 +121,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Check number of processes matches. If only one process, no partition.
     int num_processes;
     MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+    Communication::_world_size = num_processes;
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
+    Communication::_rank = _rank;
     assert (_iproc * _jproc == num_processes || num_processes == 1);
     if (num_processes == 1) {
         _iproc = 1;
@@ -125,6 +132,21 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     
     file.close();
+
+    // Interface for selecting parallel and serial solvers 
+    // CG, SD and Jacobi_CG are all parallel 
+    // GS_CG and ILDU_GG are not so, this should throw a runtime error
+    std::vector<std::string> parallel_solvers = {"CG","SD","CG_Jacobi","CG_Richarson"};
+    std::vector<std::string> serial_solvers = {"CG_GS","CG_IDLU"};
+
+    for(auto solver:serial_solvers)
+    {
+        if((solver_type == solver) && (num_processes > 1)) 
+        {
+            throw std::runtime_error("Invalid use of the a serial solver.\n"); 
+        }
+    } 
+
 
     // Update the boolean for pressure input and heat equation
     if (_rank == 0) {
@@ -156,15 +178,43 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
     //-----------------------------------------------------------------------------------------------------------
     // Load the geometry file
-    _grid = Grid(_geom_name, domain, _left_neighbor_rank != -1, _right_neighbor_rank != -1,
-                 _top_neighbor_rank != -1, _bottom_neighbor_rank != -1);
+    _grid = Grid(_geom_name, domain, Communication::_left_neighbor_rank != MPI_PROC_NULL, Communication::_right_neighbor_rank != MPI_PROC_NULL,
+                 Communication::_top_neighbor_rank != MPI_PROC_NULL, Communication::_bottom_neighbor_rank != MPI_PROC_NULL);
 
     //-----------------------------------------------------------------------------------------------------------    
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, alpha, beta, GX, GY);
 //-----------------------------------------------------------------------------------------------------------
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 //-----------------------------------------------------------------------------------------------------------
-    _pressure_solver = std::make_unique<SOR>(omg);
+    if (solver_type == "CG")
+        {
+            _pressure_solver = std::make_unique<CG>();
+            if (_rank == 0) std::cout << "Using CG." << std::endl;
+        }
+    else if (solver_type == "SOR")
+        {
+            _pressure_solver = std::make_unique<SOR>(omg);
+            if (_rank == 0) std::cout << "Using SOR." << std::endl;
+        }
+    else if (solver_type == "SD") {
+        _pressure_solver = std::make_unique<SD>();
+            if (_rank == 0) std::cout << "Using Steepest Descent." << std::endl;
+        } 
+    else if (solver_type == "CG_Richardson"){
+            _pressure_solver = std::make_unique<CG_Richardson>();
+            if(_rank==0) std::cout << "Using CG with Richardson" << std::endl; 
+        } 
+    else if(solver_type == "CG_Jacobi"){
+            _pressure_solver = std::make_unique<CG_Jacobi>();
+            if(_rank==0) std::cout << "Using CG with Jacobi \n"; 
+        } 
+    else if(solver_type == "CG_GS") {
+            _pressure_solver = std::make_unique<CG_GS>();
+            if(_rank==0) std::cout << "Using CG with Gauss Seidel Preconditioner \n"; 
+        } 
+    else
+        throw std::runtime_error("Unrecognized solver");
+
 //-----------------------------------------------------------------------------------------------------------
     _max_iter = itermax;
 //-----------------------------------------------------------------------------------------------------------
@@ -215,15 +265,19 @@ void Case::set_file_names(std::string file_name) {
 
 
     // Create output directory
+
+#ifndef NO_FILESYSTEM
     filesystem::path folder(_dict_name);
     try {
         filesystem::create_directory(folder);
+        std::cout << "Created directory for output files: " << _dict_name << std::endl;
     } catch (const std::exception &e) {
         std::cerr << "Output directory could not be created." << std::endl;
         std::cerr << "Make sure that you have write permissions to the "
                      "corresponding location"
                   << std::endl;
     }
+#endif
 }
 //-----------------------------------------------------------------------------------------------------------
 /**
@@ -258,7 +312,7 @@ void Case::simulate() {
     /* Get the total number of fluid cells to normalize the residuals */
     int LOCAL_NUMBER_OF_CELLS = _grid.fluid_cells().size();
     int TOTAL_NUMBER_OF_CELLS_REDUCED;
-    MPI_Allreduce(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    Communication::communicate_sum_int(&LOCAL_NUMBER_OF_CELLS, &TOTAL_NUMBER_OF_CELLS_REDUCED);
     
 
     /* Initialize the logger */
@@ -286,37 +340,45 @@ void Case::simulate() {
         // (Temperature is still used in calculate_fluxes, but since T is initialized to a constant, it doesn't matter)
         if (_use_energy) {
             _field.calculate_T(_grid);
-            communicate_all(_field.t_matrix(), MessageTag::T);
+            Communication::communicate_all(_field.t_matrix(), MessageTag::T);
         }
 
         // Fluxes (with *new* temperatures)
         _field.calculate_fluxes(_grid);
 
         // Communicate F and G
-        communicate_all(_field.f_matrix(), MessageTag::F);
-        communicate_all(_field.g_matrix(), MessageTag::G);
+        Communication::communicate_all(_field.f_matrix(), MessageTag::F);
+        Communication::communicate_all(_field.g_matrix(), MessageTag::G);
 
         // Poisson Pressure Equation
         _field.calculate_rs(_grid); 
+        _pressure_solver->init(_field, _grid, _boundaries);
 
         double res;
+        #ifdef DEF_COMPARE_TRUE_RES
+        double other_res;
+        #endif
         unsigned iter = 0;
 
         do {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
+
             
             /* Compute TOTAL residual */
             double res_reduction;
-            MPI_Allreduce(&res, &res_reduction, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+            Communication::communicate_sum_double(&res, &res_reduction);
             res = res_reduction / TOTAL_NUMBER_OF_CELLS_REDUCED;
             res = std::sqrt(res);
 
-            // Apply the Boundary conditions (only on pressure)
-            for (auto& boundary_ptr : _boundaries) {
-                boundary_ptr->apply(_field, true);
-            }
+            #ifdef DEF_COMPARE_TRUE_RES
+            other_res = _pressure_solver->res(_field, _grid);
+            double buff;
+            Communication::communicate_sum_double(&other_res, &buff);
+            other_res = sqrt(buff/TOTAL_NUMBER_OF_CELLS_REDUCED);
 
-            communicate_all(_field.p_matrix(), MessageTag::P);
+            std::cout << "Solver res vs true res " << res << " " << other_res << std::endl;
+            #endif
             
             ++iter;
         } while (res > _tolerance && iter < _max_iter);
@@ -325,8 +387,8 @@ void Case::simulate() {
         // Update velocity
         _field.calculate_velocities(_grid);
 
-        communicate_all(_field.v_matrix(), MessageTag::V);
-        communicate_all(_field.u_matrix(), MessageTag::U);
+        Communication::communicate_all(_field.v_matrix(), MessageTag::V);
+        Communication::communicate_all(_field.u_matrix(), MessageTag::U);
 
         // Update logging data and, if enough time has elapsed since the last VTK write ("dt_value" on the .dat file),
         // output the current state.
@@ -346,26 +408,15 @@ void Case::simulate() {
         timestep += 1;
         dt = _field.calculate_dt(_grid);
 
-        // Broadcast the smallest computed dt to all processes.
-        double dt_reduction;
-        MPI_Allreduce(&dt, &dt_reduction, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD); 
-        dt = dt_reduction;
-
-
     }
 
 }
 
-void Case::communicate_all(Matrix<double>& x, int tag) {
-    Communication::communicate_right(x, tag, _right_neighbor_rank, _left_neighbor_rank);
-    Communication::communicate_top(x, tag, _top_neighbor_rank, _bottom_neighbor_rank);
-    Communication::communicate_left(x, tag, _left_neighbor_rank, _right_neighbor_rank);
-    Communication::communicate_bottom(x, tag, _bottom_neighbor_rank, _top_neighbor_rank);
-}
 
 
 
 void Case::output_vtk(int timestep, int my_rank) {
+    #ifdef VTK_FOUND
     // Create a new structured grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 
@@ -479,6 +530,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
     writer->Write();
+
+    #endif
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
@@ -521,26 +574,26 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                      // Assign neighbor ranks. Default value of -1 no neighbor (i.e. true border)
                      // 6-9 : left, right, top, bottom
                     if (ip == 0)
-                        boundary_data[6] = -1;
+                        boundary_data[6] = MPI_PROC_NULL;
                     else
                         boundary_data[6] = target_rank - 1;
 
                     if (ip == _iproc - 1)
-                        boundary_data[7] = -1;
+                        boundary_data[7] = MPI_PROC_NULL;
                     else
                         boundary_data[7] = target_rank + 1;
 
                     if (jp == _jproc - 1)
-                        boundary_data[8] = -1;
+                        boundary_data[8] = MPI_PROC_NULL;
                     else
                         boundary_data[8] = target_rank + _iproc;
 
                     if (jp == 0)
-                        boundary_data[9] = -1;
+                        boundary_data[9] = MPI_PROC_NULL;
                     else
                         boundary_data[9] = target_rank - _iproc;
 
-                    MPI_Send(boundary_data, 10, MPI_INT, target_rank, MessageTag::DOMAIN, MPI_COMM_WORLD);
+                    MPI_Send(boundary_data, 10, MPI_INT, target_rank, MessageTag::DOM, MPI_COMM_WORLD);
                 }
         }
 
@@ -549,7 +602,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     // Read local values from the master rank
     int boundary_data[10];
-    MPI_Recv(boundary_data, 10, MPI_INT, 0, MessageTag::DOMAIN, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(boundary_data, 10, MPI_INT, 0, MessageTag::DOM, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     domain.imin = boundary_data[0];
     domain.imax = boundary_data[1];
@@ -558,10 +611,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.size_x = boundary_data[4];
     domain.size_y = boundary_data[5];
 
-    _left_neighbor_rank = boundary_data[6];
-    _right_neighbor_rank = boundary_data[7];
-    _top_neighbor_rank = boundary_data[8];
-    _bottom_neighbor_rank = boundary_data[9];
+    Communication::_left_neighbor_rank = boundary_data[6];
+    Communication::_right_neighbor_rank = boundary_data[7];
+    Communication::_top_neighbor_rank = boundary_data[8];
+    Communication::_bottom_neighbor_rank = boundary_data[9];
 
     // Print the partition
     std::cout << "(" << _rank << ") works on x-domain " << domain.imin << '-' << domain.imax 

@@ -1,5 +1,5 @@
 #include "Discretization.hpp"
-
+#include <cassert>
 #include <cmath>
 
 double Discretization::_dx = 0.0;
@@ -121,8 +121,63 @@ double Discretization::laplacian(const Matrix<double> &P, int i, int j) {
                     (P(i, j + 1) - 2.0 * P(i, j) + P(i, j - 1)) / (_dy * _dy);
     return result;
 }
+
+double Discretization::boundary_aware_laplacian(const Matrix<double> &P, int i, int j, const Grid& g) {
+    double right_grad = (P(i + 1, j)  - P(i, j));
+    double left_grad = (P(i, j)  - P(i - 1, j));
+    double top_grad = P(i, j + 1) -  P(i, j);
+    double bottom_grad = P(i, j) -  P(i, j-1);
+
+    /* Todo : Take in account pressure driven inflow */
+
+    if (g.cell(i+1, j).type() != cell_type::FLUID)
+        right_grad = 0;
+    if (g.cell(i-1, j).type() != cell_type::FLUID)
+        left_grad = 0;
+    if (g.cell(i, j+1).type() != cell_type::FLUID)
+        top_grad = 0;
+    if (g.cell(i, j-1).type() != cell_type::FLUID)
+        bottom_grad = 0;
+
+    double result = (right_grad - left_grad) / (_dx * _dx ) +
+                    (top_grad - bottom_grad) / (_dy * _dy);
+    return result;
+}
 //-----------------------------------------------------------------------------------------------------------
 double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) + P(i - 1, j)) / (_dx * _dx) + (P(i, j + 1) + P(i, j - 1)) / (_dy * _dy);
+    return result;
+}
+
+double Discretization::jacobi(const Matrix<double>& P,int i,int j)
+{
+
+    double elem = -2*((1./(_dx*_dx)) + (1./(_dy*_dy)));
+    double result  = P(i,j) / elem;
+    return result;  
+}
+
+double Discretization::GS_Forward_Sub(const Matrix<double>& P,int i,int j)
+{
+    // this is basically SOR_helper without the forward terms
+    double result = P(i - 1, j) / (_dx * _dx) + P(i, j - 1) / (_dy * _dy);
+    return result;
+}
+
+double Discretization::GS_Backward_Sub(const Matrix<double>& P,int i,int j)
+{
+    // this is basically SOR_helper without the backward terms
+    double result = P(i + 1, j) / (_dx * _dx) + P(i, j + 1) / (_dy * _dy);
+    return result;
+}
+
+double Discretization::diagonal_term(int i, int j, const Grid& g) {
+    int right = (g.cell(i+1, j).type() == cell_type::FLUID);
+    int left = (g.cell(i-1, j).type() == cell_type::FLUID);
+    int top = (g.cell(i, j+1).type() == cell_type::FLUID);
+    int bottom = (g.cell(i, j-1).type() == cell_type::FLUID);
+    assert((left+right+top+bottom) >= 2);
+    double result = -1.0 * (right + left) / (_dx * _dx ) +
+                    -1.0 * (top + bottom) / (_dy * _dy);
     return result;
 }

@@ -1,5 +1,9 @@
 ![](FluidchenLogo.png)
 
+### CFD Project
+
+See Documentation.md for project description.
+
 ### What this solver is and is not.  
 This is a finite differences solver for incompressible Navier-Stokes equations (in 2D) with heat transfer included.
 It includes provision for doing coupled temperature simulations with the Boussinesq approximation : density is an affine function of temperature for the buyancy force, but the fluid is still assumed incompressible for the other parts of the equation. Furthermore, the fluid is Newtonian (viscosity is constant and isotropic), heat diffusivity is constant too, and heat dissipation due to friction is neglected. 

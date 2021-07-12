@@ -1,4 +1,5 @@
 #include "Fields.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -14,9 +15,11 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
-
+    
+    // std::cout << "inside calculate_fluxes..." << std::endl;
 
     for (auto cell : grid.fluid_cells()) {
+        // std::cout << "inside fluid_cells loop..." << std::endl;
         auto i = cell->i();
         auto j = cell->j();
         //If it's a boundary, leave it to the BCs to fix its value
@@ -25,6 +28,9 @@ void Fields::calculate_fluxes(Grid &grid) {
             _F(i,j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j))
                                  - Discretization::convection_u(_U,_V,i,j) + _gx 
                                  - _gx * _beta * 0.5*(_T(i,j) + _T(i+1, j)));
+            // std::cout   << "dt, nu, L-u, convec-u: " 
+            //             << _dt << ", " << _nu << ", " << Discretization::laplacian(_U,i,j) << ", " 
+            //             << Discretization::convection_u(_U,_V,i,j) << std::endl ;
         }
         if (cell->neighbour(border_position::TOP)->type() == cell_type::FLUID)
         {
@@ -101,7 +107,7 @@ double Fields::calculate_dt(Grid &grid) {
         double k3 = dy/(_V.max() + 1e-8);
         double k4 = (0.5/_alpha) * 1/((1/(dx*dx))+(1/(dy*dy)));
         _dt = _tau * std::min({k1, k2, k3, k4});
-        
+        _dt = Communication::reduce_min(_dt);
         return _dt;
     }
 }

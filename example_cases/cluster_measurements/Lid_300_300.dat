@@ -8,10 +8,10 @@ nu           0.01
 #--------------------------------------------
 #            number of cells
 #--------------------------------------------
-imax        50
-jmax        50
-iproc       1
-jproc	    1
+imax        300
+jmax        300
+iproc       4
+jproc	    4
 
 #--------------------------------------------
 #               time steps
@@ -20,7 +20,7 @@ jproc	    1
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.025
-t_end        50
+t_end        2.0
 tau         0.45
 
 #--------------------------------------------
@@ -36,11 +36,11 @@ dt_value     0.1
 # omg: relaxation factor for SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
-itermax      5000
+itermax      50000
 eps          0.0001
 omg          1.7
 gamma        0.5
-pressure_solver CG_GS
+pressure_solver CG
 
 #--------------------------------------------
 #     Reynolds number (here: 1 / nu)
