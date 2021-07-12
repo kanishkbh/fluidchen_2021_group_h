@@ -267,125 +267,6 @@ double SD::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bo
 }
 
 
-void CG_Richardson::init(Fields& field, Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries)
-{
-    // Initialize residual and direction 
-    int imax = grid.imax();
-    int jmax = grid.jmax(); 
-    double dx = grid.dx(); 
-    double dy = grid.dy(); 
-
-    residual = Matrix<double>(field.p_matrix().imax(),field.p_matrix().jmax()); //
-    // Ax = b 
-    // b is now in a matrix form 
-    // r = b - Ax 
-    // x = 0 matrix 
-    // r0 = b;
-    residual = field.rs_matrix(); 
-    // In PPE, x aka p is no longer zero 
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i(); 
-        int j = cell->j(); 
-        residual(i,j) = residual(i,j) -  Discretization::laplacian(field.p_matrix(),i,j); 
-    }
-    direction = residual; 
-    adirection = direction; 
-
-    // Parameters to compute alpha 
-    // residual(it-1)
-    // direction(it)
-    // adirection(it)
-    // \alpha = r(i,j)*r(i,j) / (direction(i,j) * adirection(i,j)); 
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j();
-        double val = residual(i,j); 
-        square_residual += (val*val);
-        adirection(i,j) = Discretization::laplacian(direction,i,j);  
-    }
-    double total_residual;
-    Communication::communicate_sum_double(&square_residual,&total_residual); 
-    square_residual = total_residual; 
-}
-
-double CG_Richardson::solve(Fields& field,Grid& grid, const std::vector<std::unique_ptr<Boundary>>& boundaries)
-{
-#ifdef DEBUG
-    iter ++;
-#endif
-    // Compute alpha 
-        /// Compute d*Ad
-    double alpha = square_residual;  
-#ifdef DEBUG 
-    if (iter%100 == 0) 
-        std::cerr << "denominator " << square_residual<< std::endl; 
-#endif 
-    double dAd = 0; 
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j();
-        double val = direction(i,j) * adirection(i,j);  
-        dAd += val; 
-    }
-    double total_denom = dAd; 
-#ifdef DEBUG 
-    if (iter%100 == 0) 
-        std::cerr << "denominator " << total_denom << std::endl; 
-#endif 
-    Communication::communicate_sum_double(&dAd,&total_denom); 
-    alpha = alpha/total_denom; 
-#ifdef DEBUG
-    if(iter % 100 == 0)
-        std::cerr << "alpha " << alpha << std::endl;
-#endif 
-    // Update x and residual
-    double new_residual_squared = 0; 
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j(); 
-        field.p(i,j) = field.p(i,j) +  alpha*direction(i,j); 
-    }
-    // Communicate to all processes 
-    Communication::communicate_all(field.p_matrix(),MessageTag::P); 
-    Communication::communicate_all(direction,MessageTag::P);
-
-    // Update residuals 
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j(); 
-        residual(i,j) -= alpha * adirection(i,j); 
-        new_residual_squared += (residual(i,j)*residual(i,j)); 
-    }
-
-    double total_residual=0;
-    double return_val = new_residual_squared;
-    Communication::communicate_sum_double(&new_residual_squared,&total_residual); 
-    new_residual_squared = total_residual; 
-    // Compute beta 
-    double beta = new_residual_squared / square_residual; 
-    square_residual = new_residual_squared;
-    // Compute direction
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j(); 
-        double val = residual(i,j) + beta*direction(i,j); 
-        direction(i,j) = val;  
-    }
-    // 
-    for(auto cell:grid.fluid_cells())
-    {
-        int i = cell->i();
-        int j = cell->j(); 
-        adirection(i,j) = Discretization::laplacian(direction,i,j); 
-    }
-    return return_val;
-}
 
 void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries)
 {
@@ -536,6 +417,12 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
 
 void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries)
 {
+    /* Doesn't work in parallel !*/
+    if (Communication::_world_size != 1) {
+        if (Communication::_rank == 0)
+            std::cerr << "Fatal error : GS preconditioner can only be used sequentially !" << std::endl;
+        exit(-1);
+    }
 
     /* CG_GS initialization steps:
     1. r_0 = b - Ap
@@ -572,9 +459,7 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
     */
     double diag = -2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy));
     double diag_inv = 1.0 / diag;
-    #ifdef DEBUG
-        std::cout << " diag, diag_inv: \t" << diag << ", " << diag_inv << std::endl;   // = h^2 / 4.0, if dx == dy == h
-    #endif
+
 
     // 2.1 Forward Substitution : (L+D)*r' = r
     for(int j = 0; j < jmax+2; j++) {
@@ -586,14 +471,6 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
             }
         }    
     }
-    #ifdef DEBUG
-        std::cout << "After Forward_sub: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
-    #endif
-    #ifdef DEBUG_2
-        std::cout << "cond_residual after Forward_sub: " << std::endl;
-        std::cout.precision(2);
-        cond_residual.pretty_print(std::cout);
-    #endif
     
     // 2.2 Diagonal : D.inv * r'' = r' => r'' = D*r'
     for(auto cell:grid.fluid_cells())
@@ -609,21 +486,10 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
             if(grid.cell(i,j).type() == cell_type::FLUID ) {
                 diag_inv = 1 / Discretization::diagonal_term(i,j,grid);
                 cond_residual(i,j) = diag_inv * ( cond_residual(i,j) - Discretization::GS_Backward_Sub(cond_residual,i,j) );
-                // if(i+1 == imax+1) std::cout << "\tcond_residual(imax+1,j) should be zero: "<< cond_residual(i+1,j) << std::endl;
-                // if(j+1 == jmax+1) std::cout << "\tcond_residual(i,jmax+1) should be zero: "<< cond_residual(i,j+1) << std::endl;
-                // if(i-1 == 0) std::cout << "\tcond_residual(0,j) should be zero: "<< cond_residual(i-1,j) << std::endl;
-                // if(j-1 == 0) std::cout << "\tcond_residual(i,0) should be zero: "<< cond_residual(i,j-1) << std::endl;
+
             }
         }
     }
-    #ifdef DEBUG
-        std::cout << "After Backward_sub: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
-    #endif
-    #ifdef DEBUG_2
-        std::cout << "cond_residual after Backward_sub: " << std::endl;
-        std::cout.precision(2);
-        cond_residual.pretty_print(std::cout);
-    #endif
 
     // sigma_0 = <r0,q1> 
     for(auto cell:grid.fluid_cells())
@@ -641,9 +507,7 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
 
 double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries) 
 {
-    #ifdef DEBUG
-        std::cout << "\nI AM CG_GS::SOLVE !!!" << std::endl;
-    #endif
+
     /* Note: Terminology --> direction <=> M.inv*r <=> "q" <=> "cond_residual"
     1. Compute alpha = r.q / q.Aq = sigma / q.Aq
     2. Update p(ij) = p_old(ij) + alpha*q(ij)

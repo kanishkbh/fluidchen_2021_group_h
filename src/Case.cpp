@@ -136,7 +136,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Interface for selecting parallel and serial solvers 
     // CG, SD and Jacobi_CG are all parallel 
     // GS_CG and ILDU_GG are not so, this should throw a runtime error
-    std::vector<std::string> parallel_solvers = {"CG","SD","CG_Jacobi","CG_Richarson"};
+    std::vector<std::string> parallel_solvers = {"CG","SD","CG_Jacobi"};
     std::vector<std::string> serial_solvers = {"CG_GS","CG_IDLU"};
 
     for(auto solver:serial_solvers)
@@ -193,7 +193,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         }
     if (solver_type == "Jacobi")
         {
-            _pressure_solver = std::make_unique<Jacobi>();
+            _pressure_solver = std::make_unique<Jacobi>(omg);
             if (_rank == 0) std::cout << "Using Jacobi." << std::endl;
         }
     else if (solver_type == "SOR")
@@ -204,10 +204,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     else if (solver_type == "SD") {
         _pressure_solver = std::make_unique<SD>();
             if (_rank == 0) std::cout << "Using Steepest Descent." << std::endl;
-        } 
-    else if (solver_type == "CG_Richardson"){
-            _pressure_solver = std::make_unique<CG_Richardson>();
-            if(_rank==0) std::cout << "Using CG with Richardson" << std::endl; 
         } 
     else if(solver_type == "CG_Jacobi"){
             _pressure_solver = std::make_unique<CG_Jacobi>();

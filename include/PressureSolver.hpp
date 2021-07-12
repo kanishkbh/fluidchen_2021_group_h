@@ -216,23 +216,6 @@ class SD : public PressureSolver {
 };
 
 
-/**
- * Richardon CG : 
- * This method is nothing exclusive, it is simply a CG method with unit preconditioner
- * Included for theoretical purposes 
- */ 
-class CG_Richardson : public PressureSolver {
-  public:
-    CG_Richardson() = default; 
-    virtual ~CG_Richardson() = default;
-    virtual void init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries) override; 
-    virtual double solve(Fields& field,Grid& grid, const std::vector<std::unique_ptr<Boundary>>& boundaries);
-
-  private: 
-    Matrix<double> direction,adirection,residual; 
-    double square_residual{0}; 
-};
-
 class CG_Jacobi : public PressureSolver {
   public:
     CG_Jacobi() = default; 
