@@ -1,4 +1,3 @@
-
 # CFD Lab - Final Project (Group H)
 - Boris Martin 
 - Kanishk Bhatia 
@@ -49,8 +48,10 @@ Building inside the main folder is possible too, though less elegant.
 
 A few build options are available, in case of troubleshooting.
 
-- Defining NO_FILESYSTEM can help if your compiler doesn't support C++17 filesystem support. We needed it to run on a LRZ cluster.
+- Defining NO_FILESYSTEM can help if your compiler doesn't support C++17 filesystem support. We needed it to run on a LRZ cluster. If this is defin
 - Defining DEF_COMPARE_TRUE_RES compares the residual computed by the solver and the actual residual. This can be used to check correctness of a solver.
+
+This can be done on command line `make CXX_FLAGS=-DNO_FILESYSTEM` for instance.
 
 ### Interface 
 
