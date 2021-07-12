@@ -72,3 +72,23 @@ Serial (Withing build)
 Parallel (Within build)
 
     mpirun -np 4 ./fluidchen ../example_cases/Parallel_Cases/1_4/LidDrivenCavity.dat
+
+### Why is CG better ? (Disclaimar : Involves theory) 
+
+As mentioned, the SOR solver is a stationary iterative method and the rate of convergence is quite long. This is particularly true for fine refinements as we had seen in the instances in WS-3. 
+
+CG is based on a different philosophy, wherein in order to solve the LSE, we minimize a certain cost function 
+
+$ f(x) = frac{x^{T}Ax}{2} $
+
+The miracle in CG is that, this offers a best approximation among all solutions that are possible in the Vector Space. This is one of the reasons why the residuals in the CG are orthogonal with respect to each other. 
+
+Long story short, CG overcomes the convergence rate of the traditional SOR and in turn allows us to explore physics in a finer resolution on your personal computer. 
+
+It is important to mention that the convergence rate of CG is a direct function of the \kappa - condition number of the Poisson Matrix. Hence if a given config of the PM, has a high condition number, CG suffers from a similar bottleneck as compared to the SOR, so the natural extension to our project also involved preconditioners, which in essence should rectify this problem. 
+
+This is not to say that our solver can deal with any problem. Obviouly there are several preconditioners around that are fine-tuned for many applications. These implementations here are the most basic ones that are suited for a Symmetric Positive Definite Matrix such as the Poisson Matrix. 
+
+### I liked vanilla fluidchen better 
+
+If you prefer to run the vanilla version of fluidchen , just comment out the **pressure_solver** keyword on the config file and you would be back to normal. 
