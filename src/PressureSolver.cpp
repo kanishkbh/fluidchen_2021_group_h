@@ -74,7 +74,7 @@ void CG::init(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Bound
 
     residual = Matrix<double>(field.p_matrix().imax(), field.p_matrix().jmax());
 
-    /* Compute residual = "b - Ax" but x is 0 in fluid cells => b 
+    /* Compute residual = "b - Ax" 
        Search direction is initialized to residual too
     */
     residual = field.rs_matrix();
@@ -391,8 +391,7 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
 {
     int imax = grid.imax();
     int jmax = grid.jmax();
-    double dx = grid.dx();
-    double dy = grid.dy(); 
+
 
     residual = Matrix<double>(imax+2,jmax+2); 
     cond_residual = residual; 
@@ -409,7 +408,7 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
 
     }
 
-    //Communication::communicate_all(residual, MessageTag::P);
+    Communication::communicate_all(residual, MessageTag::P);
     // q1 = P^-1 r 
     for(auto cell:grid.fluid_cells())
     {
@@ -458,17 +457,12 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int i = cell->i();
         int j = cell->j();
         qAq += direction(i,j) * adirection(i,j); 
-        #ifdef DEBUG
-        // std::cout << "cell ( "<< i << ", " << j << "): qAq term = " << direction(i,j) * adirection(i,j) << std::endl;
-        #endif
+
     }
-    #ifdef DEBUG
-        std::cout << "total qAq  = " << qAq << std::endl;
-    #endif
 
 
     // Communicate to all processes before computing alpha 
-    double total_denom = qAq; // TODO : Change to qAq if this explodes; 
+    double total_denom = qAq; 
     Communication::communicate_sum_double(&qAq,&total_denom); 
     alpha = sigma / (total_denom ) ;
 
@@ -488,7 +482,6 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
 
     // Communicate pressure to all iterations 
     Communication::communicate_all(field.p_matrix(),MessageTag::P); 
-    Communication::communicate_all(direction,MessageTag::P); 
 
     // Update residual 
     // r =r - alpha*q 
@@ -498,7 +491,7 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int j = cell->j(); 
         residual(i,j) -= alpha * adirection(i,j); 
     }
-
+    Communication::communicate_all(residual, MessageTag::P);
     // r_bar = P^-1 * r 
     // Condition  the residual 
     for(auto cell:grid.fluid_cells())
@@ -507,9 +500,9 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int j = cell->j(); 
         cond_residual(i,j) = Discretization::jacobi(residual,i,j);
     }
-    #ifdef DEBUG
-        std::cout << "After Disc::jacobi.: cond_residual[25,25]: " << cond_residual(25,25) << std::endl;
-    #endif
+    Communication::communicate_all(cond_residual, MessageTag::P);
+    
+
     // Compute beta 
     double sigma_new = 0; 
     double true_res = 0;
@@ -525,7 +518,7 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
     double total_sigma = 0;
     Communication::communicate_sum_double(&sigma_new,&total_sigma); 
     double beta = total_sigma / sigma; 
-    sigma = sigma_new; 
+    sigma = total_sigma; 
 
     // Compute  new directions 
     for(auto cell:grid.fluid_cells())
@@ -534,18 +527,8 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int j = cell->j(); 
         direction(i,j) = cond_residual(i,j) + beta*(direction(i,j)); 
     }
+    Communication::communicate_all(direction, MessageTag::P);
 
-#ifdef DEBUG 
-    // if(iter % 100)
-    {
-        std::cerr << "alpha = " << alpha << std::endl;
-        std::cerr << "sigma = " << sigma << std::endl; 
-        std::cerr << "beta = " << beta << std::endl;
-        std::cerr << "sigma new " << sigma_new << std::endl;
-        std::cout << std::endl;
-        iter++;
-    }
-#endif 
     return true_res; 
 }
 
@@ -553,9 +536,7 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
 
 void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries)
 {
-    #ifdef DEBUG
-        std::cout << "\nI AM CG_GS::INIT !!!" << std::endl;
-    #endif
+
     /* CG_GS initialization steps:
     1. r_0 = b - Ap
     2. r_cap_0 = M.inv * r_0
