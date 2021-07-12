@@ -58,6 +58,8 @@ The solver can be chosen by simply specifying the solver on the config file usin
 
 
         pressure_solver {solver_param}
+        # Example : 
+        pressure_solver CG_GS
 
 ### Execution 
 
