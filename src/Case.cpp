@@ -133,6 +133,21 @@ Case::Case(std::string file_name, int argn, char **args) {
     
     file.close();
 
+    // Interface for selecting parallel and serial solvers 
+    // CG, SD and Jacobi_CG are all parallel 
+    // GS_CG and ILDU_GG are not so, this should throw a runtime error
+    std::vector<std::string> parallel_solvers = {"CG","SD","CG_Jacobi","CG_Richarson"};
+    std::vector<std::string> serial_solvers = {"CG_GS","CG_IDLU"};
+
+    for(auto solver:serial_solvers)
+    {
+        if((solver_type == solver) && (num_processes > 1)) 
+        {
+            throw std::runtime_error("Invalid use of the a serial solver.\n"); 
+        }
+    } 
+
+
     // Update the boolean for pressure input and heat equation
     if (_rank == 0) {
         if (energy_eq == "on") {
