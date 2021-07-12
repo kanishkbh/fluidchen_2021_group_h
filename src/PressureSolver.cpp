@@ -1,12 +1,10 @@
 #include "PressureSolver.hpp"
 #include "Communication.hpp"
-// #define DEBUG 
 #include <cmath>
 #include <iostream>
 #include <algorithm>
 #include <array>
 
-static int iter = 1; 
 SOR::SOR(double omega) : _omega(omega) {}
 
 double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
@@ -31,28 +29,38 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         boundary_ptr->apply(field, true);
     }
 
-    double res = 0.0;
-    double rloc = 0.0;
+    
+    return this->res(field, grid);
+}
+
+Jacobi::Jacobi(double omega) : _omega(omega) {}
+
+double Jacobi::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+
+    double imax = grid.imax();
+    double jmax = grid.jmax();
+    double dx = grid.dx();
+    double dy = grid.dy();
+
+    double coeff = _omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy))); // = _omega * h^2 / 4.0, if dx == dy == h
+    auto buffer = field.p_matrix();
 
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
 
-        double val = Discretization::laplacian(field.p_matrix(), i, j) - field.rs(i, j);
-        rloc += (val * val);
+        buffer(i, j) = (1.0 - _omega) * field.p(i, j) +
+                        coeff * (Discretization::sor_helper(field.p_matrix(), i, j) - field.rs(i, j));
     }
-    {
-        // Compute the sum of errors, and normalize in the main loop.
-        // This is because each process needs to know the total number of cells to divide the total residual
 
-        // res = rloc / (grid.fluid_cells().size());
-        // res = std::sqrt(res);
+    field.p_matrix() = buffer;
+    /* Enforce BCs afterwards */
+    for (auto &boundary_ptr : boundaries) {
+        boundary_ptr->apply(field, true);
     }
 
     
-
-    
-    return rloc;
+    return this->res(field, grid);
 }
 
 
@@ -401,7 +409,7 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
 
     }
 
-    Communication::communicate_all(residual, MessageTag::P);
+    //Communication::communicate_all(residual, MessageTag::P);
     // q1 = P^-1 r 
     for(auto cell:grid.fluid_cells())
     {
@@ -442,6 +450,8 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
         int j = cell->j();
         adirection(i,j) = Discretization::boundary_aware_laplacian(direction,i,j, grid);    
     }
+    Communication::communicate_all(adirection, MessageTag::P);
+
     // aTAq 
     for(auto cell:grid.fluid_cells())
     {
