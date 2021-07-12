@@ -6,8 +6,8 @@ project(CFDLAB VERSION 1.0)
 
 # Definition of the C++ Standard 
 # Target definition bc of cluster
-#set(CMAKE_CXX_STANDARD 17)
-#set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_definitions(-Dsolution_liddriven)
 add_definitions(-Dsolution_energy)
