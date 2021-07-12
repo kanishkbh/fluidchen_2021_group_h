@@ -11,7 +11,7 @@
 #include <vector>
 #include <cassert>
 
-#ifdef FILESYSTEM
+#ifndef NO_FILESYSTEM
 #include <filesystem>
 namespace filesystem = std::filesystem;
 #endif
@@ -266,7 +266,7 @@ void Case::set_file_names(std::string file_name) {
 
     // Create output directory
 
-#ifdef FILESYSTEM
+#ifndef NO_FILESYSTEM
     filesystem::path folder(_dict_name);
     try {
         filesystem::create_directory(folder);
