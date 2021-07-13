@@ -41,13 +41,15 @@ Unlike SOR, most solvers need an initialization step. This was added to the inte
 
 A typical preconditioned solver in our implementation is realized using two functions: 
 A high level algorithmic breakdown is as described: 
-- CG_x Init : 
+- CG_x Init :
+
             1. r_0 = b - Ap
             2. r_cap_0 = M.inv * r_0
             3. sigma = r_0 dot (M.inv * r_0) = r_0 dot r_cap_0
             4. d_0 = r_cap_0
 
 - CG_x Solve :
+
             Note: Terminology --> direction <=> M.inv*r <=> "q" <=> "cond_residual"
             1. Compute alpha = r.q / q.Aq = sigma / q.Aq
             2. Update p(ij) = p_old(ij) + alpha*q(ij)
