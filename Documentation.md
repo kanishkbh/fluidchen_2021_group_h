@@ -31,8 +31,35 @@ Source : Scientific Computing II, slides from Univ.-Prof. Dr. Michael Bader.
 
 ### Implementation Details 
 
+We foucs on a matrix free implementation, (this was one of the most tedious part of the implementations), as we wanted the solver to have as little overhead as possible. The matix free implementation has the following features 
+
+- It never assembles the A matrix 
+- It does not flatten the b vector - i.e. rhs_matrix is taken as is and worked upon. (Question of parallelization on a GPU? : Yes, SIMD parallelization on a GPU sadly requires refactoring our code.) 
+
 The implementation exploits the runtime polymorphism that is furnished by the PressureSolver interface used earlier. Each solver is a subclass of PressureSolver.
 Unlike SOR, most solvers need an initialization step. This was added to the interface (with a default, "do-nothing" implementation) and is called accordingly in the main loop
+
+A typical preconditioned solver in our implementation is realized using two functions: 
+A high level algorithmic breakdown is as described: 
+- CG_x Init : 
+            1. r_0 = b - Ap
+            2. r_cap_0 = M.inv * r_0
+            3. sigma = r_0 dot (M.inv * r_0) = r_0 dot r_cap_0
+            4. d_0 = r_cap_0
+
+- CG_x Solve :
+            Note: Terminology --> direction <=> M.inv*r <=> "q" <=> "cond_residual"
+            1. Compute alpha = r.q / q.Aq = sigma / q.Aq
+            2. Update p(ij) = p_old(ij) + alpha*q(ij)
+            3. Update r(ij) = r_old(ij) - alpha*A.q(ij)
+            4. Condition the residual ( Solve P*q = r )
+            5. Compute new directions ( d(ij) = r_cap(ij) + beta * d_old(ij) )
+
+It should be mentioned that in the parallel versions of the code, synchronization is performed as required. 
+
+One question to ask is , how would we differentiate the CG(special case) and the p-CG versions? 
+- CG is a special case of p-CG where M = I
+- So the purpose of cond_residual becomes moot, hence is removed from the CG Implementation 
 
 ### Building 
 
