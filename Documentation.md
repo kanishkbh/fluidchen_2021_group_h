@@ -61,7 +61,7 @@ The solver can be chosen by simply specifying the solver on the config file usin
 - Jacobi
 - CG_Jacobi 
 - CG_GS (Serial only)
-- CG_IDLU (Serial only)
+- CG_IDLU (Serial only) (Broken - Debugging : Shall be committed latest on 12/07/2021 by 23:00 )
 
 
 
