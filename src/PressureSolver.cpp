@@ -295,7 +295,7 @@ void CG_Jacobi::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<
     {
         int i = cell->i();
         int j = cell->j(); 
-        cond_residual(i,j) = Discretization::jacobi(residual,i,j); 
+        cond_residual(i,j) = residual(i,j) / Discretization::diagonal_term(i,j,grid);
         // std::cout << "cell (" << i << ',' << j << ") residual(ij), Disc::jacobi: " << (double)residual(i,j) << ',' << (double)Discretization::jacobi(residual,i,j) <<std::endl;
 
     }
@@ -379,7 +379,7 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
     {
         int i = cell->i();
         int j = cell->j(); 
-        cond_residual(i,j) = Discretization::jacobi(residual,i,j);
+        cond_residual(i,j) = residual(i,j) / Discretization::diagonal_term(i,j,grid);
     }
     Communication::communicate_all(cond_residual, MessageTag::P);
     
