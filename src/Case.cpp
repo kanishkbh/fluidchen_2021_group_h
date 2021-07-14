@@ -191,7 +191,7 @@ Case::Case(std::string file_name, int argn, char **args) {
             _pressure_solver = std::make_unique<CG>();
             if (_rank == 0) std::cout << "Using CG." << std::endl;
         }
-    if (solver_type == "Jacobi")
+    else if (solver_type == "Jacobi")
         {
             _pressure_solver = std::make_unique<Jacobi>(omg);
             if (_rank == 0) std::cout << "Using Jacobi." << std::endl;
