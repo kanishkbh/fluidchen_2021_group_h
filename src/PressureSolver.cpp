@@ -417,12 +417,12 @@ double CG_Jacobi::solve(Fields& field,Grid& grid,const std::vector<std::unique_p
 
 void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boundary>>& boundaries)
 {
-    /* Doesn't work in parallel !*/
-    if (Communication::_world_size != 1) {
-        if (Communication::_rank == 0)
-            std::cerr << "Fatal error : GS preconditioner can only be used sequentially !" << std::endl;
-        exit(-1);
-    }
+    // /* Doesn't work in parallel !*/
+    // if (Communication::_world_size != 1) {
+    //     if (Communication::_rank == 0)
+    //         std::cerr << "Fatal error : GS preconditioner can only be used sequentially !" << std::endl;
+    //     exit(-1);
+    // }
 
     /* CG_GS initialization steps:
     1. r_0 = b - Ap
@@ -449,6 +449,8 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
         residual(i,j) -= Discretization::laplacian(field.p_matrix(),i,j);  
         // std::cout << "CG_GS::init(): cell (" << i << ',' << j << ") pressure(ij): " << field.p(i,j) << std::endl;
     }
+    Communication::communicate_all(residual, MessageTag::P);
+
     
     // 2. Solve P*rc = r 
     /*    (3-step process for GS preconditioner P = (L+D)*D.inv*(D+U))
@@ -490,6 +492,7 @@ void CG_GS::init(Fields& field,Grid& grid,const std::vector<std::unique_ptr<Boun
             }
         }
     }
+    Communication::communicate_all(cond_residual, MessageTag::P);
 
     // sigma_0 = <r0,q1> 
     for(auto cell:grid.fluid_cells())
@@ -532,6 +535,8 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
         int j = cell->j();
         adirection(i,j) = Discretization::boundary_aware_laplacian(direction,i,j, grid);    
     }
+    Communication::communicate_all(adirection, MessageTag::P);
+
     // 1.2) q_T * Aq 
     for(auto cell:grid.fluid_cells())
     {
@@ -569,7 +574,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
 
     // Communicate pressure to all iterations 
     Communication::communicate_all(field.p_matrix(),MessageTag::P); 
-    Communication::communicate_all(direction,MessageTag::P); 
+    // Communication::communicate_all(direction,MessageTag::P); 
 
     // 3) Update residual //    r = r - alpha*q 
     for(auto cell:grid.fluid_cells())
@@ -579,6 +584,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
         residual(i,j) -= alpha * adirection(i,j); 
         residual_magnitude_square += residual(i,j) * residual(i,j);
     }
+    Communication::communicate_all(residual, MessageTag::P);
 
     // 4) Compute beta
     //    4.1) Condition  the residual: //         (Solve P*q1 = r )
@@ -637,6 +643,9 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
         cond_residual.pretty_print(std::cout);
     #endif
 
+    Communication::communicate_all(cond_residual, MessageTag::P);
+
+
     // 4.2) Compute denominator = r dot r_cap 
     double sigma_new = 0; 
     for(auto cell:grid.fluid_cells())
@@ -660,6 +669,7 @@ double CG_GS::solve(Fields& field,Grid& grid,const std::vector<std::unique_ptr<B
         int j = cell->j(); 
         direction(i,j) = cond_residual(i,j) + beta*(direction(i,j)); 
     }
+    Communication::communicate_all(direction, MessageTag::P);
 
 #ifdef DEBUG 
     // if(iter % 100)
